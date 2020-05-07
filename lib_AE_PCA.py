@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 from tensorflow import keras
 import matplotlib
 from mpl_toolkits import mplot3d
@@ -16,7 +18,7 @@ def plot_2D(data):
     #save_fig("linear_autoencoder_pca_plot")
     plt.show()
     plt.close()
-    
+
 def plot_3D(data):
     x,y,z = data[:,0], data[:,1], data[:,2]
     fig = plt.figure()

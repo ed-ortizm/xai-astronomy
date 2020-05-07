@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-from mod_AEs import *
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-
+from lib_AE_PCA import *
 # 3D dataset
 np.random.seed(4)
 m= 500
