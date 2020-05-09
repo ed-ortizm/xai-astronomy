@@ -1,2 +1,2 @@
-# AEs-Geron
-Practicing AEs from Géron's book
+# CAEs for outlier detection in astronomy
+Practicing!
