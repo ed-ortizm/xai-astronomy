@@ -30,9 +30,10 @@ encoder = keras.models.Sequential([keras.layers.Dense(2, input_shape=[3])])
 decoder = keras.models.Sequential([keras.layers.Dense(3, input_shape=[2])])
 autoencoder = keras.models.Sequential([encoder, decoder])
 
-autoencoder.compile(loss="mse", optimizer=keras.optimizers.SGD(lr=0.1))
+autoencoder.compile(loss="mse")#, optimizer=keras.optimizers.SGD(lr=0.1))
 history = autoencoder.fit(X, X, epochs=20)
 latent = encoder.predict(X)
+
 print(latent.shape)
 plot_2D(latent)
 plot_2D(np.array([latent[:,1],latent[:,0]]).T)

@@ -27,34 +27,70 @@ scaler.fit_transform(mnist_data)
 
 
 # Now we fit PCA on the training set
-pca = PCA(0.30)
-tr_data= pca.fit_transform(mnist_data)
-print(type(tr_data))
-print('N° of componets: ',pca.n_components_)
+# pca = PCA(0.95)
+# tr_data= pca.fit_transform(mnist_data)
+# print(type(tr_data))
+# print('N° of componets: ',pca.n_components_)
+#
+# # Let's see how efficient is the compression
+#
+# inv_tr= pca.inverse_transform(tr_data)
+# implot_pca(mnist_data[0],inv_tr[0],pca.n_components_)
+# images
+# Now let's try the same with AEs
+# the loss function was giving nan, I read this
+# https://stackoverflow.com/questions/33962226/common-causes-of-nans-during-training
 
-# Let's see how efficient is the compression
+encoder = keras.models.Sequential([keras.layers.Dense(154, input_shape=[784])])
+decoder = keras.models.Sequential([keras.layers.Dense(784, input_shape=[154])])
+autoencoder = keras.models.Sequential([encoder, decoder])
 
-inv_tr= pca.inverse_transform(tr_data)
-##################################
-plt.figure(figsize=(8,4));
+# I'm getting a bad loss function
+# https://stackoverflow.com/questions/33962226/common-causes-of-nans-during-training
+autoencoder.compile(loss="mse", optimizer=keras.optimizers.SGD(lr=1e-10))
 
-# Original Image
-plt.subplot(1, 2, 1);
-plt.imshow(mnist_data[1].reshape(28,28), cmap = plt.cm.gray,\
-interpolation='nearest', clim=(0, 255))
-plt.xlabel('784 components', fontsize = 14)
-plt.title('Original Image', fontsize = 20)
 
-# 154 principal components
-plt.subplot(1, 2, 2);
-plt.imshow(inv_tr[1].reshape(28, 28),cmap = plt.cm.gray,\
-interpolation='nearest', clim=(0, 255))
-plt.xlabel('5 components', fontsize = 14)
-plt.title('3% of Explained Variance', fontsize = 20)
-plt.show()
-plt.close()
-##########################################33
+if not(os.path.exists('autoencoder.json')):
+    history = autoencoder.fit(mnist_data, mnist_data, epochs=20)
+    model_encoder= encoder.to_json()
+    with open('encoder.json','w') as json_file:
+        json_file.write(model_encoder)
+    encoder.save_weights('encoder.h5')
 
+    model_decoder= decoder.to_json()
+    with open('decoder.json','w') as json_file:
+        json_file.write(model_decoder)
+    decoder.save_weights('decoder.h5')
+
+    model_autoencoder= autoencoder.to_json()
+    with open('autoencoder.json','w') as json_file:
+        json_file.write(model_autoencoder)
+    encoder.save_weights('autoencoder.h5')
+else:
+    ## Load the models
+
+    # encoder
+    json_file= open('encoder.json','r')
+    loaded_model_json= json_file.read()
+    json_file.close()
+    encoder= keras.models.model_from_json(loaded_model_json)
+    # decoder
+    json_file= open('decoder.json','r')
+    loaded_model_json= json_file.read()
+    json_file.close()
+    decoder= keras.models.model_from_json(loaded_model_json)
+    # Encoder
+    json_file= open('autoencoder.json','r')
+    loaded_model_json= json_file.read()
+    json_file.close()
+    autoencoder= keras.models.model_from_json(loaded_model_json)
+
+reconstruction = autoencoder.predict(mnist_data)
+implot_pca(mnist_data[0],reconstruction[0],154)
+# print(mnist_data[0].shape)
+
+# Saving the model
+# https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 
 t_f= time.time()
 

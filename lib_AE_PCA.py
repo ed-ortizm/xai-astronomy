@@ -26,3 +26,22 @@ def plot_3D(data):
     ax.scatter3D(x,y,z)
     plt.show()
     plt.close()
+
+def implot_pca(original,reconstructed,components):
+    plt.figure(figsize=(8,4));
+
+    # Original Image
+    plt.subplot(1, 2, 1);
+    plt.imshow(original.reshape(28,28), cmap = plt.cm.gray,\
+    interpolation='nearest', clim=(0, 255))
+    plt.xlabel('784 components', fontsize = 14)
+    plt.title('Original Image', fontsize = 20)
+
+    # principal components
+    plt.subplot(1, 2, 2);
+    plt.imshow(reconstructed.reshape(28, 28),cmap = plt.cm.gray,\
+    interpolation='nearest', clim=(0, 255))
+    plt.xlabel(str(components) + 'components', fontsize = 14)
+    plt.title('Reconstructed image', fontsize = 20)
+    plt.show()
+    plt.close()
