@@ -1,26 +1,16 @@
 #!/usr/bin/env python3
 from lib_AE_PCA import *
-# 3D dataset
-np.random.seed(4)
-m= 500
-w1, w2= 0.1, 0.3
-noise= 0.1
-
-angles = np.random.rand(m)*3*np.pi/2 -0.5
-data = np.empty((m,3))
-data[:,0]= np.cos(angles) + np.sin(angles)/2 + noise*np.random.randn(m)/2
-data[:,1]= np.sin(angles)*0.7 + noise* np.random.randn(m)/2
-data[:,2]= data[:,0]*w1 + data[:,1]* w2 + noise*np.random.randn(m)
-
+# 3D data
+n_points=500
+w1=0.1
+w2=0.3
+noise=0.1
+data= data_gen(n_points,w1,w2,noise)
 #plot_3D(data)
-scaler= StandardScaler()
-
-## PCA
-X = scaler.fit_transform(data)
 
 pca= PCA(n_components=2)
-pca.fit(X)
-sing_vals = pca.transform(X)
+pca.fit(data)
+sing_vals = pca.transform(data)
 print(sing_vals.shape)
 print('The two principal components are: \n',pca.components_)
 # Let's check if the two principal comoments are orthogonal
@@ -29,6 +19,7 @@ z2 = pca.components_[1]
 z12 = z1*z2
 print('The dot product of the two compoments is: ',z12.sum())
 print(np.sum(z1*z1))
+print(pca.explained_variance_ratio_,pca.explained_variance_ratio_.sum())
 
 #plot_2D(sing_vals)
 #################
