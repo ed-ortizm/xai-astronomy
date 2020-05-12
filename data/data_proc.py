@@ -30,3 +30,9 @@ for galaxy in galaxies:
     file= f'{head}{id:03}.fit'
     files.append(file)
 print(len(files))
+
+# Obtaining the redshift
+
+hdul = fits.open(files[0])
+Z = hdul[0].header['Z']
+hdul.close()

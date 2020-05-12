@@ -1,6 +1,8 @@
 import os
 import numpy as np
 from astropy.table import Table
+from astropy.io import fits
+from multiprocessing import Pool
 
 class Data:
     def __init__(self, path='spSpec/'):
