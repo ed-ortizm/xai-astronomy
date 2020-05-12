@@ -1,3 +1,6 @@
+# Astronomical data
+*.fit
+*.fits
 # weird stuff
 *~
 # data used for training
