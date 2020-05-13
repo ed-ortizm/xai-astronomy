@@ -39,7 +39,7 @@ for file in files:
     hdul = fits.open(dir+file)
     Z = hdul[0].header['Z']
 
-    # Wavelengths divided by redshift
+    # wavelengths converted to rest frame
 
     COEFF0 = hdul[0].header['COEFF0']
     COEFF1 = hdul[0].header['COEFF1']
@@ -49,8 +49,10 @@ for file in files:
     for i in range(n_pixels):
         lbd= 10**(COEFF0+COEFF1*i)
         wavelengths.append(lbd)
-    wavelengths=np.array(wavelengths)/Z
-
+    wavelengths=np.array(wavelengths)/(1+Z)
+    w_i= wavelengths[0]
+    w_f= wavelengths[-1]
+    print(f'{w_i:.2f}',f'{w_f:.2f}')
     # Mean value of the flux
     # First row is the spectrum
 
@@ -59,7 +61,6 @@ for file in files:
 
     median= np.median(flux)
     flux = flux-median
-    print(idx)
     data[idx]= np.array([wavelengths,flux])
     idx= idx+1
 
@@ -69,3 +70,5 @@ for file in files:
 # plt.close()
 t_f= time.time()
 print(t_f-t_i)
+## The wavelength range is the same, I don't need to computed
+# for each file, change that.
