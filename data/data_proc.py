@@ -32,7 +32,28 @@ for galaxy in galaxies:
 print(len(files))
 
 # Obtaining the redshift
-
-hdul = fits.open(files[0])
+print(files[0])
+hdul = fits.open(dir+files[0])
 Z = hdul[0].header['Z']
+
+# Wavelengths
+
+COEFF0 = hdul[0].header['COEFF0']
+COEFF1 = hdul[0].header['COEFF1']
+
+wavelengths= []
+n_pixels= hdul[0].header['NAXIS1']
+for i in range(n_pixels):
+    lbd= 10**(COEFF0+COEFF1*i)
+    wavelengths.append(lbd)
+
+print(wavelengths[0],wavelengths[-1])
+
+# Mean value of the flux
+
+data = hdul[0].data
+median= np.median(data)
+data = data-median
+
+
 hdul.close()
