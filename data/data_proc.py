@@ -43,7 +43,8 @@ for i in range(n_pixels):
     wavelength_range[i]= lbd
 hdul.close()
 
-# data with wavelengths converted to rest frame
+# Data with wavelengths converted to rest frame
+# Master wavelength range
 
 data= np.zeros((len(files),2,n_pixels))
 
@@ -54,9 +55,14 @@ for file in files:
     Z = hdul[0].header['Z']
 
     wavelengths_rest_frame= np.array(wavelength_range)/(1+Z)
-    w_i= wavelengths_rest_frame[0]
-    w_f= wavelengths_rest_frame[-1]
-    print(f'{w_i:.2f}',f'{w_f:.2f}')
+    if idx==0:
+        m_wavelength_range= wavelengths_rest_frame
+    else:
+        m_wavelength_range=\
+        np.concatenate((m_wavelength_range,wavelengths_rest_frame))
+    # w_i= wavelengths_rest_frame[0]
+    # w_f= wavelengths_rest_frame[-1]
+    # print(f'{w_i:.2f}',f'{w_f:.2f}')
 
     # Mean value of the flux
     # First row is the spectrum
@@ -68,6 +74,18 @@ for file in files:
     flux = flux-median
     data[idx]= np.array([wavelengths_rest_frame,flux])
     idx= idx+1
+
+# Master wavelength range
+m_wavelength_range= np.unique(m_wavelength_range)
+print(m_wavelength_range.shape,len(m_wavelength_range))
+# w1= m_wavelength_range[0]
+# w2= m_wavelength_range[-1]
+# print(w1,w2)
+
+# Interpolating fluxes
+
+for i in range(data.shape[0]):
+    
 
 # plt.figure()
 # plt.plot(wavelengths,data)
