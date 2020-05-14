@@ -30,29 +30,34 @@ for galaxy in galaxies:
     id= galaxy['fiberid']
     file= f'{head}{id:03}.fit'
     files.append(file)
+# Wavelength range
 
-n_pixels= 3834
+hdul = fits.open(dir+files[0])
+n_pixels= hdul[0].header['NAXIS1']
+COEFF0 = hdul[0].header['COEFF0']
+COEFF1 = hdul[0].header['COEFF1']
+wavelength_range= np.zeros(n_pixels)
+
+for i in range(n_pixels):
+    lbd= 10**(COEFF0+COEFF1*i)
+    wavelength_range[i]= lbd
+hdul.close()
+
+# data with wavelengths converted to rest frame
+
 data= np.zeros((len(files),2,n_pixels))
+
 idx= 0
 for file in files:
     # Obtaining the redshift
     hdul = fits.open(dir+file)
     Z = hdul[0].header['Z']
 
-    # wavelengths converted to rest frame
-
-    COEFF0 = hdul[0].header['COEFF0']
-    COEFF1 = hdul[0].header['COEFF1']
-
-    wavelengths= []
-
-    for i in range(n_pixels):
-        lbd= 10**(COEFF0+COEFF1*i)
-        wavelengths.append(lbd)
-    wavelengths=np.array(wavelengths)/(1+Z)
-    w_i= wavelengths[0]
-    w_f= wavelengths[-1]
+    wavelengths_rest_frame= np.array(wavelength_range)/(1+Z)
+    w_i= wavelengths_rest_frame[0]
+    w_f= wavelengths_rest_frame[-1]
     print(f'{w_i:.2f}',f'{w_f:.2f}')
+
     # Mean value of the flux
     # First row is the spectrum
 
@@ -61,7 +66,7 @@ for file in files:
 
     median= np.median(flux)
     flux = flux-median
-    data[idx]= np.array([wavelengths,flux])
+    data[idx]= np.array([wavelengths_rest_frame,flux])
     idx= idx+1
 
 # plt.figure()
