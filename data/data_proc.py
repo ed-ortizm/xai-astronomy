@@ -4,6 +4,7 @@ from astropy.table import Table
 import numpy as np
 from astropy.io import fits
 from data_proc_lib import spec_cln
+from data_proc_lib import get_id
 #t_i= time.time()
 # Do a catalog with the ones that are both 'GALAXY' and SPEC_CLN=2
 # Set apart the ones that are 'GALAXY' but not SPEC_CLN=2
@@ -37,26 +38,24 @@ for fiber_id in galaxies['fiberid']:
 print(f'There are {len(obj_gal_names)} files with objtype = GALAXY')
 
 
-# Crossmatching the lists (Ben diagram)
+# Crossmatching the lists (Venn diagram)
 # https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches/35713174
 
 cln_gal = [x for x in spec_cln_names if x in obj_gal_names]
 cln_non_gal = [x for x in spec_cln_names if x not in obj_gal_names]
 gal_non_cln = [x for x in obj_gal_names if x not in spec_cln_names]
-print(len(cln_gal),len(cln_non_gal),len(gal_non_cln))
+print(f'{len(cln_gal)} files intersect in the two sets')
+print(f'{len(cln_non_gal)} files are SPEC_CLN=2 but not objtype=GALAXY')
+print(f'{len(gal_non_cln)} files are objtype=GALAXY but not SPEC_CLN=2')
 
+
+fiber_ids = np.fromiter(map(get_id,cln_gal),dtype=np.int)
+print(len(fiber_ids))
 # non_galaxies = data[np.where(data['objtype'] != 'GALAXY')]
 # non_galaxies.write('non-gals-spObj-0266-51630-23.fit', format='fits',
 #                    overwrite=True)
 #
-# dir = 'spSpec/'
-# for fiber_id in non_galaxies['fiberid']:
-#     fname = f'{dir}{head}{fiber_id:03}.fit'
-#     if os.path.exists(fname):
-#         os.remove(fname)
-#     else:
-#         print(f'{fname} does not exist!')
-#
+
 #
 # # Wavelength range: the two coeficients neccessary to compute
 # # the wavelength range are the same among all the .fit files
