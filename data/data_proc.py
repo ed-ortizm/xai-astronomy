@@ -82,40 +82,35 @@ for fname in obj_names:
 # Wavelength range: the two coeficients neccessary to compute
 # the wavelength range are the same among all the .fit files
 # https://stackoverflow.com/questions/59825/how-to-retrieve-an-element-from-a-set-without-removing-it
+
 fname = next(iter(cln_gal))
 with fits.open(dir+fname) as hdul:
     n_pixels = hdul[0].header['NAXIS1']
     COEFF0 = hdul[0].header['COEFF0']
     COEFF1 = hdul[0].header['COEFF1']
 
-wl_range = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
+wl_rg = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
+# Obtaining redshifts
 
-# double check if the vacumn ws are the same.... if so, do (w)/(1+Z)
-# where Z is an array (broadcasting) double check if you can take then
-# from the table.
-# # Data with wavelengths converted to rest frame
+Z = np.array(gal_itr['zfinal'])
+
+# Converting to rest frame
+wl_rgs = np.outer(1/(1+Z),wl_rg)
+
+# # Or using broadcasting
+# nfactor = 1/(1+Z)
+# nfactor = nfactor.reshape(nfactor.size,1)
+# wl = wl.reshape(1,wl.size)
+# wls = nfactor*wl
+
 # # Master wavelength range
-#
-# raw_data= np.zeros((len(files),2,n_pixels))
-#
-# idx= 0
-# for file in files:
-#     # Obtaining the redshift
-#     hdul = fits.open(dir+file)
-#     Z = hdul[0].header['Z']
-#
-#     wavelengths_rest_frame= np.array(wavelength_range)/(1+Z)
-#     if idx==0:
-#         m_wavelength_range= wavelengths_rest_frame
-#     else:
-#         m_wavelength_range=\
-#         np.concatenate((m_wavelength_range,wavelengths_rest_frame))
-#         # create a list, it is more efficient with memory
-#
-#     # w_i= wavelengths_rest_frame[0]
-#     # w_f= wavelengths_rest_frame[-1]
-#     # print(f'{w_i:.2f}',f'{w_f:.2f}')
-#
+# m_wavelength_range= np.unique(m_wavelength_range)
+# print(m_wavelength_range.shape,len(m_wavelength_range))
+# # w1= m_wavelength_range[0]
+# # w2= m_wavelength_range[-1]
+# # print(w1,w2)
+
+
 #     # Mean value of the flux
 #     # First row is the spectrum
 #
@@ -127,12 +122,6 @@ wl_range = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
 #     raw_data[idx]= np.array([wavelengths_rest_frame,flux])
 #     idx= idx+1
 #
-# # Master wavelength range
-# m_wavelength_range= np.unique(m_wavelength_range)
-# print(m_wavelength_range.shape,len(m_wavelength_range))
-# # w1= m_wavelength_range[0]
-# # w2= m_wavelength_range[-1]
-# # print(w1,w2)
 #
 # # Interpolating fluxes
 #
