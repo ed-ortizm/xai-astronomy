@@ -38,19 +38,21 @@ for fiber_id in galaxies['fiberid']:
 print(f'There are {len(obj_gal_names)} files with objtype = GALAXY')
 
 
-# Crossmatching the lists (Venn diagram)
-# https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches/35713174
-
-cln_gal = [x for x in spec_cln_names if x in obj_gal_names]
-cln_non_gal = [x for x in spec_cln_names if x not in obj_gal_names]
-gal_non_cln = [x for x in obj_gal_names if x not in spec_cln_names]
+# Crossmatching the lists (Venn diagram) with set()
+cln_gal = set(spec_cln_names) & set(obj_gal_names)
+cln_non_gal = set(spec_cln_names) - set(obj_gal_names)
+gal_non_cln = set(obj_gal_names) - set(spec_cln_names)
 print(f'{len(cln_gal)} files intersect in the two sets')
 print(f'{len(cln_non_gal)} files are SPEC_CLN=2 but not objtype=GALAXY')
 print(f'{len(gal_non_cln)} files are objtype=GALAXY but not SPEC_CLN=2')
 
-
+# fiber ids for the intersection
 fiber_ids = np.fromiter(map(get_id,cln_gal),dtype=np.int)
-print(len(fiber_ids))
+
+# Table of objects in the intersection
+
+# fiber_ids having the same number of elements of the original table
+
 # non_galaxies = data[np.where(data['objtype'] != 'GALAXY')]
 # non_galaxies.write('non-gals-spObj-0266-51630-23.fit', format='fits',
 #                    overwrite=True)
