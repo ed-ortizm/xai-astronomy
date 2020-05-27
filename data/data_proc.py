@@ -90,8 +90,8 @@ with fits.open(dir+fname) as hdul:
     COEFF1 = hdul[0].header['COEFF1']
 
 wl_rg = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
-# Obtaining redshifts
 
+# Obtaining redshifts
 Z = np.array(gal_itr['zfinal'])
 
 # Converting to rest frame
@@ -103,26 +103,22 @@ wl_rgs = np.outer(1/(1+Z),wl_rg)
 # wl = wl.reshape(1,wl.size)
 # wls = nfactor*wl
 
-# # Master wavelength range
-# m_wavelength_range= np.unique(m_wavelength_range)
-# print(m_wavelength_range.shape,len(m_wavelength_range))
-# # w1= m_wavelength_range[0]
-# # w2= m_wavelength_range[-1]
-# # print(w1,w2)
+# Master wavelength range
+wl_min = wl_rgs.min()
+wl_max = wl_rgs.max()
+mtr_wl_rg = np.linspace(wl_min,wl_max,5_000)
 
+# Fluxes: median removed
+fluxes = np.zeros(wl_rgs.shape)
+idx = 0
+for fname in cln_gal:
+    with fits.open(dir+fname) as hdul:
+        flux = hdul[0].data[0]
+        median = np.median(flux)
+        flux -= median
+        fluxes[idx] = flux
+    idx += 1
 
-#     # Mean value of the flux
-#     # First row is the spectrum
-#
-#     flux = hdul[0].data[0]
-#     hdul.close()
-#
-#     median= np.median(flux)
-#     flux = flux-median# Stay in place!!
-#     raw_data[idx]= np.array([wavelengths_rest_frame,flux])
-#     idx= idx+1
-#
-#
 # # Interpolating fluxes
 #
 # m= raw_data.shape[0]
