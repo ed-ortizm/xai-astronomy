@@ -17,13 +17,13 @@ data = Table.read(fname)
 # Number of files with SPEC_CLN = 2
 dir = 'spSpec_org/'
 head = 'spSpec-51630-0266-'
-fnames = []
+obj_names = []
 
 for fiber_id in data['fiberid']:
     fname = f'{head}{fiber_id:03}.fit'
-    fnames.append(fname)
+    obj_names.append(fname)
 
-gal_count,spec_cln_names = spec_cln(dir=dir,fnames=fnames)
+gal_count,spec_cln_names = spec_cln(dir=dir,fnames=obj_names)
 print(f'There are {gal_count} files with SPEC_CLN = 2')
 
 # Elements with objtype = 'GALAXY'
@@ -51,33 +51,48 @@ fiber_ids = np.fromiter(map(get_id,cln_gal),dtype=np.int)
 
 # Table of objects in the intersection
 
-# fiber_ids having the same number of elements of the original table
+# Creating a mask by brute force:
+m = data['fiberid'].size
+fiber_id_mask = np.zeros(m,dtype=bool)
 
-# non_galaxies = data[np.where(data['objtype'] != 'GALAXY')]
-# non_galaxies.write('non-gals-spObj-0266-51630-23.fit', format='fits',
-#                    overwrite=True)
-#
+for fiber_id in fiber_ids:
+    fiber_id_mask[fiber_id-1] = True
+
+gal_itr = data[fiber_id_mask]
+gal_itr.write('gal-inter-spObj-0266-51630-23.fit', format='fits',
+                overwrite=True)
+
+# Saving intersection set
+
+dir = 'spSpec_itr/'
+
+for fname in obj_names:
+    exist = os.path.exists(dir+fname)
+    if exist:
+        if fname not in cln_gal:
+            os.remove(dir+fname)
+    else:
+        print(f'{fname} file does not exit!')
 
 #
-# # Wavelength range: the two coeficients neccessary to compute
-# # the wavelength range are the same among all the .fit files
-#
-# with fits.open(dir+fnames[0]) as hdul:
-#     n_pixels = hdul[0].header['NAXIS1']
-#     COEFF0 = hdul[0].header['COEFF0']
-#     COEFF1 = hdul[0].header['COEFF1']
-#
-# wl_range = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
+# for fname in cln_gal:
+#     exist = os.path.exists(dir+fname)
+#     if exist:
+
+# Wavelength range: the two coeficients neccessary to compute
+# the wavelength range are the same among all the .fit files
+# https://stackoverflow.com/questions/59825/how-to-retrieve-an-element-from-a-set-without-removing-it
+fname = next(iter(cln_gal))
+with fits.open(dir+fname) as hdul:
+    n_pixels = hdul[0].header['NAXIS1']
+    COEFF0 = hdul[0].header['COEFF0']
+    COEFF1 = hdul[0].header['COEFF1']
+
+wl_range = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
 
 # double check if the vacumn ws are the same.... if so, do (w)/(1+Z)
 # where Z is an array (broadcasting) double check if you can take then
 # from the table.
-# for i in range(n_pixels):
-#     lbd= 10**(COEFF0+COEFF1*i)
-#     wavelength_range[i]= lbd
-# hdul.close()
-# # wavelength_range = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
-#
 # # Data with wavelengths converted to rest frame
 # # Master wavelength range
 #
