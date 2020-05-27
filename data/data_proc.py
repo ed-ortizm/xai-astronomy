@@ -6,10 +6,9 @@ from astropy.io import fits
 from data_proc_lib import spec_cln
 from data_proc_lib import get_id
 from data_proc_lib import inpl
-#t_i= time.time()
-# Do a catalog with the ones that are both 'GALAXY' and SPEC_CLN=2
-# Set apart the ones that are 'GALAXY' but not SPEC_CLN=2
-# Set apart the ones  that are SPEC_CLN=2 but not 'GALAXY'
+from time import time
+import matplotlib.pyplot as plt
+t_i = time()
 
 # Loading table with info of the data
 fname = 'spObj-0266-51630-23.fit'
@@ -111,6 +110,9 @@ mtr_wl_rg = np.linspace(wl_min,wl_max,5_000)
 
 # Fluxes: median removed & interpolated
 
+cln_gal = list(cln_gal)
+cln_gal.sort()
+
 flxs_inpl= np.zeros((len(cln_gal),mtr_wl_rg.size))
 idx = 0
 for fname in cln_gal:
@@ -122,35 +124,11 @@ for fname in cln_gal:
         flxs_inpl[idx] = flux
     idx += 1
 
-# Interpolating fluxes
-
-
-# m= raw_data.shape[0]
-# n= m_wavelength_range.shape[0] # Do a sampling where you have a similar
-# # resolution as in al the wavelength ranges. (consider higest redshift)
-# cured_data= np.zeros((m,n))
-# #
-# for i in range(m):
-#     wavelength= raw_data[i,0,:]
-#     flux= raw_data[i,1,:]
-#     cured_data[i]= f_interpolate(wavelength,flux,m_wavelength_range)
-#     print(cured_data.size*cured_data.itemsize)
-    # Killed
-    ## Trying paralell
-    # with mp.Pool() as pool:
-    #     f=\
-    #     pool.starmap(\
-    #     p_f_interpolate,zip(wavelength,flux)\
-    #     )
-    #     # in line 97: TypeError: object of type
-    #     #'numpy.float64' has no len()
-    # cured_data[i]= f(m_wavelength_range)
-#
-# plt.figure()
-# plt.plot(wavelengths,data)
-# plt.show()
-# plt.close()
-#t_f= time.time()
-#print(t_f-t_i)
+plt.figure()
+plt.plot(mtr_wl_rg,flxs_inpl[100])
+plt.show()
+plt.close()
+t_f = time()
+print(t_f-t_i)
 ## The wavelength range is the same, I don't need to computed
 # for each file, change that.
