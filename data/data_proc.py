@@ -5,6 +5,7 @@ import numpy as np
 from astropy.io import fits
 from data_proc_lib import spec_cln
 from data_proc_lib import get_id
+from data_proc_lib import inpl
 #t_i= time.time()
 # Do a catalog with the ones that are both 'GALAXY' and SPEC_CLN=2
 # Set apart the ones that are 'GALAXY' but not SPEC_CLN=2
@@ -108,19 +109,22 @@ wl_min = wl_rgs.min()
 wl_max = wl_rgs.max()
 mtr_wl_rg = np.linspace(wl_min,wl_max,5_000)
 
-# Fluxes: median removed
-fluxes = np.zeros(wl_rgs.shape)
+# Fluxes: median removed & interpolated
+
+flxs_inpl= np.zeros((len(cln_gal),mtr_wl_rg.size))
 idx = 0
 for fname in cln_gal:
     with fits.open(dir+fname) as hdul:
         flux = hdul[0].data[0]
         median = np.median(flux)
         flux -= median
-        fluxes[idx] = flux
+        flux = inpl(wl_rgs[idx],flux,mtr_wl_rg)
+        flxs_inpl[idx] = flux
     idx += 1
 
-# # Interpolating fluxes
-#
+# Interpolating fluxes
+
+
 # m= raw_data.shape[0]
 # n= m_wavelength_range.shape[0] # Do a sampling where you have a similar
 # # resolution as in al the wavelength ranges. (consider higest redshift)
