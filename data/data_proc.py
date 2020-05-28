@@ -51,18 +51,22 @@ fiber_ids = np.fromiter(map(get_id,cln_gal),dtype=np.int)
 
 # Table of objects in the intersection
 
-# Creating a mask by brute force:
-m = data['fiberid'].size
-fiber_id_mask = np.zeros(m,dtype=bool)
+# Creating a mask the vectorized way
 
-for fiber_id in fiber_ids:
-    fiber_id_mask[fiber_id-1] = True
+fiber_id_mask = np.in1d(data['fiberid'],fiber_ids)
+
+# # Creating a mask by brute force:
+# m = data['fiberid'].size
+# fiber_id_mask = np.zeros(m,dtype=bool)
+#
+# for fiber_id in fiber_ids:
+#     fiber_id_mask[fiber_id-1] = True
 
 gal_itr = data[fiber_id_mask]
 gal_itr.write('gal-inter-spObj-0266-51630-23.fit', format='fits',
                 overwrite=True)
 
-# Saving intersection set
+# Keeping files from the intersection only
 
 dir = 'spSpec_itr/'
 
@@ -73,11 +77,6 @@ for fname in obj_names:
             os.remove(dir+fname)
     else:
         print(f'{fname} file does not exit!')
-
-#
-# for fname in cln_gal:
-#     exist = os.path.exists(dir+fname)
-#     if exist:
 
 # Wavelength range: the two coeficients neccessary to compute
 # the wavelength range are the same among all the .fit files
@@ -124,11 +123,17 @@ for fname in cln_gal:
         flxs_inpl[idx] = flux
     idx += 1
 
+# Saving data to HD
+
+np.save('fluxes_curated',flxs_inpl)
+#np.save('master_wavelngth', mtr_wl_rg)
+
+t_f = time()
+print(f'The running time is {t_f-t_i:2.5}')
+
 plt.figure()
-plt.plot(mtr_wl_rg,flxs_inpl[100])
+plt.plot(mtr_wl_rg,flxs_inpl[0])
 plt.show()
 plt.close()
-t_f = time()
-print(t_f-t_i)
 ## The wavelength range is the same, I don't need to computed
 # for each file, change that.

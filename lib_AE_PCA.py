@@ -1,13 +1,6 @@
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from tensorflow import keras
-import matplotlib
-from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
-import tensorflow as tf
 def data_gen(m=500,w1=0.1,w2=0.3,noise=0.1):
     # 3D dataset
     np.random.seed(4)
@@ -50,5 +43,23 @@ def implot_pca(original,reconstructed,components):
     interpolation='nearest', clim=(0, 255))
     plt.xlabel(str(components) + 'components', fontsize = 14)
     plt.title('Reconstructed image', fontsize = 20)
+    plt.show()
+    plt.close()
+
+def plt_spec_pca(flx,pca_flx,componets):
+    '''Comparative plot to see how efficient is the PCA compression'''
+    plt.figure(figsize=(8,4));
+
+    # Original Image
+    plt.subplot(1, 2, 1);
+    plt.plot(flx)
+    plt.xlabel(f'{flx.size} components', fontsize = 14)
+    plt.title('Original Spectra', fontsize = 20)
+
+    # principal components
+    plt.subplot(1, 2, 2);
+    plt.plot(pca_flx)
+    plt.xlabel(f'{componets} componets', fontsize = 14)
+    plt.title('Reconstructed spectra', fontsize = 20)
     plt.show()
     plt.close()
