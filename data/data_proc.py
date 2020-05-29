@@ -116,7 +116,7 @@ flxs_inpl= np.zeros((len(cln_gal),mtr_wl_rg.size))
 idx = 0
 for fname in cln_gal:
     with fits.open(dir+fname) as hdul:
-        flux = hdul[0].data[0]
+        flux = hdul[0].data[1]
         median = np.median(flux)
         flux -= median
         flux = inpl(wl_rgs[idx],flux,mtr_wl_rg)
