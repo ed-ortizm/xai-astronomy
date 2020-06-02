@@ -18,7 +18,7 @@ else:
     print(f'There is no {fname} in ./{dir}!')
 
 # Performing PCA
-pca = PCA() #0.99999951 (100)
+pca = PCA(0.99999951) #0.99999951 (100)
 tr_flx= pca.fit_transform(flx)
 print(f'N° of componets: {pca.n_components_}')
 

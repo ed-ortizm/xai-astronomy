@@ -11,7 +11,7 @@ def spec_cln(dir,fnames):
                 gal_count += 1
                 spec_cln_names.append(fname)
 
-    return gal_count,spec_cln_names
+    return gal_count, spec_cln_names
 
 def get_id(fname):
     '''Obtain the fiber id from a file name. Created to use map'''
