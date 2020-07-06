@@ -1,3 +1,5 @@
+# Heavy data
+*.csv
 # Astronomical data
 *.fit
 *.fits
