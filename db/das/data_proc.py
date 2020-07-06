@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 import os
+from time import time
+
 from astropy.table import Table
 import numpy as np
-from astropy.io import fits
+import astropy.io.fits as pyfits
 from data_proc_lib import spec_cln
 from data_proc_lib import get_id
 from data_proc_lib import inpl
-from time import time
 import matplotlib.pyplot as plt
+
 t_i = time()
 
 # Loading table with info of the data
+
 fname = 'spObj-0266-51630-23.fit'
 data = Table.read(fname)
 
 # Number of files with SPEC_CLN = 2
+
 dir = 'spSpec_org/'
 head = 'spSpec-51630-0266-'
 obj_names = []
@@ -24,6 +28,7 @@ for fiber_id in data['fiberid']:
     obj_names.append(fname)
 
 gal_count, spec_cln_names = spec_cln(dir=dir, fnames=obj_names)
+
 print(f'There are {gal_count} files with SPEC_CLN = 2')
 
 # Elements with objtype = 'GALAXY'
@@ -39,6 +44,7 @@ print(f'There are {len(obj_gal_names)} files with objtype = GALAXY')
 
 
 # Crossmatching the lists (Venn diagram) with set()
+
 cln_gal = set(spec_cln_names) & set(obj_gal_names)
 cln_non_gal = set(spec_cln_names) - set(obj_gal_names)
 gal_non_cln = set(obj_gal_names) - set(spec_cln_names)
@@ -89,7 +95,8 @@ for fname in obj_names:
 # https://stackoverflow.com/questions/59825/how-to-retrieve-an-element-from-a-set-without-removing-it
 
 fname = next(iter(cln_gal))
-with fits.open(dir+fname) as hdul:
+
+with pyfits.open(dir+fname) as hdul:
     n_pixels = hdul[0].header['NAXIS1']
     COEFF0 = hdul[0].header['COEFF0']
     COEFF1 = hdul[0].header['COEFF1']
@@ -102,6 +109,7 @@ z = np.array(gal_itr['zfinal'])
 # Converting to rest frame
 
 # Using np.newaxis
+
 z_factor = 1/(1+z)
 wl_rgs = wl_rg[np.newaxis, :]*z_factor[:, np.newaxis]
 
@@ -129,7 +137,7 @@ flxs_inpl = np.zeros((len(cln_gal), mtr_wl_rg.size))
 idx = 0
 
 for fname in cln_gal:
-    with fits.open(dir+fname) as hdul:
+    with pyfits.open(dir+fname) as hdul:
         flux = hdul[0].data[1]
         # median = np.median(flux)
         # flux -= median

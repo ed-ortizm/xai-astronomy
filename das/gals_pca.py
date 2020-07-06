@@ -1,23 +1,28 @@
 #! /usr/bin/env python3
 
-import numpy as np
 import os
-from sklearn.decomposition import PCA
 from time import time
+
+import numpy as np
+from sklearn.decomposition import PCA
 from lib_AE_PCA import plt_spec_pca
 from sklearn.preprocessing import StandardScaler
 
 t_i = time()
+
 # Loading the data
+
 dir = 'data/'
 fname = 'fluxes_curated.npy'
 exist = os.path.exists(dir+fname)
+
 if exist:
     flx = np.load(dir+fname)
 else:
     print(f'There is no {fname} in ./{dir}!')
 
 # Performing PCA
+
 pca = PCA(0.99999951) #0.99999951 (100)
 tr_flx= pca.fit_transform(flx)
 print(f'N° of componets: {pca.n_components_}')
