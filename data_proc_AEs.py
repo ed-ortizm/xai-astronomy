@@ -88,6 +88,11 @@ gs.to_csv(f'{dbPath}gs.csv')
 
 getFitsFiles(gs,dbPath)
 
+## Data processing
+
+# For some reason when I check for SPEC_CLN with fitsheader, it is not there.
+
+# Computing the wavelength range
 
 tf = time()
 
