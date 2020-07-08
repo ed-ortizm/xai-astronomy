@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from AEs_lib import getFitsFiles
-
+from AEs_lib import min_max_wl
 
 ti = time()
 
@@ -93,6 +93,16 @@ getFitsFiles(gs,dbPath)
 # For some reason when I check for SPEC_CLN with fitsheader, it is not there.
 
 # Computing the wavelength range
+plate = gs['plate'][0]
+mjd = gs['mjd'][0]
+fiberid = gs['fiberid'][0]
+run2d = gs['run2d'][0]
+z = gs['z'][0]
+
+min, max, flx = min_max_wl(plate, mjd, fiberid, run2d, z, dbPath)
+
+print(f'min= {min:.2f}, max= {max:.2f}')
+print(type(flx))
 
 tf = time()
 

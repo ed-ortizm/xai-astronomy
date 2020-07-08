@@ -6,6 +6,7 @@ import numpy as np
 import astropy.io.fits as pyfits
 import multiprocessing as mp
 import pandas as pd
+import numpy as np
 
 ## Me
 
@@ -13,27 +14,26 @@ def min_max_wl(plate, mjd, fiberid, run2d, z, dbPath):
     """Rturns the minimun and maximun value the wavelength range"""
 
     # Path file for the target spectrum
-    fname = f'spec-{plate}-{mjd}-{fiberid}.fits'
-    SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate}/'
+    fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
+    SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
     dir_path = f'/{dbPath}/{SDSSpath}'
     dest = f'/{dir_path}/{fname}'
 
     # Deredshifting
     with pyfits.open(dest) as hdul:
-        n_pixels = hdul[0].header['NAXIS1']
+        n_pixels = hdul[1].header['NAXIS2']
         COEFF0 = hdul[0].header['COEFF0']
         COEFF1 = hdul[0].header['COEFF1']
-        flx = hdul[0].data[1]
+        flx = hdul[1].data['flux']
 
     wl_rg = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
     z_factor = 1./(1. + z)
-    wl_rg = wl_rg[np.newaxis, :]*z_factor[:, np.newaxis]
-
+    wl_rg *= z_factor
     wl_min , wl_max = np.min(wl_rg), np.max(wl_rg)
 
     # Removing median & Interpolating
-
-    return min, max
+    flx -= np.nanmedian(flx)
+    return wl_min, wl_max, flx
 
 
 ## From Guy Goren, Dovi's student
