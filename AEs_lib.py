@@ -7,10 +7,31 @@ import astropy.io.fits as pyfits
 import multiprocessing as mp
 import pandas as pd
 import numpy as np
+from scipy import interpolate
+from functools import partial
 
 ## Me
+def fluxes(gs, dbPath):
+    """Obatin save array with all fluxes already interpolated"""
+    # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
+    pool = mp.Pool(processes=7)
+    f = partial(min_max_interp_i, gs, dbPath)
+    res = pool.map(f, range(len(gs)))
+    return res
 
-def min_max_wl(plate, mjd, fiberid, run2d, z, dbPath):
+def min_max_interp_i(gs, dbPath, i):
+    print(f'working {i}')
+    obj = gs.iloc[i]
+    plate = obj['plate']
+    mjd = obj['mjd']
+    fiberid = obj['fiberid']
+    run2d = obj['run2d']
+    z = obj['z']
+    min, max, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
+
+    return min, max, flx
+
+def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     """Rturns the minimun and maximun value the wavelength range"""
 
     # Path file for the target spectrum
@@ -33,8 +54,10 @@ def min_max_wl(plate, mjd, fiberid, run2d, z, dbPath):
 
     # Removing median & Interpolating
     flx -= np.nanmedian(flx)
+    # Replacing np.NaN with zero (already removed the median)
+    flx[np.isnan(flx)] = 0.
+    f = interpolate.interp1d(wl_rg, flx, fill_value='extrapolate')
     return wl_min, wl_max, flx
-
 
 ## From Guy Goren, Dovi's student
 

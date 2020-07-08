@@ -9,7 +9,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from AEs_lib import getFitsFiles
-from AEs_lib import min_max_wl
+from AEs_lib import min_max_interp
+from AEs_lib import fluxes
 
 ti = time()
 
@@ -47,7 +48,7 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 10_000
+n_obs = 10
 gs = gs[:n_obs]
 
 gs.index = np.arange(n_obs)
@@ -99,10 +100,17 @@ fiberid = gs['fiberid'][0]
 run2d = gs['run2d'][0]
 z = gs['z'][0]
 
-min, max, flx = min_max_wl(plate, mjd, fiberid, run2d, z, dbPath)
+min, max, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
 
 print(f'min= {min:.2f}, max= {max:.2f}')
-print(type(flx))
+
+data = fluxes(gs, dbPath)
+
+for flx in data:
+    plt.figure()
+    plt.plot(flx[2])
+    plt.show()
+    plt.close()
 
 tf = time()
 
