@@ -11,13 +11,26 @@ from scipy import interpolate
 from functools import partial
 
 ## Me
+
+def m_wl(min_max):
+    pass
+
 def fluxes(gs, dbPath):
     """Obatin save array with all fluxes already interpolated"""
     # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
     pool = mp.Pool(processes=7)
     f = partial(min_max_interp_i, gs, dbPath)
     res = pool.map(f, range(len(gs)))
-    return res
+    print(f'res: {res}')
+    min_max = np.array([(res[i][0], res[i][1]) for i in range(len(res))])
+    print(f'min_max: {min_max}')
+    min, max = np.min(min_max), np.max(min_max)
+
+    # Master grid
+
+    m_wl = np.linspace(min, max, 1_000)
+    flxs = np.array([res[i][2](m_wl) for i in range(len(res))])
+    return flxs
 
 def min_max_interp_i(gs, dbPath, i):
     print(f'working {i}')
@@ -27,9 +40,9 @@ def min_max_interp_i(gs, dbPath, i):
     fiberid = obj['fiberid']
     run2d = obj['run2d']
     z = obj['z']
-    min, max, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
+    min, max, flx_intp = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
 
-    return min, max, flx
+    return min, max, flx_intp
 
 def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     """Rturns the minimun and maximun value the wavelength range"""
@@ -56,8 +69,8 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     flx -= np.nanmedian(flx)
     # Replacing np.NaN with zero (already removed the median)
     flx[np.isnan(flx)] = 0.
-    f = interpolate.interp1d(wl_rg, flx, fill_value='extrapolate')
-    return wl_min, wl_max, flx
+    flx_intp = interpolate.interp1d(wl_rg, flx, fill_value='extrapolate')
+    return wl_min, wl_max, flx_intp
 
 ## From Guy Goren, Dovi's student
 
