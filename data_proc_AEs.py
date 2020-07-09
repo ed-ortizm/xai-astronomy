@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from AEs_lib import getFitsFiles
 from AEs_lib import min_max_interp
-from AEs_lib import fluxes
+from AEs_lib import spectra
 
 ti = time()
 
@@ -48,7 +48,7 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 10
+n_obs = 5
 gs = gs[:n_obs]
 
 gs.index = np.arange(n_obs)
@@ -104,13 +104,16 @@ getFitsFiles(gs,dbPath)
 
 # print(f'min= {min:.2f}, max= {max:.2f}')
 
-flxs = fluxes(gs, dbPath)
+m_wl, flxs = spectra(gs, dbPath)
 
-for flx in flxs:
-    plt.figure()
-    plt.plot(flx)
-    plt.show()
-    plt.close()
+np.save(f'{dbPath}flxs_{flxs.shape[0]}.npy', flxs)
+np.save(f'{dbPath}wl_grid_{m_wl.size}.npy', m_wl)
+
+# for flx in flxs:
+#     plt.figure()
+#     plt.plot(m_wl, flx)
+#     plt.show()
+#     plt.close()
 
 tf = time()
 

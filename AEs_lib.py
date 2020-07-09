@@ -12,28 +12,61 @@ from functools import partial
 
 ## Me
 
-def m_wl(min_max):
-    pass
+def spectra(gs, dbPath):
+    """
+    Computes the spectra interpolating over a master grid of wavelengths
+    Parameters
+    ----------
+    gs : Pandas DataFrame with info of the galaxies
+    dbPath : String : Path to data base
 
-def fluxes(gs, dbPath):
-    """Obatin save array with all fluxes already interpolated"""
-    # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
+    Returns
+    -------
+    m_wl_grid : numpy array 1-D : The master wavelength grid
+    flxs :  numpy array 2-D : Interpolated spectra over the grid
+    """
+
+    print(f'Getting grid of wavelengths and spectra from {len(gs)} .fits files')
+
     pool = mp.Pool(processes=7)
+
+    # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
     f = partial(min_max_interp_i, gs, dbPath)
     res = pool.map(f, range(len(gs)))
-    print(f'res: {res}')
+
+    if (None, None, None) in res:
+        print('removing none')
+        res = list(set(res))
+        print(f'len of res = {len(res)}')
+        res.remove((None, None, None))
+
     min_max = np.array([(res[i][0], res[i][1]) for i in range(len(res))])
-    print(f'min_max: {min_max}')
     min, max = np.min(min_max), np.max(min_max)
 
-    # Master grid
+    # Master grid and interpolation
+    m_wl_grid = np.linspace(min, max, 5_000)
+    flxs = np.array([res[i][2](m_wl_grid) for i in range(len(res))])
 
-    m_wl = np.linspace(min, max, 1_000)
-    flxs = np.array([res[i][2](m_wl) for i in range(len(res))])
-    return flxs
+    print('Job finished')
+
+    return m_wl_grid, flxs
 
 def min_max_interp_i(gs, dbPath, i):
-    print(f'working {i}')
+    """
+    Computes the min and max value in the wavelenght grid for the ith spectrum.
+    Computes the interpolation functtion for the ith spectrum.
+    Parameters
+    ----------
+    gs : Pandas DataFrame with info of the galaxies
+    dbPath : String : Path to data base
+    i : int : Index of .fits file in the DataFrame
+    Returns
+    -------
+    min : float : minimum value if the wavelength grid for the ith spectrum
+    max : float : maximun value if the wavelength grid for the ith spectrum
+    flx_intp :  interp1d object : Interpolation function for the ith spectrum
+    """
+
     obj = gs.iloc[i]
     plate = obj['plate']
     mjd = obj['mjd']
@@ -45,31 +78,60 @@ def min_max_interp_i(gs, dbPath, i):
     return min, max, flx_intp
 
 def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
-    """Rturns the minimun and maximun value the wavelength range"""
+    """
+    Computes the min and max value in the wavelenght grid for the spectrum.
+    Computes the interpolation functtion for the spectrum.
+    Parameters
+    ----------
+    plate : int : plate number
+    mjd : int : mjd of observation (days)
+    fiberid : int : Fiber ID
+    run2d : str : 2D Reduction version of spectrum
+    z : float : redshift, replaced by z_noqso when available.
+    (z_nqso --> Best redshift when excluding QSO fit in BOSS spectra (right redshift to use for galaxy targets))
+    dbPath : String : Path to data base
+    Returns
+    -------
+    wl_min : float : minimum value of the wavelength grid for the spectrum
+    wl_max : float : maximun value of the wavelength grid for the spectrum
+    flx_intp :  interp1d object : Interpolation function for the spectrum
 
-    # Path file for the target spectrum
+    """
+    # Path to the .fits file of the target spectrum
     fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
     SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
     dir_path = f'/{dbPath}/{SDSSpath}'
     dest = f'/{dir_path}/{fname}'
 
-    # Deredshifting
+
+    if not(os.path.exists(dest)):
+        print(f'File {dest} not found.')
+        return None, None, None
+
     with pyfits.open(dest) as hdul:
-        n_pixels = hdul[1].header['NAXIS2']
-        COEFF0 = hdul[0].header['COEFF0']
-        COEFF1 = hdul[0].header['COEFF1']
+        wl_rg = 10. ** (hdul[1].data['loglam'])
         flx = hdul[1].data['flux']
 
-    wl_rg = 10. ** (COEFF0 + COEFF1 * np.arange(n_pixels))
+    # Discarding spectrum with more than 10% of indefininte valunes
+    if (np.count_nonzero(~np.isfinite(flx)) > flx.size // 10 ):
+        return None, None, None
+
+    # Deredshifting & min & max
     z_factor = 1./(1. + z)
     wl_rg *= z_factor
     wl_min , wl_max = np.min(wl_rg), np.max(wl_rg)
+    print(f'min = {wl_min:.2f} & max = {wl_max:.2f}')
 
-    # Removing median & Interpolating
+    # Replacing indefinite values with the median
+    flx[~np.isfinite(flx)] = np.nanmedian(flx)
+
+    # Removing the median & Interpolating
+    print(f'The median is {np.nanmedian(flx):.2f}')
     flx -= np.nanmedian(flx)
-    # Replacing np.NaN with zero (already removed the median)
-    flx[np.isnan(flx)] = 0.
+
+    # Interpolation function
     flx_intp = interpolate.interp1d(wl_rg, flx, fill_value='extrapolate')
+
     return wl_min, wl_max, flx_intp
 
 ## From Guy Goren, Dovi's student
