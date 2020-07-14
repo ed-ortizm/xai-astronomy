@@ -48,7 +48,7 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 5
+n_obs = 20_000
 gs = gs[:n_obs]
 
 gs.index = np.arange(n_obs)
@@ -106,8 +106,8 @@ getFitsFiles(gs,dbPath)
 
 m_wl, flxs = spectra(gs, dbPath)
 
-np.save(f'{dbPath}flxs_{flxs.shape[0]}.npy', flxs)
-np.save(f'{dbPath}wl_grid_{m_wl.size}.npy', m_wl)
+np.save(f'{dbPath}/flxs_{flxs.shape[0]}.npy', flxs)
+np.save(f'{dbPath}/wl_grid_{m_wl.size}.npy', m_wl)
 
 # for flx in flxs:
 #     plt.figure()

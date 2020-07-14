@@ -29,7 +29,7 @@ def spectra(gs, dbPath):
     """
 
     print(f'Getting grid of wavelengths and spectra from {len(gs)} .fits files')
-
+    # close the pool (with) & do partial before
     pool = mp.Pool(processes=7)
 
     # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
@@ -37,11 +37,13 @@ def spectra(gs, dbPath):
     res = pool.map(f, range(len(gs)))
 
     if (None, None, None) in res:
+        ## list(filter(lambda a: a != (None, None, None), res))  --> try this
         print('removing none')
         res = list(set(res))
         print(f'len of res = {len(res)}')
         res.remove((None, None, None))
 
+    ## min_max = np.array([(r[0], r[1]) for r in res])
     min_max = np.array([(res[i][0], res[i][1]) for i in range(len(res))])
     min, max = np.min(min_max), np.max(min_max)
 
@@ -115,6 +117,7 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
         flx = hdul[1].data['flux']
 
     # Discarding spectrum with more than 10% of indefininte valunes
+    ## Do on the entierty of the spectra, eliminate where u have 10% of spectra mising some flux
     if (np.count_nonzero(~np.isfinite(flx)) > flx.size // 10 ):
         return None, None, None
 
@@ -125,6 +128,7 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     print(f'min = {wl_min:.2f} & max = {wl_max:.2f}')
 
     # Replacing indefinite values with the median
+    ## Similar to line 118. I have to replace by the nedian in all the spectra for the given wl
     flx[~np.isfinite(flx)] = np.nanmedian(flx)
 
     # Removing the median & Interpolating
@@ -132,7 +136,7 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     flx -= np.nanmedian(flx)
 
     # Interpolation function
-    flx_intp = interpolate.interp1d(wl_rg, flx, fill_value='extrapolate')
+    flx_intp = interpolate.interp1d(wl_rg, flx, fill_value=np.nan)
 
     return wl_min, wl_max, flx_intp
 
