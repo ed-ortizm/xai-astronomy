@@ -1,6 +1,7 @@
 import os
 import urllib
 from glob import glob
+from time import time
 
 import numpy as np
 import astropy.io.fits as pyfits
@@ -180,7 +181,7 @@ def getFitsFiles(gs, dbPath):
     :return: None.
     """
 
-    if __name__ == 'uRF_SDSS':      # Wrap Parallelized code for Windows OS
+    if __name__ == 'AEs_lib':      # Wrap Parallelized code for Windows OS
         print ('*** Getting  %d fits files ****' % (len(gs)))
         start = time()
 
@@ -191,6 +192,7 @@ def getFitsFiles(gs, dbPath):
         # Download .fits files parallelly
         pool = mp.Pool()
         f = partial(getFitFile_i, gs, dbPath)
+        print('Starting first pool')
         res = pool.map(f, range(len(gs)))
         nFailed=sum(res)
 
@@ -222,7 +224,6 @@ def getFitFile_i(gs, dbPath, i):
         return 0
     except Exception as e:
         print ('Failed to DL: ' + 'https://data.sdss.org/' + 'sas/dr16/sdss/spectro/redux/' + run2d + '/spectra/lite/' + plate + '/' + '-'.join(['spec',plate,mjd,fiberid]) + '.fits')
-        print(f'The run2d is {run2d}')
         print(str(e))
         return 1
 

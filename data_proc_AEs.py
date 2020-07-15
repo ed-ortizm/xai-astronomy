@@ -18,7 +18,7 @@ ti = time()
 
 ## The sample
 dbPath= f'{os.getcwd()}/db/'
-gs = pd.read_csv(f'{dbPath}gals_DR16.csv', header=0)
+gs = pd.read_csv(f'{dbPath}/gals_DR16.csv', header=0)
 
 ## Replacing z by z_noqso when possible
 # z_noqso --> "Best redshift when excluding QSO fit in BOSS spectra
@@ -48,20 +48,20 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 20_000
-gs = gs[:n_obs]
+n_obs = 3_188_712
+if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
+    gs = gs[:n_obs]
+    gs.index = np.arange(n_obs)
 
-gs.index = np.arange(n_obs)
+    # Create links for the Download
 
-# Create links for the Download
+    url_head = 'http://skyserver.sdss.org/dr16/en/tools/explore/summary.aspx?plate='
 
-url_head = 'http://skyserver.sdss.org/dr16/en/tools/explore/summary.aspx?plate='
-
-# It cannot be done with a big f string
-gs['url'] = url_head + gs['plate'].map('{:04}'.format) + '&mjd='\
-            + gs['mjd'].astype(str) \
-            + '&fiber=' + gs['fiberid'].map('{:04}'.format)
-gs.to_csv(f'{dbPath}gs.csv')
+    # It cannot be done with a big f string
+    gs['url'] = url_head + gs['plate'].map('{:04}'.format) + '&mjd='\
+                + gs['mjd'].astype(str) \
+                + '&fiber=' + gs['fiberid'].map('{:04}'.format)
+    gs.to_csv(f'{dbPath}/gs_{n_obs}.csv')
 
 # Plotting the z and SNR distribution
 
@@ -85,8 +85,12 @@ gs.to_csv(f'{dbPath}gs.csv')
 # plt.show()
 # plt.close
 
-# Downloading the data...
+tf = time()
 
+print(f'Running time: {tf-ti:.2f} [s]')
+
+# Downloading the data...
+print('Getting spectra')
 getFitsFiles(gs,dbPath)
 
 ## Data processing
@@ -103,15 +107,15 @@ getFitsFiles(gs,dbPath)
 # min, max, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
 
 # print(f'min= {min:.2f}, max= {max:.2f}')
-
-m_wl, flxs = spectra(gs, dbPath)
-
-np.save(f'{dbPath}/flxs_{flxs.shape[0]}.npy', flxs)
-np.save(f'{dbPath}/wl_grid_{m_wl.size}.npy', m_wl)
-
-# for flx in flxs:
-#     plt.figure()
-#     plt.plot(m_wl, flx)
+#
+# m_wl, flxs = spectra(gs, dbPath)
+#
+# np.save(f'{dbPath}/flxs_{flxs.shape[0]}.npy', flxs)
+# np.save(f'{dbPath}/wl_grid_{m_wl.size}.npy', m_wl)
+#
+# # for flx in flxs:
+# #     plt.figure()
+# #     plt.plot(m_wl, flx)
 #     plt.show()
 #     plt.close()
 
