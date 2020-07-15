@@ -8,7 +8,7 @@ import astropy.io.fits as pyfits
 import multiprocessing as mp
 import pandas as pd
 import numpy as np
-from scipy import interpolate
+from scipy.interpolate import interp1d
 from functools import partial
 import matplotlib
 import matplotlib.pyplot as plt
@@ -30,31 +30,47 @@ def spectra(gs, dbPath):
     """
 
     print(f'Getting grid of wavelengths and spectra from {len(gs)} .fits files')
-    # close the pool (with) & do partial before
-    pool = mp.Pool(processes=7)
-
     # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
     f = partial(min_max_interp_i, gs, dbPath)
-    res = pool.map(f, range(len(gs)))
+
+    # close the pool (with) & do partial before
+    with mp.Pool(processes=-1) as pool:
+        res = pool.map(f, range(len(gs)))
 
     if (None, None, None) in res:
-        ## list(filter(lambda a: a != (None, None, None), res))  --> try this
-        print('removing none')
-        res = list(set(res))
-        print(f'len of res = {len(res)}')
-        res.remove((None, None, None))
+        ##  Removing None from res
+        res = list(filter(lambda a: a != (None, None, None), res))
 
-    ## min_max = np.array([(r[0], r[1]) for r in res])
-    min_max = np.array([(res[i][0], res[i][1]) for i in range(len(res))])
-    min, max = np.min(min_max), np.max(min_max)
+    # wavelenght arrays
+    wls = np.array([r[0] for r in res])
+    min, max = np.argmin(wls), np.argmax(wls)
 
     # Master grid and interpolation
-    m_wl_grid = np.linspace(min, max, 5_000)
-    flxs = np.array([res[i][2](m_wl_grid) for i in range(len(res))])
+    wl_grid = np.linspace(min, max, 5_000)
+
+    # Discarding spectrum with more than 10% of indefininte
+    #valunes in a given wl for al training set
+    flxs = np.array([r[1] for r in res])
+    wkeep = np.where(np.count_nonzero(~np.isfinite(flxs), axis=0) < flxs.shape[0] / 10)
+
+    # Removing one dimensional axis since wkeep is a tuple
+    flxs = np.squeeze(flxs[:, wkeep])
+    wls = np.squeeze(wls[:, wkeep])
+
+    # Replacing indefinite values in a spectrum with its nan median
+    for flx in flxs:
+        flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
+
+    # Normalizing by the median
+    flxs -= np.median(flxs, axis=1).reshape((flxs.shape[0],1))
+
+    # Interpolating
+
+    flxs = interp1d(wls, flxs, axis=1)(m_wl_grid)
 
     print('Job finished')
 
-    return m_wl_grid, flxs
+    return wl_grid, flxs
 
 def min_max_interp_i(gs, dbPath, i):
     """
@@ -78,9 +94,9 @@ def min_max_interp_i(gs, dbPath, i):
     fiberid = obj['fiberid']
     run2d = obj['run2d']
     z = obj['z']
-    min, max, flx_intp = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
+    wl_rg, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
 
-    return min, max, flx_intp
+    return wl_rg, flx
 
 def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     """
@@ -106,7 +122,7 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     fname = f'spec-{plate:04}-{mjd}-{fiberid:04}.fits'
     SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
     dir_path = f'/{dbPath}/{SDSSpath}'
-    dest = f'/{dir_path}/{fname}'
+    dest = f'{dir_path}/{fname}'
 
 
     if not(os.path.exists(dest)):
@@ -117,29 +133,15 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
         wl_rg = 10. ** (hdul[1].data['loglam'])
         flx = hdul[1].data['flux']
 
-    # Discarding spectrum with more than 10% of indefininte valunes
-    ## Do on the entierty of the spectra, eliminate where u have 10% of spectra mising some flux
-    if (np.count_nonzero(~np.isfinite(flx)) > flx.size // 10 ):
-        return None, None, None
 
     # Deredshifting & min & max
     z_factor = 1./(1. + z)
     wl_rg *= z_factor
     wl_min , wl_max = np.min(wl_rg), np.max(wl_rg)
-    print(f'min = {wl_min:.2f} & max = {wl_max:.2f}')
+    # print(f'min = {wl_min:.2f} & max = {wl_max:.2f}')
 
-    # Replacing indefinite values with the median
-    ## Similar to line 118. I have to replace by the nedian in all the spectra for the given wl
-    flx[~np.isfinite(flx)] = np.nanmedian(flx)
 
-    # Removing the median & Interpolating
-    print(f'The median is {np.nanmedian(flx):.2f}')
-    flx -= np.nanmedian(flx)
-
-    # Interpolation function
-    flx_intp = interpolate.interp1d(wl_rg, flx, fill_value=np.nan)
-
-    return wl_min, wl_max, flx_intp
+    return wl_rg, flx
 
 def plt_spec_pca(flx,pca_flx,componets):
     '''Comparative plot to see how efficient is the PCA compression'''
