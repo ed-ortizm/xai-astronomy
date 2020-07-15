@@ -1,7 +1,7 @@
 import os
 import urllib
 from glob import glob
-from time import time
+from time import time, sleep
 
 import numpy as np
 import astropy.io.fits as pyfits
@@ -181,25 +181,24 @@ def getFitsFiles(gs, dbPath):
     :return: None.
     """
 
-    if __name__ == 'AEs_lib':      # Wrap Parallelized code for Windows OS
-        print ('*** Getting  %d fits files ****' % (len(gs)))
-        start = time()
+    print ('*** Getting  %d fits files ****' % (len(gs)))
+    start = time()
 
-        # Create fits' DB folder, if needed
-        if not os.path.exists(dbPath):
-            os.makedirs(dbPath)
+    # Create fits' DB folder, if needed
+    if not os.path.exists(dbPath):
+        os.makedirs(dbPath)
 
-        # Download .fits files parallelly
-        pool = mp.Pool()
-        f = partial(getFitFile_i, gs, dbPath)
-        print('Starting first pool')
-        res = pool.map(f, range(len(gs)))
-        nFailed=sum(res)
+    # Download .fits files parallelly
+    pool = mp.Pool()
+    f = partial(getFitFile_i, gs, dbPath)
+    print('Starting first pool')
+    res = pool.map(f, range(len(gs)))
+    nFailed=sum(res)
 
-        end = time()
-        print('  Done! Finished downloading .fits files\t')
-        print(f'  Failed to download: {nFailed} of {len(gs.index)}')
-        print('  Time: ' + str(round(end - start, 2)) + ' [s]')
+    end = time()
+    print('  Done! Finished downloading .fits files\t')
+    print(f'  Failed to download: {nFailed} of {len(gs.index)}')
+    print('  Time: ' + str(round(end - start, 2)) + ' [s]')
 
 
 def getFitFile_i(gs, dbPath, i):
