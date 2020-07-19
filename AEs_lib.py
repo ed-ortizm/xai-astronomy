@@ -34,28 +34,41 @@ def spectra(gs, dbPath):
     f = partial(min_max_interp_i, gs, dbPath)
 
     # close the pool (with) & do partial before
-    with mp.Pool(processes=-1) as pool:
+    with mp.Pool() as pool:
         res = pool.map(f, range(len(gs)))
 
-    if (None, None, None) in res:
+    if ('No value', 'No value') in res:
         ##  Removing None from res
-        res = list(filter(lambda a: a != (None, None, None), res))
+        res = list(filter(lambda a: a != ('No value', 'No value'), res))
 
-    # wavelenght arrays
-    wls = np.array([r[0] for r in res])
-    min, max = np.argmin(wls), np.argmax(wls)
+    ## wavelenght arrays
+    # sizes of each array
 
-    # Master grid and interpolation
+    sizes = np.array([r[0].size for r in res])
+    wls = np.empty((sizes.size, np.max(sizes)))
+
+    for idx, r in enumerate(res):
+        wls[idx] = np.pad(r[0], pad_width=(0, wls.shape[1]-r[0].size), constant_values=np.nan)
+
+    min, max = np.min(wls), np.max(wls)
+
+    # Master grid
     wl_grid = np.linspace(min, max, 5_000)
 
     # Discarding spectrum with more than 10% of indefininte
-    #valunes in a given wl for al training set
-    flxs = np.array([r[1] for r in res])
+    # valunes in a given wl for al training set
+
+    flxs = np.empty(wls.shape)
+    for idx, r in enumerate(res):
+        flxs[idx] = np.pad(r[1], pad_width=(0,flxs.shape[1]-r[1].size), constant_values=np.nan)
+
     wkeep = np.where(np.count_nonzero(~np.isfinite(flxs), axis=0) < flxs.shape[0] / 10)
 
     # Removing one dimensional axis since wkeep is a tuple
+    print(flxs.shape, wls.shape)
     flxs = np.squeeze(flxs[:, wkeep])
     wls = np.squeeze(wls[:, wkeep])
+    print(flxs.shape, wls.shape)
 
     # Replacing indefinite values in a spectrum with its nan median
     for flx in flxs:
@@ -65,8 +78,8 @@ def spectra(gs, dbPath):
     flxs -= np.median(flxs, axis=1).reshape((flxs.shape[0],1))
 
     # Interpolating
-
-    flxs = interp1d(wls, flxs, axis=1)(m_wl_grid)
+    print(flxs.shape, wls.shape)
+    flxs = interp1d(wls, flxs, axis=1)(wl_grid)
 
     print('Job finished')
 
@@ -127,7 +140,7 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
 
     if not(os.path.exists(dest)):
         print(f'File {dest} not found.')
-        return None, None, None
+        return 'No value', 'No value'
 
     with pyfits.open(dest) as hdul:
         wl_rg = 10. ** (hdul[1].data['loglam'])
@@ -137,9 +150,6 @@ def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
     # Deredshifting & min & max
     z_factor = 1./(1. + z)
     wl_rg *= z_factor
-    wl_min , wl_max = np.min(wl_rg), np.max(wl_rg)
-    # print(f'min = {wl_min:.2f} & max = {wl_max:.2f}')
-
 
     return wl_rg, flx
 

@@ -48,7 +48,7 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 100
+n_obs = 10
 if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
     print(f'Creating file: gs_{n_obs}.csv')
     gs = gs[:n_obs]

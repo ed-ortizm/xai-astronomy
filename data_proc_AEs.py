@@ -25,7 +25,7 @@ from AEs_lib import spectra
 
 ## Loading DataFrame with the data of the galaxies
 
-n_obs = 100
+n_obs = 10
 dbPath = f'{os.getcwd()}/db'
 fname = f'gs_{n_obs}.csv'
 dest = f'{dbPath}/{fname}'
