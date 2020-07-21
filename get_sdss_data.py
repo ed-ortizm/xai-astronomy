@@ -86,7 +86,7 @@ def getFitsFile(plate, mjd, fiberid, run2d, dbPath):
 
     # Calculate paths
     filename = '-'.join(['spec',plate,mjd,fiberid]) + '.fits'
-    SDSSpath = 'sas/dr16/sdss/spectro/redux/' + run2d + '/spectra/lite/' + plate + '/'
+    SDSSpath = '/sas/dr16/sdss/spectro/redux/' + run2d + '/spectra/lite/' + plate + '/'
     url = 'https://data.sdss.org/' + SDSSpath + filename
     folderPath = dbPath + SDSSpath
     dest = folderPath + filename
@@ -116,7 +116,7 @@ ti = time()
 #### Obtain the spectra from SDSS DR16
 
 ## The sample
-dbPath= f'{os.getcwd()}/db/'
+dbPath= f'/home/edgar/zorro/SDSSdata/'
 gs = pd.read_csv(f'{dbPath}/gals_DR16.csv', header=0)
 
 ## Replacing z by z_noqso when possible
@@ -147,7 +147,7 @@ gs.index = np.arange(n1_rows)
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
 
-n_obs = 10
+n_obs = 1_000_000 # 3188712
 if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
     print(f'Creating file: gs_{n_obs}.csv')
     gs = gs[:n_obs]
