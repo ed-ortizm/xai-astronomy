@@ -5,8 +5,10 @@ from time import time
 
 import numpy as np
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 
-from AEs_lib import spectra
+from proc_sdss import spectra
 
 # Data processing
 
@@ -26,18 +28,18 @@ from AEs_lib import spectra
 ## Loading DataFrame with the data of the galaxies
 
 n_obs = 10
-dbPath = f'{os.getcwd()}/db'
+dbPath = f'/home/edgar/zorro/SDSSdata'
 fname = f'gs_{n_obs}.csv'
 dest = f'{dbPath}/{fname}'
 gs = pd.read_csv(dest)
 
 m_wl, flxs = spectra(gs, dbPath)
 
-np.save(f'{dbPath}/flxs_{flxs.shape[0]}.npy', flxs)
-np.save(f'{dbPath}/wl_grid_{m_wl.size}.npy', m_wl)
-#
-# # for flx in flxs:
-# #     plt.figure()
-# #     plt.plot(m_wl, flx)
-#     plt.show()
-#     plt.close()
+np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
+np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
+
+#for flx in flxs:
+#   plt.figure()
+#   plt.plot(m_wl, flx)
+#   plt.show()
+#   plt.close()

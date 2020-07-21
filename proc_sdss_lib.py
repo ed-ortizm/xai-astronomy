@@ -50,7 +50,7 @@ def spectra(gs, dbPath):
     for idx, r in enumerate(res):
         wls[idx] = np.pad(r[0], pad_width=(0, wls.shape[1]-r[0].size), constant_values=np.nan)
 
-    min, max = np.min(wls), np.max(wls)
+    min, max = np.nanmin(wls), np.nanmax(wls)
 
     # Master grid
     wl_grid = np.linspace(min, max, 5_000)
@@ -65,10 +65,8 @@ def spectra(gs, dbPath):
     wkeep = np.where(np.count_nonzero(~np.isfinite(flxs), axis=0) < flxs.shape[0] / 10)
 
     # Removing one dimensional axis since wkeep is a tuple
-    print(flxs.shape, wls.shape)
     flxs = np.squeeze(flxs[:, wkeep])
     wls = np.squeeze(wls[:, wkeep])
-    print(flxs.shape, wls.shape)
 
     # Replacing indefinite values in a spectrum with its nan median
     for flx in flxs:
@@ -78,12 +76,14 @@ def spectra(gs, dbPath):
     flxs -= np.median(flxs, axis=1).reshape((flxs.shape[0],1))
 
     # Interpolating
-    print(flxs.shape, wls.shape)
-    flxs = interp1d(wls, flxs, axis=1)(wl_grid)
+    flxs_itp = np.empty((flxs.shape[0], wl_grid.size))
+
+    for idx, flx in enumerate(flxs):
+        flxs_itp[idx, :] = np.interp(wl_grid, wls[idx, :], flx, left=np.nan, right=np.nan)
 
     print('Job finished')
 
-    return wl_grid, flxs
+    return wl_grid, flxs_itp
 
 def min_max_interp_i(gs, dbPath, i):
     """
@@ -180,4 +180,3 @@ def plot_2D(data, title):
     plt.savefig(f'{title}.png')
     plt.show()
     plt.close()
-
