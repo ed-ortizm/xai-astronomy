@@ -31,7 +31,7 @@ def spectra(gs, dbPath):
 
     print(f'Getting grid of wavelengths and spectra from {len(gs)} .fits files')
     # http://python.omics.wiki/multiprocessing_map/multiprocessing_partial_function_multiple_arguments
-    f = partial(min_max_interp_i, gs, dbPath)
+    f = partial(flx_rest_frame_i, gs, dbPath)
 
     # close the pool (with) & do partial before
     with mp.Pool() as pool:
@@ -44,6 +44,7 @@ def spectra(gs, dbPath):
     ## wavelenght arrays
     # sizes of each array
 
+    print('Creating master wavelength grid...')
     sizes = np.array([r[0].size for r in res])
     wls = np.empty((sizes.size, np.max(sizes)))
 
@@ -58,34 +59,37 @@ def spectra(gs, dbPath):
     # Discarding spectrum with more than 10% of indefininte
     # valunes in a given wl for al training set
 
+    print('Processing all fluxes')
+
+    # Interpolating
+
     flxs = np.empty(wls.shape)
     for idx, r in enumerate(res):
         flxs[idx] = np.pad(r[1], pad_width=(0,flxs.shape[1]-r[1].size), constant_values=np.nan)
 
-    wkeep = np.where(np.count_nonzero(~np.isfinite(flxs), axis=0) < flxs.shape[0] / 10)
+    flxs_itp = np.empty((flxs.shape[0], wl_grid.size))
+    for idx, flx in enumerate(flxs):
+        flxs_itp[idx, :] = np.interp(wl_grid, wls[idx, :], flx, left=np.nan, right=np.nan)
+
+
+    wkeep = np.where(np.count_nonzero(~np.isfinite(flxs_itp), axis=0) < flxs_itp.shape[0] / 10)
 
     # Removing one dimensional axis since wkeep is a tuple
-    flxs = np.squeeze(flxs[:, wkeep])
-    wls = np.squeeze(wls[:, wkeep])
+    flxs_itp = np.squeeze(flxs_itp[:, wkeep])
 
     # Replacing indefinite values in a spectrum with its nan median
-    for flx in flxs:
+    for flx in flxs_itp:
         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
 
     # Normalizing by the median
-    flxs -= np.median(flxs, axis=1).reshape((flxs.shape[0],1))
+    flxs_itp -= np.median(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
 
-    # Interpolating
-    flxs_itp = np.empty((flxs.shape[0], wl_grid.size))
-
-    for idx, flx in enumerate(flxs):
-        flxs_itp[idx, :] = np.interp(wl_grid, wls[idx, :], flx, left=np.nan, right=np.nan)
 
     print('Job finished')
 
     return wl_grid, flxs_itp
 
-def min_max_interp_i(gs, dbPath, i):
+def flx_rest_frame_i(gs, dbPath, i):
     """
     Computes the min and max value in the wavelenght grid for the ith spectrum.
     Computes the interpolation functtion for the ith spectrum.
@@ -107,11 +111,13 @@ def min_max_interp_i(gs, dbPath, i):
     fiberid = obj['fiberid']
     run2d = obj['run2d']
     z = obj['z']
-    wl_rg, flx = min_max_interp(plate, mjd, fiberid, run2d, z, dbPath)
+
+    print(f'Processing spectrun N° {i}: Obtaining fluxes and wl in rest frame...', end='\r')
+    wl_rg, flx = flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath)
 
     return wl_rg, flx
 
-def min_max_interp(plate, mjd, fiberid, run2d, z, dbPath):
+def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     """
     Computes the min and max value in the wavelenght grid for the spectrum.
     Computes the interpolation functtion for the spectrum.

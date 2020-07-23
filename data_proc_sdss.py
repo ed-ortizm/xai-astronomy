@@ -8,8 +8,9 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-from proc_sdss import spectra
+from proc_sdss_lib import spectra
 
+ti = time()
 # Data processing
 
 # For some reason when I check for SPEC_CLN with fitsheader, it is not there.
@@ -27,19 +28,36 @@ from proc_sdss import spectra
 
 ## Loading DataFrame with the data of the galaxies
 
-n_obs = 10
 dbPath = f'/home/edgar/zorro/SDSSdata'
-fname = f'gs_{n_obs}.csv'
-dest = f'{dbPath}/{fname}'
-gs = pd.read_csv(dest)
+gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
-m_wl, flxs = spectra(gs, dbPath)
 
-np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
-np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
+n_obs = 50_000 # 3188712
+
+if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
+    print(f'Creating file: gs_{n_obs}.csv')
+    fname = f'gs_{n_obs}.csv'
+    dest = f'{dbPath}/{fname}'
+    gs_n = gs[:n_obs]
+    gs_n.index = np.arange(n_obs)
+    gs_n.to_csv(f'{dbPath}/gs_{n_obs}.csv')
+    print('Starting data curation process...')
+    gs_n = pd.read_csv(f'{dbPath}/gs_{n_obs}.csv')
+    m_wl, flxs = spectra(gs_n, dbPath)
+    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
+    np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
+else:
+    print('Starting data curation process...')
+    gs_n = pd.read_csv(f'{dbPath}/gs_{n_obs}.csv')
+    m_wl, flxs = spectra(gs_n, dbPath)
+    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
+    np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
 
 #for flx in flxs:
 #   plt.figure()
 #   plt.plot(m_wl, flx)
 #   plt.show()
 #   plt.close()
+tf = time()
+
+print(f'Running time: {tf-ti:.2f} [seg]')

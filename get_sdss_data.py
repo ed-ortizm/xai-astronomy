@@ -146,8 +146,9 @@ gs.index = np.arange(n1_rows)
 
 # Choose the top n_obs median SNR objects
 gs.sort_values(by=['snMedian'], ascending=False, inplace=True)
+gs.to_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
-n_obs = 1_000_000 # 3188712
+n_obs = 1_000 # 3188712
 if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
     print(f'Creating file: gs_{n_obs}.csv')
     gs = gs[:n_obs]
@@ -162,6 +163,18 @@ if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
                 + gs['mjd'].astype(str) \
                 + '&fiber=' + gs['fiberid'].map('{:04}'.format)
     gs.to_csv(f'{dbPath}/gs_{n_obs}.csv')
+    tf = time()
+    print(f'Building links for download took: {tf-ti:.2f} [s]')
+
+    # Downloading the data...
+
+    ti = time()
+
+    getFitsFiles(gs,dbPath)
+
+    tf = time()
+
+    print(f'Data download took: {tf-ti:.2f} [s]')
 
 # Plotting the z and SNR distribution
 
@@ -184,16 +197,3 @@ if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
 #
 # plt.show()
 # plt.close
-
-tf = time()
-print(f'Building links for download took: {tf-ti:.2f} [s]')
-
-# Downloading the data...
-
-ti = time()
-
-getFitsFiles(gs,dbPath)
-
-tf = time()
-
-print(f'Data download took: {tf-ti:.2f} [s]')
