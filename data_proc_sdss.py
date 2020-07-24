@@ -32,7 +32,7 @@ dbPath = f'/home/edgar/zorro/SDSSdata'
 gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
 
-n_obs = 50_000 # 3188712
+n_obs = 5_000 # 3188712
 
 if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
     print(f'Creating file: gs_{n_obs}.csv')
