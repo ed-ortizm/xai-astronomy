@@ -10,13 +10,14 @@ from tensorflow.keras.losses import mse
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 
-class AEpca():
+class AEpca:
 
-    def __init__(self, in_dim, lat_dim=2, batch_size=32, epochs=10):
+    def __init__(self, in_dim, lat_dim=2, batch_size=32, epochs=10, lr= 1e-4):
         self.in_dim = in_dim
         self.batch_size = batch_size
         self.lat_dim = lat_dim
         self.epochs = epochs
+        self.lr = lr
         self.encoder = None
         self.decoder = None
         self.AE = None
@@ -45,7 +46,7 @@ class AEpca():
 #        plot_model(autoencoder, to_file='autoencoder.png', show_shapes=True)
 
         # Mean square error loss function with Adam optimizer
-        autoencoder.compile(loss='mse', optimizer='adam')
+        autoencoder.compile(loss='mse', optimizer='adam') #, lr = self.lr)
 
         self.AE = autoencoder
  
@@ -53,29 +54,48 @@ class AEpca():
         self.AE.fit(spectra, spectra, epochs=self.epochs,
                     batch_size=self.batch_size)
 
-    def predict(self, test_spectra):
-        return self.AE.predict(test_spectra)
+    def predict(self, test_spec):
+        if test_spec.ndim == 1:
+            test_spec = test_spec.reshape(1, -1)
+        return self.AE.predict(test_spec)
 
-    def encode(self, spectra):
-        return self.encoder(spectra)
+    def encode(self, spec):
+        if spec.ndim == 1:
+            spec = spec.reshape(1, -1)
+        return self.encoder(spec)
 
     def decode(self, lat_val):
         return self.decoder(lat_val)
 
-class Pca:
+class PcA:
 
-    def __init__(self, n_components=2):
-        self.n_components = n_components
-        self.PCA = PCA(self.n_components)
+    def __init__(self, n_comps = False):
+        if not(n_comps):
+            self.PCA = PCA()
+        else:
+            self.n_comps = n_comps
+            self.PCA = PCA(self.n_comps)
 
     def fit(self, spec):
-        return self.PCA.fit_transform(spec)
+        return self.PCA.fit(spec)
+
+    def components(self):
+        return self.PCA.components_
+
+    def expvar(self):
+        return self.PCA.explained_variance_ratio_
 
     def inverse(self, trf_spec):
+        if trf_spec.ndim == 1:
+            trf_spec = trf_spec.reshape(1, -1)
+
         return self.PCA.inverse_transform(trf_spec)
 
     def predict(self, test_spec):
-        pass
+        if test_spec.ndim == 1:
+            test_spec = test_spec.reshape(1, -1)
+
+        return self.PCA.transform(test_spec)
 
 def plt_spec_pca(flx,pca_flx,componets):
     '''Comparative plot to see how efficient is the PCA compression'''

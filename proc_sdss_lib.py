@@ -81,9 +81,9 @@ def spectra(gs, dbPath):
     for flx in flxs_itp:
         flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
 
-    # Normalizing by the median
-    flxs_itp -= np.median(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
-
+    # Substracting the median and normalizing by the standar deviation
+    flxs_itp *= 1/np.median(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
+#    flxs_itp *= 1/np.std(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
 
     print('Job finished')
 
@@ -152,6 +152,9 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
         wl_rg = 10. ** (hdul[1].data['loglam'])
         flx = hdul[1].data['flux']
 
+    ## Aviding spectra with many indefinite values
+    if np.count_nonzero(~np.isfinite(flx)) > flx.size/200:
+        return 'No value', 'No value'
 
     # Deredshifting & min & max
     z_factor = 1./(1. + z)

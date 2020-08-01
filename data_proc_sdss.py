@@ -44,13 +44,15 @@ if not os.path.exists(f'{dbPath}/gs_{n_obs}.csv'):
     print('Starting data curation process...')
     gs_n = pd.read_csv(f'{dbPath}/gs_{n_obs}.csv')
     m_wl, flxs = spectra(gs_n, dbPath)
-    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
+    print(f'Saving file: flxs_{flxs.shape[0]}_div_med_rem_10.npy')
+    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}_div_med_rem_10.npy', flxs)
     np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
 else:
     print('Starting data curation process...')
     gs_n = pd.read_csv(f'{dbPath}/gs_{n_obs}.csv')
     m_wl, flxs = spectra(gs_n, dbPath)
-    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}.npy', flxs)
+    print(f'Saving file: flxs_{flxs.shape[0]}_div_med_rem_10.npy')
+    np.save(f'{dbPath}/data_proc/flxs_{flxs.shape[0]}_div_med_rem_10.npy', flxs)
     np.save(f'{dbPath}/data_proc/wl_grid_{m_wl.size}.npy', m_wl)
 
 #for flx in flxs:
