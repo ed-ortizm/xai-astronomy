@@ -13,9 +13,44 @@ from functools import partial
 import matplotlib
 import matplotlib.pyplot as plt
 
+from constants_AEs import m_wl
 ## Me
 
-def spectra(gs, dbPath):
+def proc_spec(fnames):
+
+    print('Processing all spectra')
+
+    N = len(fnames)
+    spec = np.empty((N, m_wl.size))
+
+    for idx, fname in enumerate(fnames[:N]):
+        print(f'Processing spectra N° {idx+1} --> {fname}', end='\r')
+        spec[idx, :] = np.load(fname)
+
+    print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+
+# Discarding spectrum with more than 10% of indefininte
+# valunes in a given wl for al training set
+    wkeep = np.where(np.count_nonzero(~np.isfinite(spec), axis=0) < spec.shape[0] / 10)
+# Removing one dimensional axis since wkeep is a tuple
+    spec = np.squeeze(spec[:, wkeep])
+
+    print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+
+# Replacing indefinite values in a spectrum with its nan median
+    for flx in spec.T:
+        flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
+
+    print(f'indf vals: {np.count_nonzero(~np.isfinite(spec))}')
+
+# Nomalize by the median and reduce noise with the standar deviation
+    spec *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
+    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
+
+
+    np.save(f'spec_{N}.npy', spec)
+
+def get_spectra(gs, dbPath):
     """
     Computes the spectra interpolating over a master grid of wavelengths
     Parameters
@@ -35,59 +70,12 @@ def spectra(gs, dbPath):
 
     # close the pool (with) & do partial before
     with mp.Pool() as pool:
-        res = pool.map(f, range(len(gs)))
-
-    if ('No value', 'No value') in res:
-        ##  Removing None from res
-        res = list(filter(lambda a: a != ('No value', 'No value'), res))
-
-    ## wavelenght arrays
-    # sizes of each array
-
-    print('Creating master wavelength grid...')
-    sizes = np.array([r[0].size for r in res])
-    wls = np.empty((sizes.size, np.max(sizes)))
-
-    for idx, r in enumerate(res):
-        wls[idx] = np.pad(r[0], pad_width=(0, wls.shape[1]-r[0].size), constant_values=np.nan)
-
-    min, max = np.nanmin(wls), np.nanmax(wls)
-
-    # Master grid
-    wl_grid = np.linspace(min, max, 5_000)
-
-    # Discarding spectrum with more than 10% of indefininte
-    # valunes in a given wl for al training set
-
-    print('Processing all fluxes')
-
-    # Interpolating
-
-    flxs = np.empty(wls.shape)
-    for idx, r in enumerate(res):
-        flxs[idx] = np.pad(r[1], pad_width=(0,flxs.shape[1]-r[1].size), constant_values=np.nan)
-
-    flxs_itp = np.empty((flxs.shape[0], wl_grid.size))
-    for idx, flx in enumerate(flxs):
-        flxs_itp[idx, :] = np.interp(wl_grid, wls[idx, :], flx, left=np.nan, right=np.nan)
+        pool.map(f, range(len(gs)))
 
 
-    wkeep = np.where(np.count_nonzero(~np.isfinite(flxs_itp), axis=0) < flxs_itp.shape[0] / 10)
-
-    # Removing one dimensional axis since wkeep is a tuple
-    flxs_itp = np.squeeze(flxs_itp[:, wkeep])
-
-    # Replacing indefinite values in a spectrum with its nan median
-    for flx in flxs_itp:
-        flx[np.where(~np.isfinite(flx))] = np.nanmedian(flx)
-
-    # Substracting the median and normalizing by the standar deviation
-    flxs_itp *= 1/np.median(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
-#    flxs_itp *= 1/np.std(flxs_itp, axis=1).reshape((flxs_itp.shape[0],1))
-
+#
     print('Job finished')
 
-    return wl_grid, flxs_itp
 
 def flx_rest_frame_i(gs, dbPath, i):
     """
@@ -112,10 +100,9 @@ def flx_rest_frame_i(gs, dbPath, i):
     run2d = obj['run2d']
     z = obj['z']
 
-    print(f'Processing spectrun N° {i}: Obtaining fluxes and wl in rest frame...', end='\r')
-    wl_rg, flx = flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath)
+    print(f'Processing spectrun N° {i}', end='\r')
+    flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath)
 
-    return wl_rg, flx
 
 def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     """
@@ -142,25 +129,24 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     SDSSpath = f'/sas/dr16/sdss/spectro/redux/{run2d}/spectra/lite/{plate:04}/'
     dir_path = f'/{dbPath}/{SDSSpath}'
     dest = f'{dir_path}/{fname}'
+    save2 = '/home/edgar/zorro/SDSSdata/data_proc'
 
 
     if not(os.path.exists(dest)):
-        print(f'File {dest} not found.')
-        return 'No value', 'No value'
+        print(f'File {fname} not found!')
+        return None
 
     with pyfits.open(dest) as hdul:
         wl_rg = 10. ** (hdul[1].data['loglam'])
         flx = hdul[1].data['flux']
 
-    ## Aviding spectra with many indefinite values
-    if np.count_nonzero(~np.isfinite(flx)) > flx.size/200:
-        return 'No value', 'No value'
 
     # Deredshifting & min & max
     z_factor = 1./(1. + z)
     wl_rg *= z_factor
+    flx = np.interp(m_wl, wl_rg, flx, left=np.nan, right=np.nan)
 
-    return wl_rg, flx
+    np.save(f'{save2}/{fname}.npy', flx)
 
 def plt_spec_pca(flx,pca_flx,componets):
     '''Comparative plot to see how efficient is the PCA compression'''
