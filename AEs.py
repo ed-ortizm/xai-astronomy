@@ -6,56 +6,54 @@ from time import time
 
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from tensorflow import keras
 
 from AEs_lib import plot_2D, plt_spec_pca
-from AEs_lib import AEpca, PcA
+from AEs_lib import AEpca, PcA, Outlier
 
 
 ti = time()
 
 # Loading the data
 print('Loading the data...')
-proc_dbPath = f'/home/edgar/zorro/SDSSdata/data_proc'
-fname =  f'flxs_5000_div_med.npy'
-dest = f'{proc_dbPath}/{fname}'
+path = f'/home/edgar/zorro/outlier_AEs'
+fname =  f'spec_99356.npy'
+dest = f'{path}/{fname}'
 if os.path.exists(dest):
     spec = np.load(dest, mmap_mode='r')
 else:
-    print(f'There is no {fname} in {proc_dbPath} directory!')
+    print(f'There is no {fname} in {path} directory!')
 
 ### Performing PCA
 print('Performing PCA...')
 
-pca = PcA()
-
-tr_spec = pca.fit(spec)
-
-## Inverse transform
-#print('Performing inverse PCA...')
-
-#inv_tr = pca.inverse(tr_flxs)
-#plot_2D(tr_flxs, 'PCA')
-
-## Ploting a spetrum
-#plt_spec_pca(flxs[0],inv_tr[0],pca.n_components)
-
-## Normalizing the flux: removing the mean value and normalizing
-# by the standard deviation. This is done because
-# pca.fit_transform does the same on the data. Therefore if we
-# want to compare we need to have the same data.
-
-#sc = StandardScaler()
-#flxs = sc.fit_transform(flxs)
+pca = PcA(n_comps=2)
+pca.fit(spec)
+latent_pca = pca.predict(spec)
+np.save('latent_pca.npy', latent_pca)
 
 ## Creating the AE
 print('Training Auto Encoder...')
 
-AE = AEpca(in_dim=spec.shape[1], epochs=10)
+AE = AEpca(in_dim=spec.shape[1], epochs=30)
 AE.fit(spec)
-#pred = AE.predict(flxs)
-#plt_spec_pca(flxs[-1,:],pred[-1,:],2)
-codings = AE.encode(spec)
-#plot_2D(codings, 'AE')
+
+# Saving model
+AE.save()
+
+# Latent space
+latent_AE = AE.encode(spec)
+np.save('latent_AE.npy', latent_AE)
+
+# Outlier scores
+outliers = Outlier()
+pred = AE.predict(spec)
+np.save('pred_AE.npy', pred)
+scores = outliers.xi_scores(spec, pred)
+np.save('outlier_scores.npy', scores)
+
+outliers.retrieve(N=100)
+
 
 tf = time()
 print(f'Running time: {tf-ti:.2f}')

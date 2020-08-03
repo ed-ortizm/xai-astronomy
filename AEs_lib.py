@@ -1,14 +1,54 @@
+from glob import glob
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import chisquare
 from sklearn.decomposition import PCA
 import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Dense, Input, Lambda, Dropout
 from tensorflow.keras.losses import mse
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
+
+from constants_AEs import data_proc
+
+class Outlier:
+
+    def __init__(self, dbPath=data_proc):
+        self.scores = None
+        self.fnames = glob(f'{dbPath}/*')
+
+    def xi(self, O, P):
+        self.scores, p = chisquare(O,P, axis=1)
+        self.scores = np.abs(self.scores)
+        return self.scores
+
+    def mse(self, O, P):
+        self.scores = np.square(O-P).mean(axis=1)
+        return self.scores
+
+
+    def mad(self, O, P):
+        self.scores = np.abs(O-P).mean(axis=1)
+        return self.scores
+
+    def retrieve(self, scores=None, N=20, metric=None):
+        print('Loading outlier scores!')
+
+        ids_proc_specs = np.argpartition(scores, -1*N)[-1*N:]
+
+        print('Outlier scores for the weirdest spectra')
+
+        file = open(f'{metric}_oulier_scores.dat', 'w+')
+
+        for n, idx in enumerate(ids_proc_specs):
+            print(f'ID:{idx} --> {scores[idx]}. File name: {self.fnames[idx]}')
+            file.write(f'ID:{idx} --> {scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}\n')
+
+        file.close()
 
 class AEpca:
 
@@ -49,7 +89,7 @@ class AEpca:
         autoencoder.compile(loss='mse', optimizer='adam') #, lr = self.lr)
 
         self.AE = autoencoder
- 
+
     def fit(self, spectra):
         self.AE.fit(spectra, spectra, epochs=self.epochs,
                     batch_size=self.batch_size)
@@ -66,6 +106,11 @@ class AEpca:
 
     def decode(self, lat_val):
         return self.decoder(lat_val)
+
+    def save(self):
+        self.encoder.save('encoder')
+        self.decoder.save('decoder')
+        self.AE.save('AutoEncoder')
 
 class PcA:
 

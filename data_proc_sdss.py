@@ -20,10 +20,10 @@ dbPath = f'/home/edgar/zorro/SDSSdata'
 gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
 
-n_obs = 100_000 # 3188712
-gs_n = gs[:n_obs]
-gs_n.index = np.arange(n_obs)
-spectra(gs_n, dbPath)
+#n_obs = 100_000 # 3188712
+#gs_n = gs[:n_obs]
+#gs_n.index = np.arange(n_obs)
+#get_spectra(gs_n, dbPath)
 
 fnames = glob(f'{data_proc}/*.npy')
 
