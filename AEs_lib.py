@@ -17,38 +17,56 @@ from constants_AEs import data_proc
 
 class Outlier:
 
-    def __init__(self, dbPath=data_proc):
+    def __init__(self, dbPath=data_proc, N=20):
         self.scores = None
+        self.N = N
         self.fnames = glob(f'{dbPath}/*')
 
-    def xi(self, O, P):
-        self.scores, p = chisquare(O,P, axis=1)
-        self.scores = np.abs(self.scores)
-        return self.scores
+    def chi2(self, O, P):
+        self.scores = (np.square(pred-spec)*(1/pred)).mean(axis=1)
+        np.save('chi2_outlier_scores.npy', self.scores)
+        self.retrieve(metric='chi2')
 
     def mse(self, O, P):
-        self.scores = np.square(O-P).mean(axis=1)
-        return self.scores
+        self.scores = np.square(P-O).mean(axis=1)
+        np.save('mse_outlier_scores.npy', self.scores)
+        self.retrieve(metric='mse')
 
 
     def mad(self, O, P):
-        self.scores = np.abs(O-P).mean(axis=1)
-        return self.scores
+        self.scores = np.abs(P-O).mean(axis=1)
+        np.save('mad_outlier_scores.npy', self.scores)
+        self.retrieve(metric='mad')
 
-    def retrieve(self, scores=None, N=20, metric=None):
+    def lp(self, O, P, p=1):
+        self.scores = (np.sum((np.abs(P-0))**p, axis=1))**(1/p)
+        np.save(f'lp_{p}_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'lp_{p}')
+
+    def area(self, O, P):
+        self.scores = np.trapz(np.square(P-O), axis=1)
+        np.save('area_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'area')
+
+    def lpf(self, O, P, p=1):
+        self.scores = (np.trapz((np.abs(P-O))**p, axis=1))**(1/p)
+        np.save('lpf_{p}_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'lpf_{p}')
+
+
+    def retrieve(self, metric=None):
         print('Loading outlier scores!')
 
-        ids_proc_specs = np.argpartition(scores, -1*N)[-1*N:]
-
+        ids_proc_specs = np.argpartition(self.scores, -1*self.N)[-1*self.N:]
+        np.save(f'outlier_ids_{metric}', ids_proc_specs)
         print('Outlier scores for the weirdest spectra')
 
-        file = open(f'{metric}_oulier_scores.dat', 'w+')
+        names = open(f'{metric}_fnames.txt', 'w+')
 
         for n, idx in enumerate(ids_proc_specs):
-            print(f'ID:{idx} --> {scores[idx]}. File name: {self.fnames[idx]}')
-            file.write(f'ID:{idx} --> {scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}\n')
-
-        file.close()
+            print(f'ID:{idx} --> {self.scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}\n')
+            names.write(f'{self.fnames[idx].split("/")[-1][:-5]}\n')
+        names.close()
 
 class AEpca:
 

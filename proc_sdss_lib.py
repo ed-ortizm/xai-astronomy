@@ -45,7 +45,7 @@ def proc_spec(fnames):
 
 # Nomalize by the median and reduce noise with the standar deviation
     spec *= 1/np.median(spec, axis=1).reshape((spec.shape[0], 1))
-    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
+#    spec *= 1/np.std(spec, axis=1).reshape((spec.shape[0], 1))
 
 
     np.save(f'spec_{N}.npy', spec)

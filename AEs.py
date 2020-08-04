@@ -25,12 +25,12 @@ else:
     print(f'There is no {fname} in {path} directory!')
 
 ### Performing PCA
-print('Performing PCA...')
-
-pca = PcA(n_comps=2)
-pca.fit(spec)
-latent_pca = pca.predict(spec)
-np.save('latent_pca.npy', latent_pca)
+#print('Performing PCA...')
+#
+#pca = PcA(n_comps=2)
+#pca.fit(spec)
+#latent_pca = pca.predict(spec)
+#np.save('latent_pca.npy', latent_pca)
 
 ## Creating the AE
 print('Training Auto Encoder...')
@@ -45,15 +45,38 @@ AE.save()
 latent_AE = AE.encode(spec)
 np.save('latent_AE.npy', latent_AE)
 
-# Outlier scores
-outliers = Outlier()
+# Saving AE predictions
 pred = AE.predict(spec)
 np.save('pred_AE.npy', pred)
-scores = outliers.xi_scores(spec, pred)
-np.save('outlier_scores.npy', scores)
 
-outliers.retrieve(N=100)
+# Outlier scores
+outlier = Outlier(N=latent_AE.shape[0])
 
+# Area
+outlier.area(spec, pred)
+
+# chi2
+outlier.chi2(spec, pred)
+
+# mse
+outlier.mse(spec, pred)
+
+# mad
+outlier.mad(spec, pred)
+
+# lp 2, 1, 0.5, 0.3
+
+outlier.lp(spec, pred, p=2)
+outlier.lp(spec, pred, p=1)
+outlier.lp(spec, pred, p=0.5)
+outlier.lp(spec, pred, p=0.3)
+
+# lpf 2, 1, 0.5, 0.3
+
+outlier.lpf(spec, pred, p=2)
+outlier.lpf(spec, pred, p=1)
+outlier.lpf(spec, pred, p=0.5)
+outlier.lpf(spec, pred, p=0.3)
 
 tf = time()
 print(f'Running time: {tf-ti:.2f}')
