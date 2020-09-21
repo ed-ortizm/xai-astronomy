@@ -23,7 +23,7 @@ class Outlier:
         self.fnames = glob(f'{dbPath}/*')
 
     def chi2(self, O, P):
-        self.scores = (np.square(pred-spec)*(1/pred)).mean(axis=1)
+        self.scores = (np.square(P-O)*(1/np.abs(P))).mean(axis=1)
         np.save('chi2_outlier_scores.npy', self.scores)
         self.retrieve(metric='chi2')
 
@@ -39,7 +39,7 @@ class Outlier:
         self.retrieve(metric='mad')
 
     def lp(self, O, P, p=1):
-        self.scores = (np.sum((np.abs(P-0))**p, axis=1))**(1/p)
+        self.scores = (np.sum((np.abs(P-O))**p, axis=1))**(1/p)
         np.save(f'lp_{p}_outlier_scores.npy', self.scores)
         self.retrieve(metric=f'lp_{p}')
 
@@ -50,22 +50,22 @@ class Outlier:
 
     def lpf(self, O, P, p=1):
         self.scores = (np.trapz((np.abs(P-O))**p, axis=1))**(1/p)
-        np.save('lpf_{p}_outlier_scores.npy', self.scores)
+        np.save(f'lpf_{p}_outlier_scores.npy', self.scores)
         self.retrieve(metric=f'lpf_{p}')
 
 
-    def retrieve(self, metric=None):
+    def retrieve(self, metric=None, fraction=1):
         print('Loading outlier scores!')
 
-        ids_proc_specs = np.argpartition(self.scores, -1*self.N)[-1*self.N:]
+        ids_proc_specs = np.argpartition(self.scores, -1*int(self.N*fraction))[-1*int(self.N*fraction):]
         np.save(f'outlier_ids_{metric}', ids_proc_specs)
         print('Outlier scores for the weirdest spectra')
 
         names = open(f'{metric}_fnames.txt', 'w+')
 
         for n, idx in enumerate(ids_proc_specs):
-            print(f'ID:{idx} --> {self.scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}\n')
-            names.write(f'{self.fnames[idx].split("/")[-1][:-5]}\n')
+            print(f'ID:{idx} --> {self.scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}', end='\r')
+            names.write(f'{self.fnames[idx].split("/")[-1][:-4]}\n')
         names.close()
 
 class AEpca:

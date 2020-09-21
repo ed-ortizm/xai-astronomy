@@ -146,7 +146,7 @@ def flx_rest_frame(plate, mjd, fiberid, run2d, z, dbPath):
     wl_rg *= z_factor
     flx = np.interp(m_wl, wl_rg, flx, left=np.nan, right=np.nan)
 
-    np.save(f'{save2}/{fname}.npy', flx)
+    np.save(f'{save2}/{fname.split(".")[0]}.npy', flx)
 
 def plt_spec_pca(flx,pca_flx,componets):
     '''Comparative plot to see how efficient is the PCA compression'''

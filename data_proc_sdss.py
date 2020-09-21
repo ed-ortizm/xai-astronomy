@@ -16,8 +16,8 @@ ti = time()
 
 ## Loading DataFrame with the data of the galaxies
 
-dbPath = f'/home/edgar/zorro/SDSSdata'
-gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
+#dbPath = f'/home/edgar/zorro/SDSSdata'
+#gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
 
 #n_obs = 100_000 # 3188712
@@ -27,7 +27,7 @@ gs = pd.read_csv(f'{dbPath}/gs_SN_median_sorted.csv')
 
 fnames = glob(f'{data_proc}/*.npy')
 
-proc_spec(fnames)
+proc_spec(fnames[:])
 
 
 tf = time()

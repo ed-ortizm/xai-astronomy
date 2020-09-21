@@ -31,26 +31,28 @@ else:
 #pca.fit(spec)
 #latent_pca = pca.predict(spec)
 #np.save('latent_pca.npy', latent_pca)
-
+#
 ## Creating the AE
-print('Training Auto Encoder...')
+#print('Training Auto Encoder...')
+#
+#AE = AEpca(in_dim=spec.shape[1], epochs=30)
+#AE.fit(spec)
+#
+## Saving model
+#AE.save()
+#
+## Latent space
+#latent_AE = AE.encode(spec)
+#np.save('latent_AE.npy', latent_AE)
+#
+## Saving AE predictions
+#pred = AE.predict(spec)
+#np.save('pred_AE.npy', pred)
 
-AE = AEpca(in_dim=spec.shape[1], epochs=30)
-AE.fit(spec)
 
-# Saving model
-AE.save()
-
-# Latent space
-latent_AE = AE.encode(spec)
-np.save('latent_AE.npy', latent_AE)
-
-# Saving AE predictions
-pred = AE.predict(spec)
-np.save('pred_AE.npy', pred)
-
+pred = np.load('pred_AE.npy')
 # Outlier scores
-outlier = Outlier(N=latent_AE.shape[0])
+outlier = Outlier(N=10)
 
 # Area
 outlier.area(spec, pred)
@@ -65,14 +67,12 @@ outlier.mse(spec, pred)
 outlier.mad(spec, pred)
 
 # lp 2, 1, 0.5, 0.3
-
 outlier.lp(spec, pred, p=2)
 outlier.lp(spec, pred, p=1)
 outlier.lp(spec, pred, p=0.5)
 outlier.lp(spec, pred, p=0.3)
 
 # lpf 2, 1, 0.5, 0.3
-
 outlier.lpf(spec, pred, p=2)
 outlier.lpf(spec, pred, p=1)
 outlier.lpf(spec, pred, p=0.5)
