@@ -30,23 +30,23 @@ class VAE:
     epochs=10,
     lr= 1e-4):
 
-    self.in_dim = in_dim
-    self.hid_dim = hid_dim
-    self.batch_size = batch_size
-    self.lat_dim = lat_dim
-    self.epochs = epochs
-    self.lr = lr
-    self.encoder = None
-    self.decoder = None
-    self.AE = None
-    self._init_VAE()
-
-
-    def _init_VAE(self):
-        # blabla
-
-        # Create AE
+        self.in_dim = in_dim
+        self.hid_dim = hid_dim
+        self.batch_size = batch_size
+        self.lat_dim = lat_dim
+        self.epochs = epochs
+        self.lr = lr
+        self.encoder = None
+        self.decoder = None
+        self.VAE = None
         self._create_VAE()
+
+        #
+        # def _init_VAE(self):
+        #     # blabla
+        #
+        #     # Create AE
+        #     self._create_VAE()
 
     def _create_VAE(self):
 
@@ -59,7 +59,7 @@ class VAE:
         latent_mu = Dense(self.hid_dim[2], name='latent_mu')(hidden_1)
         latent_ln_sigma = Dense(self.hid_dim[2], name='latent_ln_sigma')(hidden_1)
 
-        latent = Lambda(_sample_latent_features, output_shape=(self.hid_dim[2],),
+        latent = Lambda(self._sample_latent_features, output_shape=(self.hid_dim[2],),
         name='latent')([latent_mu, latent_ln_sigma])
 
 
@@ -81,19 +81,19 @@ class VAE:
         # VAE = Encoder + Decoder
         vae = Model(inputs, self.decoder(self.encoder
                             (inputs)), name='VAE')
-        autoencoder.summary()
-        plot_model(autoencoder, to_file='autoencoder.png', show_shapes=True)
+        vae.summary()
+        plot_model(vae, to_file='VAE.png', show_shapes=True)
 
         # Mean square error loss function with Adam optimizer
-        autoencoder.compile(loss='mse', optimizer='adam') #, lr = self.lr)
+        vae.compile(loss='mse', optimizer='adam') #, lr = self.lr)
 
-        self.AE = autoencoder
+        self.VAE = vae
 
     def _sample_latent_features(self, distribution):
 
         z_m, z_s = distribution
-        batch = K.shape(zm)[0]
-        dim = K.int_shape(zm)[1]
+        batch = K.shape(z_m)[0]
+        dim = K.int_shape(z_m)[1]
         epsilon = K.random_normal(shape=(batch, dim))
 
         return z_m + K.exp(0.5*z_s)*epsilon
