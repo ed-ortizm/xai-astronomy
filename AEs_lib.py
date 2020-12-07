@@ -1,5 +1,5 @@
 from glob import glob
-import matplotlib
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import chisquare
@@ -15,58 +15,89 @@ from tensorflow.keras.utils import plot_model
 
 from constants_AEs import data_proc
 
-class Outlier:
+class VAE:
+    """ VAE for outlier detection using tf.keras
 
-    def __init__(self, dbPath=data_proc, N=20):
-        self.scores = None
-        self.N = N
-        self.fnames = glob(f'{dbPath}/*')
+    References:
+    Portillo et al. 2020
+    """
 
-    def chi2(self, O, P):
-        self.scores = (np.square(P-O)*(1/np.abs(P))).mean(axis=1)
-        np.save('chi2_outlier_scores.npy', self.scores)
-        self.retrieve(metric='chi2')
+    def __init__(self,
+    in_dim=1_000,
+    lat_dim=10,
+    hid_dim=[549, 110, 10, 110, 549],
+    batch_size=32,
+    epochs=10,
+    lr= 1e-4):
 
-    def mse(self, O, P):
-        self.scores = np.square(P-O).mean(axis=1)
-        np.save('mse_outlier_scores.npy', self.scores)
-        self.retrieve(metric='mse')
-
-
-    def mad(self, O, P):
-        self.scores = np.abs(P-O).mean(axis=1)
-        np.save('mad_outlier_scores.npy', self.scores)
-        self.retrieve(metric='mad')
-
-    def lp(self, O, P, p=1):
-        self.scores = (np.sum((np.abs(P-O))**p, axis=1))**(1/p)
-        np.save(f'lp_{p}_outlier_scores.npy', self.scores)
-        self.retrieve(metric=f'lp_{p}')
-
-    def area(self, O, P):
-        self.scores = np.trapz(np.square(P-O), axis=1)
-        np.save('area_outlier_scores.npy', self.scores)
-        self.retrieve(metric=f'area')
-
-    def lpf(self, O, P, p=1):
-        self.scores = (np.trapz((np.abs(P-O))**p, axis=1))**(1/p)
-        np.save(f'lpf_{p}_outlier_scores.npy', self.scores)
-        self.retrieve(metric=f'lpf_{p}')
+    self.in_dim = in_dim
+    self.hid_dim = hid_dim
+    self.batch_size = batch_size
+    self.lat_dim = lat_dim
+    self.epochs = epochs
+    self.lr = lr
+    self.encoder = None
+    self.decoder = None
+    self.AE = None
+    self._init_VAE()
 
 
-    def retrieve(self, metric=None, fraction=1):
-        print('Loading outlier scores!')
+    def _init_VAE(self):
+        # blabla
 
-        ids_proc_specs = np.argpartition(self.scores, -1*int(self.N*fraction))[-1*int(self.N*fraction):]
-        np.save(f'outlier_ids_{metric}', ids_proc_specs)
-        print('Outlier scores for the weirdest spectra')
+        # Create AE
+        self._create_VAE()
 
-        names = open(f'{metric}_fnames.txt', 'w+')
+    def _create_VAE(self):
 
-        for n, idx in enumerate(ids_proc_specs):
-            print(f'ID:{idx} --> {self.scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}', end='\r')
-            names.write(f'{self.fnames[idx].split("/")[-1][:-4]}\n')
-        names.close()
+        # Build Encoder
+        inputs = Input(shape=(self.in_dim,), name='encoder_input')
+        hidden_0 = Dense(self.hid_dim[0], name='hidden_0', activation='relu')(inputs)
+        hidden_1 = Dense(self.hid_dim[1], name='hidden_1', activation='relu')(hidden_0)
+
+        # Stocastic layer
+        latent_mu = Dense(self.hid_dim[2], name='latent_mu')(hidden_1)
+        latent_ln_sigma = Dense(self.hid_dim[2], name='latent_ln_sigma')(hidden_1)
+
+        latent = Lambda(_sample_latent_features, output_shape=(self.hid_dim[2],),
+        name='latent')([latent_mu, latent_ln_sigma])
+
+
+        self.encoder = Model(inputs, latent, name='encoder')
+        self.encoder.summary()
+        plot_model(self.encoder, to_file='encoder.png', show_shapes='True')
+
+        # Build Decoder
+
+        latent_in = Input(shape=(self.hid_dim[2],), name='decoder_input')
+        hidden_3 = Dense(self.hid_dim[3], name='hidden_3', activation='relu')(latent_in)
+        hidden_4 = Dense(self.hid_dim[4], name='hidden_4', activation='relu')(hidden_3)
+        outputs = Dense(self.in_dim, name='decoder_output')(hidden_4)
+
+        self.decoder = Model(latent_in, outputs, name='decoder')
+        self.decoder.summary()
+        plot_model(self.decoder, to_file='decoder.png', show_shapes='True')
+
+        # VAE = Encoder + Decoder
+        vae = Model(inputs, self.decoder(self.encoder
+                            (inputs)), name='VAE')
+        autoencoder.summary()
+        plot_model(autoencoder, to_file='autoencoder.png', show_shapes=True)
+
+        # Mean square error loss function with Adam optimizer
+        autoencoder.compile(loss='mse', optimizer='adam') #, lr = self.lr)
+
+        self.AE = autoencoder
+
+    def _sample_latent_features(self, distribution):
+
+        z_m, z_s = distribution
+        batch = K.shape(zm)[0]
+        dim = K.int_shape(zm)[1]
+        epsilon = K.random_normal(shape=(batch, dim))
+
+        return z_m + K.exp(0.5*z_s)*epsilon
+
 
 class AEpca:
 
@@ -129,6 +160,60 @@ class AEpca:
         self.encoder.save('encoder')
         self.decoder.save('decoder')
         self.AE.save('AutoEncoder')
+
+class Outlier:
+
+    def __init__(self, dbPath=data_proc, N=20):
+        self.scores = None
+        self.N = N
+        self.fnames = glob(f'{dbPath}/*')
+
+    def chi2(self, O, P):
+        self.scores = (np.square(P-O)*(1/np.abs(P))).mean(axis=1)
+        np.save('chi2_outlier_scores.npy', self.scores)
+        self.retrieve(metric='chi2')
+
+    def mse(self, O, P):
+        self.scores = np.square(P-O).mean(axis=1)
+        np.save('mse_outlier_scores.npy', self.scores)
+        self.retrieve(metric='mse')
+
+
+    def mad(self, O, P):
+        self.scores = np.abs(P-O).mean(axis=1)
+        np.save('mad_outlier_scores.npy', self.scores)
+        self.retrieve(metric='mad')
+
+    def lp(self, O, P, p=1):
+        self.scores = (np.sum((np.abs(P-O))**p, axis=1))**(1/p)
+        np.save(f'lp_{p}_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'lp_{p}')
+
+    def area(self, O, P):
+        self.scores = np.trapz(np.square(P-O), axis=1)
+        np.save('area_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'area')
+
+    def lpf(self, O, P, p=1):
+        self.scores = (np.trapz((np.abs(P-O))**p, axis=1))**(1/p)
+        np.save(f'lpf_{p}_outlier_scores.npy', self.scores)
+        self.retrieve(metric=f'lpf_{p}')
+
+
+    def retrieve(self, metric=None, fraction=1):
+        print('Loading outlier scores!')
+
+        ids_proc_specs = np.argpartition(self.scores, -1*int(self.N*fraction))[-1*int(self.N*fraction):]
+        np.save(f'outlier_ids_{metric}', ids_proc_specs)
+        print('Outlier scores for the weirdest spectra')
+
+        names = open(f'{metric}_fnames.txt', 'w+')
+
+        for n, idx in enumerate(ids_proc_specs):
+            print(f'ID:{idx} --> {self.scores[idx]}. File name: {self.fnames[idx].split("/")[-1]}', end='\r')
+            names.write(f'{self.fnames[idx].split("/")[-1][:-4]}\n')
+        names.close()
+
 
 class PcA:
 
