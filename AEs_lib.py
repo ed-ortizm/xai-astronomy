@@ -52,37 +52,61 @@ class VAE:
 
         # Build Encoder
         inputs = Input(shape=(self.in_dim,), name='encoder_input')
-        hidden_0 = Dense(self.hid_dim[0], name='hidden_0', activation='relu')(inputs)
-        hidden_1 = Dense(self.hid_dim[1], name='hidden_1', activation='relu')(hidden_0)
+
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.in_dim))
+        hidden_0 = Dense(self.hid_dim[0], name='hidden_0', activation='relu',
+        kernel_initializer=w_init)(inputs)
+
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.hid_dim[0]))
+        hidden_1 = Dense(self.hid_dim[1], name='hidden_1', activation='relu',
+        kernel_initializer=w_init)(hidden_0)
 
         # Stocastic layer
-        latent_mu = Dense(self.hid_dim[2], name='latent_mu')(hidden_1)
-        latent_ln_sigma = Dense(self.hid_dim[2], name='latent_ln_sigma')(hidden_1)
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.hid_dim[1]))
+        latent_mu = Dense(self.hid_dim[2], name='latent_mu',
+        kernel_initializer=w_init)(hidden_1)
+        latent_ln_sigma = Dense(self.hid_dim[2], name='latent_ln_sigma',
+        kernel_initializer=w_init)(hidden_1)
 
-        latent = Lambda(self._sample_latent_features, output_shape=(self.hid_dim[2],),
+        latent = Lambda(self._sample_latent_features,
+        output_shape=(self.hid_dim[2],),
         name='latent')([latent_mu, latent_ln_sigma])
 
 
         self.encoder = Model(inputs, latent, name='encoder')
         self.encoder.summary()
-        plot_model(self.encoder, to_file='encoder.png', show_shapes='True')
+        # plot_model(self.encoder, to_file='encoder.png', show_shapes='True')
 
         # Build Decoder
-
         latent_in = Input(shape=(self.hid_dim[2],), name='decoder_input')
-        hidden_3 = Dense(self.hid_dim[3], name='hidden_3', activation='relu')(latent_in)
-        hidden_4 = Dense(self.hid_dim[4], name='hidden_4', activation='relu')(hidden_3)
-        outputs = Dense(self.in_dim, name='decoder_output')(hidden_4)
+
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.hid_dim[2]))
+        hidden_3 = Dense(self.hid_dim[3], name='hidden_3', activation='relu',
+        kernel_initializer=w_init)(latent_in)
+
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.hid_dim[3]))
+        hidden_4 = Dense(self.hid_dim[4], name='hidden_4', activation='relu',
+        kernel_initializer=w_init)(hidden_3)
+
+        w_init = keras.initializers.RandomNormal(mean=0.,
+        stddev=np.sqrt(2./self.hid_dim[4]))
+        outputs = Dense(self.in_dim, name='decoder_output',
+        kernel_initializer=w_init)(hidden_4)
 
         self.decoder = Model(latent_in, outputs, name='decoder')
         self.decoder.summary()
-        plot_model(self.decoder, to_file='decoder.png', show_shapes='True')
+        # plot_model(self.decoder, to_file='decoder.png', show_shapes='True')
 
         # VAE = Encoder + Decoder
         vae = Model(inputs, self.decoder(self.encoder
                             (inputs)), name='VAE')
         vae.summary()
-        plot_model(vae, to_file='VAE.png', show_shapes=True)
+        # plot_model(vae, to_file='VAE.png', show_shapes=True)
 
         # Mean square error loss function with Adam optimizer
         vae.compile(loss='mse', optimizer='adam') #, lr = self.lr)
