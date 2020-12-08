@@ -109,7 +109,10 @@ class VAE:
         # plot_model(vae, to_file='VAE.png', show_shapes=True)
 
         # Mean square error loss function with Adam optimizer
-        vae.compile(loss='mse', optimizer='adam') #, lr = self.lr)
+        # loss = self._vae_loss(z_m=latent_mu, z_s=latent_ln_sigma,
+        # y_true=inputs, y_pred=outputs)
+        loss = self._vae_loss(z_m=latent_mu, z_s=latent_ln_sigma)
+        vae.compile(loss=loss, optimizer='adam') #, lr = self.lr)
 
         self.VAE = vae
 
@@ -121,6 +124,40 @@ class VAE:
         epsilon = K.random_normal(shape=(batch, dim))
 
         return z_m + K.exp(0.5*z_s)*epsilon
+
+    # def _vae_loss(self, z_m, z_s, y_true, y_pred):
+    def _vae_loss(self, z_m, z_s):
+
+        # vae_loss = self._reconstruction_loss(y_true, y_pred) +\
+        # self._kl_loss(z_m, z_s)
+        def rec_loss(y_true, y_pred):
+
+            return keras.losses.mse(y_true, y_pred)
+
+        def kl_loss(self, z_m, z_s):
+
+            kl_loss = 1 + z_s - K.square(z_m) - K.exp(z_s)
+
+            return -0.5*K.sum(kl_loss, axis=-1)
+
+        def vae_loss(y_true, y_pred):
+
+            kl_loss = kl_loss(z_m, z_s)
+            rec_loss = rec_loss(y_true, y_pred)
+            return K.mean(kl_loss + rec_loss)
+
+        # return K.mean(vae_loss)
+        return vae_loss
+
+    # def _reconstruction_loss(self, y_true, y_pred):
+    #
+    #     return keras.losses.mse(y_true, y_pred)
+    #
+    # def _kl_loss(self, z_m, z_s):
+    #
+    #     kl_loss = 1 + z_s - K.square(z_m) - K.exp(z_s)
+    #
+    #     return -0.5*K.sum(kl_loss, axis=-1)
 
 
 class AEpca:
