@@ -36,20 +36,26 @@ max_id = np.argmax(mse_score)
 
 print(f'The id for the top MSE outlier is {max_id}')
 
-k_widths = [5, 10, 20, 38, 50, 75, 100, 250, 500, 1_000]
-
-n_cores = multiprocessing.cpu_count()
 
 if __name__ == "__main__":
 
 # Parallelization
 
+    k_widths = [5, 10, 20, 38, 50, 75, 100, 250, 500, 1_000]
+
+    n_cores = multiprocessing.cpu_count()
+
     explanations_csv = open('explanations_list_p.csv', 'w', newline='\n')
 
-    explainers_list = Parallel(n_jobs=n_cores)(delayed(explain)
-    (kernel_width=kernel_width, training_data=spec, training_labels=spec,
-    data_row = spec[max_id, :], predict_fn=AE.predict, num_features=100,
-    file = explanations_csv) for kernel_width in k_widths)
+    # explainers_list = Parallel(n_jobs=n_cores)(delayed(explain)
+    # (kernel_width=kernel_width, training_data=spec, training_labels=spec,
+    # data_row = spec[max_id, :], predict_fn=AE.predict, num_features=100,
+    # file = explanations_csv) for kernel_width in k_widths)
+
+    with multiprocessing.Pool(processes=n_cores) as pool:
+        explainers_list = pool.starmap(explain,
+        ((kernel_width, spec, spec, spec[max_id, :], AE.predict, 100,
+        explanations_csv) for kernel_width in k_widths))
 
     explanations_csv.close()
 
