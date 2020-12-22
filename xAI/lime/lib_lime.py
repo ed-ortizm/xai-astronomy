@@ -8,6 +8,28 @@ import numpy as np
 import lime
 import lime.lime_tabular
 from tensorflow.keras.models import load_model
+###############################################################################
+
+def top_reconstructions(scores, n_normal_outliers=20):
+    """Selecting top outliers for a given outlier score and its SDSS metadata"""
+
+    spec_idxs = np.argpartition(scores,
+    [n_normal_outliers, -1*n_normal_outliers])
+
+    most_normal = spec_idxs[: n_normal_outliers]
+    most_oulying = spec_idxs[-1*n_normal_outliers:]
+
+    return most_normal, most_oulying
+
+def mse_score(O):
+
+    # Loading trained model
+    model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
+    AE = load_model(f'{model_path}')
+
+    R = AE.predict(O)
+
+    return np.square(R-O).mean(axis=1)
 
 def explain(kernel_width, training_data, training_labels, data_row,
                 predict_fn, num_features, file):
