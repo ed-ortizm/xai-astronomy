@@ -25,9 +25,9 @@ ti = time.time()
 # Data used to train the model
 train_data_path = '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
 spec = np.load(f'{train_data_path}')
-
+# pred = np.load('../../pred_99356.npy')
 # # Selecting top outliers for explanations
-# o_score_mse = mse_score(O=spec, model=AE)
+o_score_mse = mse_score(O=spec)
 #
 # normal_mse, outliers_mse = top_reconstructions(scores=o_score_mse,
 # n_normal_outliers=30)
@@ -68,17 +68,17 @@ for kernel_width in k_widths:
 
     print(f'Creating explainer...')
     explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
-                mode='regression', training_labels = spec,
+                mode='regression', training_labels = o_score_mse,
                 kernel_width=kernel_width, verbose=True)
 
     explanations_csv = open(
-    f'{j}_outlier_explanations_list.csv', 'w', newline='\n')
+    f'{kernel_width}_kernel_outlier_explanations_list.csv', 'w', newline='\n')
 
     # Generating an explanation
     for j, outlier in enumerate(outliers_to_exp):
 
         np.save(f'{j}_outlier.npy', outlier)
-        outlier = outlier.reshape(1, -1)
+        # outlier = outlier.reshape(1, -1)
 
         print(f'Generating explanation...')
         exp = explainer.explain_instance(outlier, mse_score,
@@ -91,7 +91,7 @@ for kernel_width in k_widths:
 
         # explanation as list
         exp_list = exp.as_list()
-        wr = csv.writer(list_file, quoting=csv.QUOTE_ALL)
+        wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
         wr.writerow(exp_list)
 
         # explanation as pyplot figure

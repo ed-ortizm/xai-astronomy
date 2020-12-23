@@ -27,6 +27,8 @@ def mse_score(O):
     model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
     AE = load_model(f'{model_path}')
 
+    if O.shape[0] == 3801:
+        O = O.reshape(1,-1)
     R = AE.predict(O)
 
     return np.square(R-O).mean(axis=1)
