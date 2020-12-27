@@ -11,6 +11,7 @@ ti = time.time()
 # Extracting explanation files paths and kernel widths
 
 print(f'Extracting explanation files paths and kernel widths...')
+output_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
 lime_path ='/home/edgar/zorro/outlier_AEs/xAI/lime'
 exp_files = glob.glob(f'{lime_path}/*_kernel/*.csv')
 
@@ -21,9 +22,9 @@ for fname in exp_files:
     k_widths.append(int(width))
 
 # Preparing explanations
-print(len(exp_files))
 for fname in exp_files:
 
+    k_size = int(fname.split('/')[-1].split('_')[0])
     explanations = {}
 
     with open(f'{fname}', newline='\n') as file:
@@ -71,14 +72,14 @@ for fname in exp_files:
                 # print(tuple[0].split('>')[0], tuple[0].split('>')[1])
                 tuple[0] = np.int(tuple[0].split('>')[0])
 
-            print(feature_idx, tuple)
 
-            break
             tuple.append(outlier_idx)
+            tuple[0], tuple[1], tuple[2] = tuple[2], tuple[0], tuple[1]
             feature_weight[outlier_idx, feature_idx, :] = np.array(tuple)
 
-    # print(feature_weight[1, 0, 1])
-    # np.save('features_exp_weight.npy', feature_weight)
+    np.save(f'{output_path}/outlier_feature_weight_k_size_{k_size}.npy',
+    feature_weight)
+print(f'numpy array created: [n_outlier, feature, lime_weight]')
 
 ################################################################################
 tf = time.time()
