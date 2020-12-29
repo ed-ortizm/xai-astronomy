@@ -3,8 +3,6 @@
 import glob
 import time
 
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
 ti = time.time()
@@ -15,18 +13,7 @@ ti = time.time()
 data_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
 output_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
 ################################################################################
-# Loading relevant data
-
-# The outliers
-outlier_files = glob.glob(f'{data_path}/[0-9]_outlier.npy')
-m = len(outlier_files)
-n = np.load(outlier_files[0]).size
-spectra = np.empty((m,n))
-
-for idx, fname in enumerate(outlier_files):
-
-    spectra[idx, :] = np.load(fname)
-
+## Loading relevant data
 # The explanations
 exp_files = glob.glob(f'{data_path}/outlier_feature_weight_k_size_*.npy')
 
@@ -48,17 +35,13 @@ for idx_kernel, fname in enumerate(exp_files):
     tmp[:, idx_kernel, :, 1] = n_kernel
 
     exps = np.load(fname)
-    # print(n_kernel)
+
     for idx_outlier, exp in enumerate(exps):
 
-        # exp = np.hstack(exp[],np.array([n_kernel]), )
         tmp[idx_outlier, idx_kernel, :, [0, 2, 3]] = exp[:, :].T
-        # tmp[idx_outlier, idx_kernel, :, 2:] = exp[:, 1:]
 
-        break
-    for row in tmp[0, idx_kernel, 0, :]:
-        print(row)
-    break
+print(f'Saving final array')
+np.save(f'{output_path}/exps_otl_ker_feat_weight.npy', tmp)
 
 ################################################################################
 tf = time.time()
