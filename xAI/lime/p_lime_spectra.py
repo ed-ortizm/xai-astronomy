@@ -99,9 +99,9 @@ f'test/outlier_nfeat_{num_features}_exp_AE.csv', 'w', newline='\n')
 
 
 for j, outlier in enumerate(spec_2xpl):
-
-    np.save(f'{o_score_path}/{j}_outlier.npy', outlier)
-    # outlier = outlier.reshape(1, -1)
+# test
+    np.save(f'test/{j}_outlier.npy', outlier)
+    # np.save(f'{o_score_path}/{j}_outlier.npy', outlier)
 
     print(f'Generating explanation...')
     exp = explainer.explain_instance(outlier, mse_score,
