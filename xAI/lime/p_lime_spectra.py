@@ -14,66 +14,136 @@ from lib_lime import mse_score, top_reconstructions
 
 ti = time.time()
 ################################################################################
-#
-# k_n = int(sys.argv[1])
-# ## Data used to train the model
+if len(sys.argv) > 1:
+    k_width = float(sys.argv[1])
+else:
+    k_width = None
+## Relevant paths
 train_data_path = '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
-outlier_score_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
+o_score_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
+model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
+
+## Data used to train the model
+
+print('Loading relevant data')
 spec = np.load(f'{train_data_path}')
 
-# # Selecting top outliers for explanations
-model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
-o_score_mse = mse_score(O=spec, model_path=model_path)
+# do here the if array exists so I don't have to compute it every time
+print(f'Computing outlier scores: the labels ')
 
-# From visual exploration, check projec_gal_retireve for metadata of spectra
-outliers_mse = np.load(f'{outlier_score_path}/top_outliers_mse_idx.npy')
-to_explain_spec_idx = [outliers_mse[i] for i in [24, 28, 23, 21, 20, 19, 18, 17, 16]]
-outliers_to_exp = [spec[i, :] for i in to_explain_spec_idx]
-#
+if os.path.exists(f'{o_score_path}/outlier_score_mse.npy'):
+    o_score_mse = np.load(f'{o_score_path}/outlier_score_mse.npy')
+else:
+    o_score_mse = mse_score(O=spec, model_path = model_path)
+    np.save(f'{o_score_path}/outlier_score_mse.npy', o_score_mse)
+
+## Selecting top outliers for explanations
+# check projec_gal_retireve for metadata of spectra
+
+print(f'Loading top outliers')
+# This can be a function
+n_normal_outliers = 30
+if os.path.exists(
+                f'{o_score_path}/top_{n_normal_outliers}_outliers_idx_mse.npy'):
+    top_oo_mse = np.load(
+                f'{o_score_path}/top_{n_normal_outliers}_outliers_idx_mse.npy')
+else:
+    top_normal_mse, top_oo_mse = top_reconstructions(scores=o_score_mse,
+                                        n_normal_outliers=n_normal_outliers)
+    np.save(f'{o_score_path}/top_{n_normal_outliers}_normal_idx_mse.npy',
+            top_normal_mse)
+    np.save(f'{o_score_path}/top_{n_normal_outliers}_outliers_idx_mse.npy',
+            top_oo_mse)
+
+# From last array an by visual exploration, I'll like to explain:
+tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
+
+tmp = [top_oo_mse[i] for i in tmp]
+spec_2xpl = [spec[i, :] for i in tmp]
+################################################################################
+t1 = time.time()
+time1 = t1-ti
+print(f'Running time 1: {time1:.2f} s')
+################################################################################
+## Explanations
 # k_widths = [5, 10, 20, 38, 50, 75, 100]
 #
-#
-# print(f'Creating explainer...')
-# explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
-#             mode='regression', training_labels = o_score_mse,
-#             kernel_width=k_widths[k_n], verbose=True)
-#
-# # Generating an explanation
+ftrr_names = [f'flux {i+1}' for i in range(spec.shape[1])]
+#'highest_weights': selects the features that have the highest product of
+# absolute weight * original data point when learning with all the features
+ftr_select = 'highest_weights'
+# spec_stats = data_stats(data=spec)
+print(f'Creating explainer...')
+explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
+            mode='regression', training_labels=o_score_mse,
+            feature_names=ftrr_names, kernel_width=k_width, verbose=True,
+            feature_selection=ftr_select, discretize_continuous=False,
+            discretizer= 'decile', sample_around_instance=True,
+            training_data_stats=None)
+################################################################################
+t2 = time.time()
+time2 = t2-t1
+print(f'Running time 2: {time2:.2f} s')
+################################################################################
+
+# Generating an explanation
+# test
+num_features = spec.shape[1]
+explanations_csv = open(
+f'test/outlier_nfeat_{num_features}_exp_AE.csv', 'w', newline='\n')
+
 # num_features = spec.shape[1]
+
 # explanations_csv = open(
 # f'{k_widths[k_n]}_kernel/{k_widths[k_n]}_k_outlier_nfeat_{num_features}_exp_AE.csv', 'w', newline='\n')
-#
-#
-# for j, outlier in enumerate(outliers_to_exp):
-#
-#     np.save(f'{j}_outlier.npy', outlier)
-#     # outlier = outlier.reshape(1, -1)
-#
-#     print(f'Generating explanation...')
-#     exp = explainer.explain_instance(outlier, mse_score,
-#           num_features=num_features)
-#
-#     print(f'Saving explanation as html')
-#     exp.save_to_file(
-#     file_path=\
-#     f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.html')
-#
-#
-#     # explanation as list
-#     exp_list = exp.as_list()
-#     wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
-#     wr.writerow(exp_list)
-#
-#     # explanation as pyplot figure
-#     exp_fig = exp.as_pyplot_figure()
-#     exp_fig.savefig(
-#     f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.png')
-#
-# explanations_csv.close()
+
+
+for j, outlier in enumerate(spec_2xpl):
+
+    np.save(f'{o_score_path}/{j}_outlier.npy', outlier)
+    # outlier = outlier.reshape(1, -1)
+
+    print(f'Generating explanation...')
+    exp = explainer.explain_instance(outlier, mse_score,
+          num_features=num_features)
+
+    print(f'Saving explanation as html')
+# test
+    exp.save_to_file(
+    file_path = f'test/{j}_n_outlier_{num_features}_exp_AE.html')
+    # exp.save_to_file(
+    # file_path=\
+    # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.html')
+
+
+    # explanation as list
+    exp_list = exp.as_list()
+    wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
+    wr.writerow(exp_list)
+
+    # explanation as pyplot figure
+# test
+    exp_fig = exp.as_pyplot_figure()
+    exp_fig.savefig(f'test/{j}_n_outlier_{num_features}_exp_AE.png')
+
+    # exp_fig = exp.as_pyplot_figure()
+    # exp_fig.savefig(
+    # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.png')
+
+    break
+
+explanations_csv.close()
+################################################################################
+t3 = time.time()
+time3 = t3-t2
+print(f'Running time 3: {time3:.2f} s')
+################################################################################
+
 ################################################################################
 # Writing code in a neat way
 ## Abbreviations
 
+# ftr: feature
 # o: outlier
 # oo: outliers
 # pv: previous variable
@@ -83,38 +153,6 @@ outliers_to_exp = [spec[i, :] for i in to_explain_spec_idx]
 # Kernel width will be introduced from the command newline
 # k_widths = []
 
-## Data used to train the model
-train_data_path = '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
-o_score_path = '/home/edgar/zorro/outlier_AEs/xAI/lime/spectra_scores'
-
-print('Loading relevant data')
-spec = np.load(f'{train_data_path}')
-
-print(f'Computing outlier scores: the labels ')
-
-model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
-o_score_mse = mse_score(O=spec, model_path = model_path)
-
-## Selecting top outliers for explanations
-# check projec_gal_retireve for metadata of spectra
-print(f'Loading top outliers')
-
-if os.path.exists(f'{o_score_path}/top_outliers_mse_idx.npy'):
-    top_oo_mse = np.load(f'{o_score_path}/top_outliers_mse_idx.npy')
-else:
-    _, top_oo_mse = top_reconstructions(scores=o_score_mse,
-                                        n_normal_outliers=30)
-# From last array an by visual exploration, I'll like to explain:
-tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
-
-tmp = [top_oo_mse[i] for i in tmp]
-
-for idx, var in enumerate(tmp):
-    print(to_explain_spec_idx[idx]==var)
-
-spec_2xpl = [spec[i, :] for i in tmp]
-################################################################################
-## Explanations
 
 # print(f'Creating explainer...')
 # explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,

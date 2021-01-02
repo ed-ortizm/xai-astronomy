@@ -20,7 +20,9 @@ def top_reconstructions(scores, n_normal_outliers=20):
 
     return most_normal, most_oulying
 ###############################################################################
-def mse_score(O, model_path):
+AE_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
+
+def mse_score(O, model_path=AE_path):
 
     model_name = model_path.split('/')[-1]
     print(f'Loading model: {model_name}')
@@ -38,7 +40,7 @@ def mse_score(O, model_path):
 #(kernel_width, training_data, training_labels, data_row,
                 #predict_fn, num_features, file):
 
-# class Explainer: 
+# class Explainer:
 #
 #
 #     __init__(self, k_width)print(f'Explainer with kernel width: {kernel_width}')
