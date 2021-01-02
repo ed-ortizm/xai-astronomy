@@ -10,7 +10,7 @@ def plot_exp(n_outlier):
 
     """n_outlier: str"""
 
-    fig, ax
+    # fig, ax
 
     pass
 
@@ -57,3 +57,13 @@ for key_n_outlier in spec_outliers:
 tf = time.time()
 
 print(f'Running time: {tf-ti:.2f}')
+# # test
+#
+# outlier0 = np.load('0_outlier.npy')
+# exp = np.load('outlier_feature_weight_nfeatt_3801.npy')
+# wave_exp = exp[0, :, 1].astype(np.int)
+# flx_exp = outlier0[wave_exp]
+# weights = exp[0, :, 2]
+# c = weights/np.max(weights)
+# scatter(wave_exp, flx_exp, c=c, cmap='plasma_r')
+# colorbar()

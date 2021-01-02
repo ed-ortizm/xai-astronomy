@@ -59,7 +59,7 @@ for outlier_idx, outlier_key in enumerate(explanations):
         tuple = tuple.split(',')
         # print(tuple)
 
-        tuple[0] = np.float(tuple[0].strip("('flux"))
+        tuple[0] = np.float(tuple[0].strip("('flux")) - 1.0
         tuple[1] = np.float(tuple[1].strip(')'))
 
         tuple.append(outlier_idx)
