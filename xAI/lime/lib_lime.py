@@ -1,9 +1,8 @@
 import csv
-from joblib import Parallel, delayed
+import os
+
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import multiprocessing
 import numpy as np
 import lime
 import lime.lime_tabular
@@ -24,6 +23,12 @@ AE_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
 
 def mse_score(O, model_path=AE_path):
 
+    """
+    Using my UL ODA together with the outlier score to transfor the model
+    into a regression model to feed it to the LIME explanations
+    f: outlier_score(O, AE.predict(O))
+    """
+
     model_name = model_path.split('/')[-1]
     print(f'Loading model: {model_name}')
     AE = load_model(f'{model_path}')
@@ -36,36 +41,74 @@ def mse_score(O, model_path=AE_path):
 
     return np.square(R-O).mean(axis=1)
 ###############################################################################
-#k_width: kernel width
-#(kernel_width, training_data, training_labels, data_row,
-                #predict_fn, num_features, file):
 
-# class Explainer:
-#
-#
-#     __init__(self, k_width)print(f'Explainer with kernel width: {kernel_width}')
-#
-#     explainer = lime.lime_tabular.LimeTabularExplainer(
-#     training_data=training_data, mode='regression',
-#     raining_labels = training_labels, kernel_width=kernel_width, verbose=True)
-#
-#     print(f'Computing explanations for the top MSE outlier')
-#     exp = explainer.explain_instance(data_row=data_row, predict_fn=predict_fn,
-#     num_features=num_features)
-#
-#     print(f'Saving explanation as html')
-#     exp.save_to_file(file_path=f'./kw_{kernel_width}_explanation_AE_p.html')
-#
-#     # explanation as list
-#     print(f'Explanation list to a file...')
-#     exp_list = exp.as_list()
-#     wr = csv.writer(file, quoting=csv.QUOTE_ALL)
-#     wr.writerow(exp_list)
-#
-#     # explanation as pyplot figure
-#     print(f'Explanation to pyplot figure')
-#     exp_fig = exp.as_pyplot_figure()
-#     exp_fig.savefig(f'./kw_{kernel_width}_explanation_AE_p.png')
-#
-#     return exp
+class explanations:
+
+    def __init__(self, discretize_continuous=False):
+        self.discretize_continuous = discretize_continuous
+
+    def process_explanations(self, exp_file_path):
+
+        if os.path.exists(exp_file_path):
+            # Extracting kernel width
+            k_width = exp_file_path.split('/')[-1].split('_')[0]
+        else:
+            print(f'There is no file {exp_file_path}')
+            return None
+
+        explanation = None
+
+        with open(f'{exp_file_path}', newline='\n') as file:
+
+            for line in file:
+                explanation = line
+
+        explanation = explanation.split('"')
+        explanation = list(dict.fromkeys(exp))
+        explanation.remove(',')
+        explanation.remove('')
+        explanation.remove('\r\n')
+
+        n_features = len(explanation)
+        n_values = len(explanation[0].split(','))
+
+        feature_weight = np.empty((n_features, n_values))
+
+
+        if not discretize_continuous:
+
+            for feature_idx, tuple in enumerate(explanation):
+
+                tuple = tuple.split(',')
+
+                tuple[0] = np.float(tuple[0].strip("('flux")) - 1.0
+                tuple[1] = np.float(tuple[1].strip(')'))
+
+                feature_weight[feature_idx, :] = np.array(tuple)
+
+        else:
+
+            tuple = tuple.split(',')
+
+            tuple[0] = tuple[0][2:-1]
+            tuple[1] = np.float(tuple[1][:-1])
+
+            if '<' in tuple[0]:
+
+                if len(tuple[0].split('<'))==2:
+                    tuple[0] = np.int(tuple[0].split('<')[0])
+                else:
+                    tuple[0] = np.int(tuple[0].split('<')[1])
+
+            else:
+
+                tuple[0] = np.int(tuple[0].split('>')[0])
+
+            feature_weight[feature_idx, :] = np.array(tuple)
+
+        print(f'numpy array created: [feature, lime_weight]')
+
+        return feature_weight
+################################################################################
+
 ###############################################################################
