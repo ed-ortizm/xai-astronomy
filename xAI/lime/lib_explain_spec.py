@@ -149,11 +149,15 @@ class Explanation:
         ax.plot(spec, linewidth=linewidth)
         ax.scatter(wave_exp, flx_exp, c=c, cmap=cmap)
 
-        fig.colorbar()
+        fig.colorbar(matplotlib.cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
 
         fig.savefig(f'test.png')
         fig.savefig(f'test.pdf')
 
-################################################################################
+        plt.close()
 
+################################################################################
+def segment_spec(spec, n_segments=100):
+
+    return
 ###############################################################################

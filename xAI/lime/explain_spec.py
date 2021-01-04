@@ -71,10 +71,10 @@ print(f'Running time 1: {time1:.2f} s')
 ftrr_names = [f'flux {i+1}' for i in range(spec.shape[1])]
 #'highest_weights': selects the features that have the highest product of
 # absolute weight * original data point when learning with all the features
-ftr_selectt = ['highest_weights', 'forward_selection', 'lasso_path', 'none']
+ftr_selectt = ['highest_weights', 'lasso_path', 'none', 'forward_selection']
 # spec_stats = data_stats(data=spec)
 for ftr_select in ftr_selectt:
-    print(f'Creating explainer...')
+    print(f'Creating explainer... feature selection: {ftr_select}')
     discretize_continuous = False
     discretizer = 'decile'
     explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
