@@ -42,12 +42,12 @@ def mse_score(O, model_path=AE_path):
     return np.square(R-O).mean(axis=1)
 ###############################################################################
 
-class explanations:
+class Explanation:
 
     def __init__(self, discretize_continuous=False):
         self.discretize_continuous = discretize_continuous
 
-    def process_explanations(self, exp_file_path):
+    def process_explanation(self, exp_file_path):
 
         if os.path.exists(exp_file_path):
             # Extracting kernel width
@@ -109,6 +109,51 @@ class explanations:
         print(f'numpy array created: [feature, lime_weight]')
 
         return feature_weight
+
+    def analyze_explanation(self, spec_path, exp_file_path):
+
+        if os.path.exists(spec_path):
+            spec = np.load(spec_path)
+        else:
+            print(f'There is no file {spec_path}')
+            return None
+
+        if os.path.exists(exp_file_path):
+            exp = self.process_explanations(exp_file_path)
+        else:
+            print(f'There is no file {exp_file_path}')
+            return None
+
+
+        wave_exp = exp[:, 0].astype(np.int)
+        flx_exp = spec[wave_exp]
+        weights_exp = exp[:, 1]
+
+        return wave_exp, flx_exp, weights_exp
+
+    def plot_explanation(self, spec_path, linewidth=0.2, cmap='plasma_r'):
+
+        if os.path.exists(spec_path):
+            spec = np.load(spec_path)
+        else:
+            print(f'There is no file {spec_path}')
+            return None
+
+        wave_exp, flx_exp, weights_exp = self.analyze_explanation(spec_path,
+        exp_file_path)
+
+        c = weights_exp/np.max(weights_exp)
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+        ax.plot(spec, linewidth=linewidth)
+        ax.scatter(wave_exp, flx_exp, c=c, cmap=cmap)
+
+        fig.colorbar()
+
+        fig.savefig(f'test.png')
+        fig.savefig(f'test.pdf')
+
 ################################################################################
 
 ###############################################################################
