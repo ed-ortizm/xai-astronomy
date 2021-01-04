@@ -144,7 +144,7 @@ class Explanation:
 
         c = weights_exp/np.max(weights_exp)
 
-        fig, ax = plt.subplots(figsize=(10, 5))
+        fig, ax = plt.subplots(figsize=(15, 5))
 
         ax.plot(spec, linewidth=linewidth)
         ax.scatter(wave_exp, flx_exp, c=c, cmap=cmap)
@@ -156,8 +156,101 @@ class Explanation:
 
         plt.close()
 
-################################################################################
-def segment_spec(spec, n_segments=100):
+class Outlier:
 
-    return
+    def __init__(self, model_path, n_spec=30):
+
+        self.model_path = model_path
+        self.n_spec = n_spec
+
+    def score(self, O, metric='mse', p='p'):
+
+        model_name = self.model_path.split('/')[-1]
+        print(f'Loading model: {model_name}')
+        model = load_model(f'{self.model_path}')
+
+        if metric == 'mse':
+            print(f'Computing the predictions of {model_name}')
+            return self._mse(O=O, model=model)
+
+        elif metric == 'chi2':
+            print(f'Computing the predictions of {model_name}')
+            return self._chi2(O=O, model=model)
+
+        elif metric == 'mad':
+            print(f'Computing the predictions of {model_name}')
+            return self._mad(O=O, model=model)
+
+        elif metric == 'lp':
+
+            if p == 'p':
+                print(f'The {metric} lp needs p as an argument')
+                return None
+
+            print(f'Computing the predictions of {model_name}')
+            return self._lp(O=O, model=model, p=p)
+
+        else:
+            print(f'The provided metric: {metric} is not implemented yet')
+            return None
+
+    def _mse(self, O, model):
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return np.square(R-O).mean(axis=1)
+
+    def _chi2(self, O, model):
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return (np.square(R-O)*(1/np.abs(R))).mean(axis=1)
+
+    def _mad(self, O, model):
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return np.abs(R-O).mean(axis=1)
+
+    def _lp(self, O, model, p):
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return (np.sum((np.abs(R-O))**p, axis=1))**(1/p)
+
+    def metadata(self, spec_idx, training_data_path):
+
+        print('Gathering name of fata points used for training')
+
+        names = glob.glob(f'{training_data_path}/*-*[0-9].npy')
+        sdss_names = [name.split('/')[-1].split('.')[0] for name in names]
+
+        print('Retrieving the sdss name of the desired spectrum')
+
+        sdss_name = sdss_names[spec_idx]
+        sdss_name_path = names[spec_idx]
+
+        return sdss_name, sdss_name_path
+
+
+
+        return sdss_name
+
+
+################################################################################
+def segment_spec(spec, n_segments, training_data_path):
+
+    pass
 ###############################################################################
