@@ -64,7 +64,7 @@ class Explanation:
                 explanation = line
 
         explanation = explanation.split('"')
-        explanation = list(dict.fromkeys(exp))
+        explanation = list(dict.fromkeys(explanation))
         explanation.remove(',')
         explanation.remove('')
         explanation.remove('\r\n')
@@ -75,7 +75,7 @@ class Explanation:
         feature_weight = np.empty((n_features, n_values))
 
 
-        if not discretize_continuous:
+        if not self.discretize_continuous:
 
             for feature_idx, tuple in enumerate(explanation):
 
@@ -119,7 +119,7 @@ class Explanation:
             return None
 
         if os.path.exists(exp_file_path):
-            exp = self.process_explanations(exp_file_path)
+            exp = self.process_explanation(exp_file_path)
         else:
             print(f'There is no file {exp_file_path}')
             return None
@@ -131,7 +131,7 @@ class Explanation:
 
         return wave_exp, flx_exp, weights_exp
 
-    def plot_explanation(self, spec_path, linewidth=0.2, cmap='plasma_r'):
+    def plot_explanation(self, spec_path, exp_file_path, linewidth=0.2, cmap='plasma_r'):
 
         if os.path.exists(spec_path):
             spec = np.load(spec_path)
