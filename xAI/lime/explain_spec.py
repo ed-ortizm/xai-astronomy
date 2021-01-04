@@ -4,12 +4,7 @@ import sys
 import time
 
 import csv
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
-import lime
-import lime.lime_tabular
 from lib_lime import mse_score, top_reconstructions
 
 ti = time.time()
@@ -66,137 +61,11 @@ time1 = t1-ti
 print(f'Running time 1: {time1:.2f} s')
 ################################################################################
 ## Explanations
-# k_widths = [5, 10, 20, 38, 50, 75, 100]
-#
 ftrr_names = [f'flux {i+1}' for i in range(spec.shape[1])]
 #'highest_weights': selects the features that have the highest product of
 # absolute weight * original data point when learning with all the features
 ftr_selectt = ['highest_weights', 'lasso_path', 'none', 'forward_selection']
 # spec_stats = data_stats(data=spec)
-for ftr_select in ftr_selectt:
-    print(f'Creating explainer... feature selection: {ftr_select}')
-    discretize_continuous = False
-    discretizer = 'decile'
-    explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
-                mode='regression', training_labels=o_score_mse,
-                feature_names=ftrr_names, kernel_width=k_width, verbose=True,
-                feature_selection=ftr_select,
-                discretize_continuous=discretize_continuous, discretizer= discretizer,
-                sample_around_instance=False, training_data_stats=None)
-    # Kernel ($\Pi(x)$) and kernel width ($\sigma$ [?]) are the default parameters
-    ################################################################################
-    t2 = time.time()
-    time2 = t2-t1
-    print(f'Running time 2: {time2:.2f} s')
-    ################################################################################
-
-    # Generating an explanation
-    # test
-    # number of features to include in the explanation. This K <--> $\Omega$
-    num_features = spec.shape[1]
-    explanations_csv = open(
-    f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.csv',
-    'w', newline='\n')
-
-    # num_features = spec.shape[1]
-
-    # explanations_csv = open(
-    # f'{k_widths[k_n]}_kernel/{k_widths[k_n]}_k_outlier_nfeat_{num_features}_exp_AE.csv', 'w', newline='\n')
-
-
-    for j, outlier in enumerate(spec_2xpl):
-    # test
-        np.save(f'test/{j}_outlier.npy', outlier)
-        # np.save(f'{o_score_path}/{j}_outlier.npy', outlier)
-
-        print(f'Generating explanation...')
-        exp = explainer.explain_instance(outlier, mse_score,
-              num_features=num_features)
-
-        print(f'Saving explanation as html')
-    # test
-        exp.save_to_file(
-        file_path = f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.html')
-        # exp.save_to_file(
-        # file_path=\
-        # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.html')
-
-
-        # explanation as list
-        exp_list = exp.as_list()
-        wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
-        wr.writerow(exp_list)
-
-        # explanation as pyplot figure
-    # test
-        exp_fig = exp.as_pyplot_figure()
-        exp_fig.savefig(f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.png')
-
-        # exp_fig = exp.as_pyplot_figure()
-        # exp_fig.savefig(
-        # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.png')
-
-        break
-
-    explanations_csv.close()
-################################################################################
-t3 = time.time()
-time3 = t3-t2
-print(f'Running time 3: {time3:.2f} s')
-################################################################################
-
-################################################################################
-# Writing code in a neat way
-## Abbreviations
-
-# ftr: feature
-# o: outlier
-# oo: outliers
-# pv: previous variable
-# idx: index
-# idxx: indexes
-# xpl: explain
-# Kernel width will be introduced from the command newline
-# k_widths = []
-
-
-# print(f'Creating explainer...')
-# explainer = lime.lime_tabular.LimeTabularExplainer(training_data=spec,
-#             mode='regression', training_labels = o_score_mse,
-#             kernel_width=k_widths[k_n], verbose=True)
-#
-# # Generating an explanation
-# num_features = spec.shape[1]
-# explanations_csv = open(
-# f'{k_widths[k_n]}_kernel/{k_widths[k_n]}_k_outlier_nfeat_{num_features}_exp_AE.csv', 'w', newline='\n')
-#
-#
-# for j, outlier in enumerate(outliers_to_exp):
-#
-#     np.save(f'{j}_outlier.npy', outlier)
-#     # outlier = outlier.reshape(1, -1)
-#
-#     print(f'Generating explanation...')
-#     exp = explainer.explain_instance(outlier, mse_score,
-#           num_features=num_features)
-#
-#     print(f'Saving explanation as html')
-#     exp.save_to_file(
-#     file_path=\
-#     f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.html')
-#
-#
-#     # explanation as list
-#     exp_list = exp.as_list()
-#     wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
-#     wr.writerow(exp_list)
-#
-#     # explanation as pyplot figure
-#     exp_fig = exp.as_pyplot_figure()
-#     exp_fig.savefig(
-#     f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.png')
-#
-# explanations_csv.close()
 
 ################################################################################
 tf = time.time()

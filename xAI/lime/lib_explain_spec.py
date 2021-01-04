@@ -41,6 +41,54 @@ def mse_score(O, model_path=AE_path):
 
     return np.square(R-O).mean(axis=1)
 ###############################################################################
+class Explainer:
+    def __init__(self, training_data, training_labels, feature_names,
+    kernel_width, feature_selection, training_data_stats=None,
+    sample_around_instance=False, discretize_continuous=False,
+    discretizer='decile',verbose=True,mode='regression'):
+
+    self.tr_data = training_data
+    slef.tr_labels = training_labels
+    self.ftr_names = feature_names
+    self.k_width = kernel_width
+    self.ftr_selct = feature_selection
+    self.tr_data_stats = training_data_stats
+    self.sar_instance = sample_around_instance
+    self.discretize = discretize_continuous
+    self.discretizer = discretizer
+    self.verbose = verbose
+    self.mode = mode
+
+    def _tabular_explainer(self):
+
+        explainer = lime.lime_tabular.LimeTabularExplainer(
+        training_data=self.tr_data, training_labels=self.tr_labels,
+        feature_names=self.ftr_names, kernel_width=self.k_width,
+        feature_selection=self.ftr_select,
+        training_data_stats=self.tr_data_stats,
+        sample_around_instance=self.sar_instance,
+        discretize_continuous=self.discretize, discretizer=self.discretizer,
+        verbose = self.verbose, mode=self.mode)
+
+        return explainer
+
+    def explanation(self, sdss_name='sdss_name', html=False, figure=False):
+
+        explainer = self._tabular_explainer()
+
+        xpl = explainer.explain_instance(outlier, mse_score,
+              num_features=num_features)
+
+        if html:
+
+            xpl.save_to_file(file_path = f'{html_name}.html')
+
+        if figure:
+
+            fig = xpl.as_pyplot_figure()
+            fig.savefig(f'{sdss_name}.pdf')
+
+        return xpl.as_list()
 
 class Explanation:
 
@@ -248,7 +296,7 @@ class Outlier:
 
         return sdss_name
 
-
+# pending to add
 ################################################################################
 def segment_spec(spec, n_segments, training_data_path):
 
