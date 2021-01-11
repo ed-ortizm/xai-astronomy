@@ -206,8 +206,34 @@ class Explanation:
         plt.close()
 
 class Outlier:
+    """
+    Class for dealing with the outliers based on a generative model trained with
+    tensorflow.keras
+    """
 
-    def __init__(self, model_path, o_scores_path, metric='mse', p='p', n_spec=30):
+    def __init__(self, model_path, o_scores_path='.', metric='mse', p='p', n_spec=30):
+        """
+        Init fucntion
+
+        Args:
+            model_path: path where the trained generative model is located
+
+            o_scores_path: (str) path where the numpy arrays with the outlier scores
+                is located. Its functionality is for the cases where the class
+                will be implemented several times, offering therefore the
+                possibility to load the scores instead of computing them over
+                and over.
+
+            metric: (str) the name of the metric used to compute the outlier score
+                using the observed spectrum and its reconstruction. Possible
+
+            p: (float > 0) in case the metric is the lp metric, p needs to be a non null
+                possitive float [Aggarwal 2001]
+
+            n_spec: (int > 0) this parameter contros the number of objects identifiers to
+                return for the top reconstruction, that is the most oulying and
+                the most normal objects
+        """
 
         self.model_path = model_path
         self.o_scores_path = o_scores_path
@@ -216,6 +242,18 @@ class Outlier:
         self.n_spec = n_spec
 
     def score(self, O):
+        """
+        Computes the outlier score according to the metric used to define
+        instantiate the class.
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+        Returns:
+            A one dimensional numpy array with the outlier scores for objects
+            present in O
+        """
 
         model_name = self.model_path.split('/')[-1]
         print(f'Loading model: {model_name}')
@@ -247,6 +285,20 @@ class Outlier:
             return None
 
     def _mse(self, O, model):
+        """
+        Computes the mean square error for the reconstruction of the input
+        objects
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            model: (tensorflow.keras model) the generative model
+
+        Returns:
+            A one dimensional numpy array with the mean square error for objects
+            present in O
+        """
 
         if O.shape[0] == 3801:
             O = O.reshape(1,-1)
@@ -256,7 +308,20 @@ class Outlier:
         return np.square(R-O).mean(axis=1)
 
     def _chi2(self, O, model):
+        """
+        Computes the chi square error for the reconstruction of the input
+        objects
 
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            model: (tensorflow.keras model) the generative model
+
+        Returns:
+            A one dimensional numpy array with the chi square error for objects
+            present in O
+        """
         if O.shape[0] == 3801:
             O = O.reshape(1,-1)
 
@@ -265,7 +330,20 @@ class Outlier:
         return (np.square(R-O)*(1/np.abs(R))).mean(axis=1)
 
     def _mad(self, O, model):
+        """
+        Computes the maximum absolute deviation from the reconstruction of the
+        input objects
 
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            model: (tensorflow.keras model) the generative model
+
+        Returns:
+            A one dimensional numpy array with the maximum absolute deviation
+            from the objects present in O
+        """
         if O.shape[0] == 3801:
             O = O.reshape(1,-1)
 
@@ -274,6 +352,19 @@ class Outlier:
         return np.abs(R-O).mean(axis=1)
 
     def _lp(self, O, model):
+        """
+        Computes the lp distance from the reconstruction of the input objects
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            model: (tensorflow.keras model) the generative model
+
+        Returns:
+            A one dimensional numpy array with the lp distance from the objects
+            present in O
+        """
 
         if O.shape[0] == 3801:
             O = O.reshape(1,-1)
@@ -283,6 +374,23 @@ class Outlier:
         return (np.sum((np.abs(R-O))**self.p, axis=1))**(1/self.p)
 
     def metadata(self, spec_idx, training_data_files):
+        """
+        Generates the names and paths of the individual objects used to create
+        the training data set.
+        Note: this work according to the way the training data set was created
+
+        Args:
+            spec_idx: (int > 0) the location index of the spectrum in the
+                training data set.
+
+            training_data_files: (list of strs) a list with the paths of the
+                individual objects used to create the training data set.
+
+        Returns:
+            sdss_name, sdss_name_path: (str, str) the sdss name of the objec,
+                the path of the object in the files system
+        """
+
 
         # print('Gathering name of data points used for training')
 
@@ -297,10 +405,19 @@ class Outlier:
         return sdss_name, sdss_name_path
 
     def top_reconstructions(self, O):
+        """
+        Selects the most normal and outlying objecs
 
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+        Returns:
+            most_normal, most_oulying: (1D np.array, 1D np.array) numpy arrays
+                with the location indexes of the most normal and outlying
+                object in the training set.
         """
-        Selecting top outliers for a given outlier score and its SDSS metadata
-        """
+
         if os.path.exists(f"{self.o_scores_path}/{self.metric}_o_score.npy"):
             scores= np.load(f"{self.o_scores_path}/{self.metric}_o_score.npy")
         else:
@@ -312,13 +429,7 @@ class Outlier:
         most_normal = spec_idxs[: self.n_spec]
         most_oulying = spec_idxs[-1*self.n_spec:]
 
-        ## Retrieving metadata
-        # later
-
         return most_normal, most_oulying
-
-
-
 ################################################################################
 def segment_spec(spec, n_segments, training_data_path):
 
