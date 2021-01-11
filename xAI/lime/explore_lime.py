@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import lime
 import lime.lime_tabular
-from lib_lime import mse_score, top_reconstructions
+from lib_explain_spec import mse_score, top_reconstructions
 
 ti = time.time()
 ################################################################################
@@ -71,7 +71,7 @@ print(f'Running time 1: {time1:.2f} s')
 ftrr_names = [f'flux {i+1}' for i in range(spec.shape[1])]
 #'highest_weights': selects the features that have the highest product of
 # absolute weight * original data point when learning with all the features
-ftr_selectt = ['highest_weights', 'lasso_path', 'none', 'forward_selection']
+ftr_selectt = ['highest_weights', 'lasso_path', 'none']#, 'forward_selection']
 # spec_stats = data_stats(data=spec)
 for ftr_select in ftr_selectt:
     print(f'Creating explainer... feature selection: {ftr_select}')
@@ -94,9 +94,6 @@ for ftr_select in ftr_selectt:
     # test
     # number of features to include in the explanation. This K <--> $\Omega$
     num_features = spec.shape[1]
-    explanations_csv = open(
-    f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.csv',
-    'w', newline='\n')
 
     # num_features = spec.shape[1]
 
@@ -106,6 +103,12 @@ for ftr_select in ftr_selectt:
 
     for j, outlier in enumerate(spec_2xpl):
     # test
+
+        explanations_csv = open(
+        f'test/{j}_outlier_nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.csv',
+        'w', newline='\n')
+
+
         np.save(f'test/{j}_outlier.npy', outlier)
         # np.save(f'{o_score_path}/{j}_outlier.npy', outlier)
 
@@ -116,7 +119,7 @@ for ftr_select in ftr_selectt:
         print(f'Saving explanation as html')
     # test
         exp.save_to_file(
-        file_path = f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.html')
+        file_path = f'test/{j}_outlier_nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.html')
         # exp.save_to_file(
         # file_path=\
         # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.html')
@@ -130,15 +133,14 @@ for ftr_select in ftr_selectt:
         # explanation as pyplot figure
     # test
         exp_fig = exp.as_pyplot_figure()
-        exp_fig.savefig(f'test/nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.png')
+        exp_fig.savefig(f'test/{j}_outlier_nfeat_{num_features}_discretize_{int(discretize_continuous)}_{discretizer}_ftr_select_{ftr_select}.png')
 
         # exp_fig = exp.as_pyplot_figure()
         # exp_fig.savefig(
         # f'{k_widths[k_n]}_kernel/{j}_outlier_k_{k_widths[k_n]}_nfeat_{num_features}_exp_AE.png')
 
-        break
 
-    explanations_csv.close()
+        explanations_csv.close()
 ################################################################################
 t3 = time.time()
 time3 = t3-t2

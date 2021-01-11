@@ -47,36 +47,36 @@ class Explainer:
     sample_around_instance=False, discretize_continuous=False,
     discretizer='decile',verbose=True,mode='regression'):
 
-    self.tr_data = training_data
-    slef.tr_labels = training_labels
-    self.ftr_names = feature_names
-    self.k_width = kernel_width
-    self.ftr_selct = feature_selection
-    self.tr_data_stats = training_data_stats
-    self.sar_instance = sample_around_instance
-    self.discretize = discretize_continuous
-    self.discretizer = discretizer
-    self.verbose = verbose
-    self.mode = mode
+        self.tr_data = training_data
+        slef.tr_labels = training_labels
+        self.ftr_names = feature_names
+        self.k_width = kernel_width
+        self.ftr_selct = feature_selection
+        self.tr_data_stats = training_data_stats
+        self.sar_instance = sample_around_instance
+        self.discretize = discretize_continuous
+        self.discretizer = discretizer
+        self.verbose = verbose
+        self.mode = mode
+
+        self.explainer = self._tabular_explainer()
 
     def _tabular_explainer(self):
 
         explainer = lime.lime_tabular.LimeTabularExplainer(
-        training_data=self.tr_data, training_labels=self.tr_labels,
-        feature_names=self.ftr_names, kernel_width=self.k_width,
-        feature_selection=self.ftr_select,
-        training_data_stats=self.tr_data_stats,
-        sample_around_instance=self.sar_instance,
-        discretize_continuous=self.discretize, discretizer=self.discretizer,
-        verbose = self.verbose, mode=self.mode)
+            training_data=self.tr_data, training_labels=self.tr_labels,
+            feature_names=self.ftr_names, kernel_width=self.k_width,
+            feature_selection=self.ftr_select,
+            training_data_stats=self.tr_data_stats,
+            sample_around_instance=self.sar_instance,
+            discretize_continuous=self.discretize, discretizer=self.discretizer,
+            verbose = self.verbose, mode=self.mode)
 
         return explainer
 
     def explanation(self, sdss_name='sdss_name', html=False, figure=False):
 
-        explainer = self._tabular_explainer()
-
-        xpl = explainer.explain_instance(outlier, mse_score,
+        xpl = self.explainer.explain_instance(outlier, mse_score,
               num_features=num_features)
 
         if html:
@@ -300,5 +300,7 @@ class Outlier:
 ################################################################################
 def segment_spec(spec, n_segments, training_data_path):
 
+    segments = ['median', 'gray?', 'average', 'flat']
     pass
 ###############################################################################
+# scatter lime weights vs mse outlier score
