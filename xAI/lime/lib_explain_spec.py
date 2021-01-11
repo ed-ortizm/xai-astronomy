@@ -1,4 +1,5 @@
 import csv
+import glob
 import os
 
 import matplotlib
@@ -8,38 +9,38 @@ import lime
 import lime.lime_tabular
 from tensorflow.keras.models import load_model
 ###############################################################################
-def top_reconstructions(scores, n_normal_outliers=20):
-    """Selecting top outliers for a given outlier score and its SDSS metadata"""
-
-    spec_idxs = np.argpartition(scores,
-    [n_normal_outliers, -1*n_normal_outliers])
-
-    most_normal = spec_idxs[: n_normal_outliers]
-    most_oulying = spec_idxs[-1*n_normal_outliers:]
-
-    return most_normal, most_oulying
+# def top_reconstructions(scores, n_normal_outliers=30):
+#     """Selecting top outliers for a given outlier score and its SDSS metadata"""
+#
+#     spec_idxs = np.argpartition(scores,
+#     [n_normal_outliers, -1*n_normal_outliers])
+#
+#     most_normal = spec_idxs[: n_normal_outliers]
+#     most_oulying = spec_idxs[-1*n_normal_outliers:]
+#
+#     return most_normal, most_oulying
 ###############################################################################
 AE_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
 
-def mse_score(O, model_path=AE_path):
-
-    """
-    Using my UL ODA together with the outlier score to transfor the model
-    into a regression model to feed it to the LIME explanations
-    f: outlier_score(O, AE.predict(O))
-    """
-
-    model_name = model_path.split('/')[-1]
-    print(f'Loading model: {model_name}')
-    AE = load_model(f'{model_path}')
-
-    if O.shape[0] == 3801:
-        O = O.reshape(1,-1)
-
-    print(f'Computing the predictions of {model_name}')
-    R = AE.predict(O)
-
-    return np.square(R-O).mean(axis=1)
+# def mse_score(O, model_path=AE_path):
+#
+#     """
+#     Using my UL ODA together with the outlier score to transfor the model
+#     into a regression model to feed it to the LIME explanations
+#     f: outlier_score(O, AE.predict(O))
+#     """
+#
+#     model_name = model_path.split('/')[-1]
+#     print(f'Loading model: {model_name}')
+#     AE = load_model(f'{model_path}')
+#
+#     if O.shape[0] == 3801:
+#         O = O.reshape(1,-1)
+#
+#     print(f'Computing the predictions of {model_name}')
+#     R = AE.predict(O)
+#
+#     return np.square(R-O).mean(axis=1)
 ###############################################################################
 class Explainer:
     def __init__(self, training_data, training_labels, feature_names,
@@ -206,40 +207,43 @@ class Explanation:
 
 class Outlier:
 
-    def __init__(self, model_path, n_spec=30):
+    def __init__(self, model_path, o_scores_path, metric='mse', p='p', n_spec=30):
 
         self.model_path = model_path
+        self.o_scores_path = o_scores_path
+        self.metric = metric
+        self.p = p
         self.n_spec = n_spec
 
-    def score(self, O, metric='mse', p='p'):
+    def score(self, O):
 
         model_name = self.model_path.split('/')[-1]
         print(f'Loading model: {model_name}')
         model = load_model(f'{self.model_path}')
 
-        if metric == 'mse':
+        if self.metric == 'mse':
             print(f'Computing the predictions of {model_name}')
             return self._mse(O=O, model=model)
 
-        elif metric == 'chi2':
+        elif self.metric == 'chi2':
             print(f'Computing the predictions of {model_name}')
             return self._chi2(O=O, model=model)
 
-        elif metric == 'mad':
+        elif self.metric == 'mad':
             print(f'Computing the predictions of {model_name}')
             return self._mad(O=O, model=model)
 
-        elif metric == 'lp':
+        elif self.metric == 'lp':
 
-            if p == 'p':
-                print(f'The {metric} lp needs p as an argument')
+            if self.p == 'p' or self.p <= 0:
+                print(f'For the {self.metric} metric you need p')
                 return None
 
             print(f'Computing the predictions of {model_name}')
-            return self._lp(O=O, model=model, p=p)
+            return self._lp(O=O, model=model)
 
         else:
-            print(f'The provided metric: {metric} is not implemented yet')
+            print(f'The provided metric: {self.metric} is not implemented yet')
             return None
 
     def _mse(self, O, model):
@@ -269,34 +273,52 @@ class Outlier:
 
         return np.abs(R-O).mean(axis=1)
 
-    def _lp(self, O, model, p):
+    def _lp(self, O, model):
 
         if O.shape[0] == 3801:
             O = O.reshape(1,-1)
 
         R = model.predict(O)
 
-        return (np.sum((np.abs(R-O))**p, axis=1))**(1/p)
+        return (np.sum((np.abs(R-O))**self.p, axis=1))**(1/self.p)
 
-    def metadata(self, spec_idx, training_data_path):
+    def metadata(self, spec_idx, training_data_files):
 
-        print('Gathering name of fata points used for training')
+        # print('Gathering name of data points used for training')
 
-        names = glob.glob(f'{training_data_path}/*-*[0-9].npy')
-        sdss_names = [name.split('/')[-1].split('.')[0] for name in names]
+        sdss_names = [name.split('/')[-1].split('.')[0] for name in
+            training_data_files]
 
-        print('Retrieving the sdss name of the desired spectrum')
+        # print('Retrieving the sdss name of the desired spectrum')
 
         sdss_name = sdss_names[spec_idx]
-        sdss_name_path = names[spec_idx]
+        sdss_name_path = training_data_files[spec_idx]
 
         return sdss_name, sdss_name_path
 
+    def top_reconstructions(self, O):
+
+        """
+        Selecting top outliers for a given outlier score and its SDSS metadata
+        """
+        if os.path.exists(f"{self.o_scores_path}/{self.metric}_o_score.npy"):
+            scores= np.load(f"{self.o_scores_path}/{self.metric}_o_score.npy")
+        else:
+            scores = self.score(O)
+
+        spec_idxs = np.argpartition(scores,
+        [self.n_spec, -1*self.n_spec])
+
+        most_normal = spec_idxs[: self.n_spec]
+        most_oulying = spec_idxs[-1*self.n_spec:]
+
+        ## Retrieving metadata
+        # later
+
+        return most_normal, most_oulying
 
 
-        return sdss_name
 
-# pending to add
 ################################################################################
 def segment_spec(spec, n_segments, training_data_path):
 

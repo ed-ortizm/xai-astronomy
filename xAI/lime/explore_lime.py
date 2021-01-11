@@ -28,7 +28,6 @@ model_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
 print('Loading relevant data')
 spec = np.load(f'{train_data_path}')
 
-# do here the if array exists so I don't have to compute it every time
 print(f'Computing outlier scores: the labels ')
 
 if os.path.exists(f'{o_score_path}/outlier_score_mse.npy'):
