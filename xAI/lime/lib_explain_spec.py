@@ -211,7 +211,8 @@ class Outlier:
     tensorflow.keras
     """
 
-    def __init__(self, model_path, o_scores_path='.', metric='mse', p='p', n_spec=30):
+    def __init__(self, model_path, o_scores_path='.', metric='mse', p='p',
+        n_spec=30):
         """
         Init fucntion
 

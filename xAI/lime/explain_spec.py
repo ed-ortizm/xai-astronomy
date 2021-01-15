@@ -55,10 +55,16 @@ training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
 
 print(f"Generating explanmations for the following outlying spectra")
 
+o_sdss_names = []
+o_sdss_paths = []
+
 for spec_idx in most_oulying:
     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
     training_data_files=training_data_files)
-    print(sdss_name_path)
+    o_sdss_names.append(sdss_name)
+    o_sdss_paths.append(sdss_name_path)
+
+print(o_sdss_names)
 ################################################################################
 
 # Creating explainer
@@ -80,6 +86,19 @@ mode = 'regression'
 
 # print(f'Creating explainer... feature selection: {feature_selection}')
 
+################################################################################
+# print(f"Generating explanmations for the most normal spectra")
+#
+# n_sdss_names = []
+# n_sdss_paths = []
+#
+# for spec_idx in most_normal:
+#     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
+#     training_data_files=training_data_files)
+#     n_sdss_names.append(sdss_name)
+#     n_sdss_paths.append(sdss_name_path)
+#
+# print(n_sdss_names)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
