@@ -209,7 +209,7 @@ class Outlier:
 
     def _get_OR(self, O, model):
 
-        if O.shape[0] == 3801:
+        if len(O.shape) == 1:
             O = O.reshape(1,-1)
 
         R = model.predict(O)
@@ -443,18 +443,48 @@ def segment_spec(spec, n_segments, training_data_path):
 ###############################################################################
 ## Case for spectra
 class Spec_segmenter:
-    def __init__(self):
-        pass
-# segments_slic = slic(spec_test, n_segments=30, compactness=100,
-#     sigma=1, multichannel=False)
+
+    def __init__(self, spec, segmenter="slic"):
+
+        if len(spec.shape) == 1:
+            self.spec = spec.reshape(1,-1)
+        else:
+            self.spec = spec
+
+        self.segmenter = segmenter
+
+    def slic(self, n_segments=30, compactness=100, sigma=1):
+
+        segments = slic(self.spec, n_segments=n_segments,
+            compactness=compactness, sigma=sigma, multichannel=False)
+
+        boundaries = mark_boundaries(self.spec, segments)
+
+        diff = boundaries[0, :, 0] - self.spec[0, :]
+
+        idxs = np.nonzero(diff)[0]
+
+        return idxs
+
+
+    def plot(self, idxs, show=False):
+
+        fig, ax = plt.subplots(figsize=(15, 5))
+
+        wave = np.arange(self.spec.shape[1])
+
+        for n, idx in enumerate(idxs):
+
+            if n == 0:
+                ax.plot(wave[:idxs[n]], self.spec[0, :idxs[n]], linewidth=0.7)
+            else:
+                ax.plot(wave[idxs[n-1]: idxs[n]],
+                    self.spec[0, idxs[n-1]: idxs[n]], linewidth=0.7)
+
+        if show:
+            plt.show()
 #
-# boundaries = mark_boundaries(spec_test, segments_slic)
 #
-# diff = boundaries[0, :, 0] - spec_test[0, :]
-#
-# idxs = np.nonzero(diff)[0]
-#
-# plot(spec_test[0, :], color='black', linewidth=0.7)
 #
 # for vline in idxs:
 #     axvline(x=vline, color='red', linewidth=0.5)
