@@ -1,2 +1,2 @@
-# CAEs for outlier detection in astronomy
+# Generative learning for outlier detection in galaxy spectra
 Practicing!
