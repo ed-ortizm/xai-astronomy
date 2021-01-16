@@ -6,8 +6,9 @@ import time
 
 import csv
 import numpy as np
-from lib_explain_spec import Explainer, Explanation
-from lib_explain_spec import Outlier
+from lib_explanations import Explainer, Explainer_parallel
+from lib_explanations import Explanation
+from lib_explanations import Outlier
 # kk
 ti = time.time()
 ################################################################################
@@ -44,42 +45,41 @@ t1 = time.time()
 print(f't1: {t1-ti:.2f} s')
 ################################################################################
 ## Selecting top outliers
-print(f'Computing top reconstructions for {metric} metric')
-most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
+# print(f'Computing top reconstructions for {metric} metric')
+# most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
 ################################################################################
-print(f"Generating explanmations for the following outlying spectra")
-# From last array an by visual exploration, I'll like to explain:
-tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
-tmp = [most_oulying[i] for i in tmp]
-spec_2xpl = [training_data[i, :] for i in tmp]
-
-# Training data files
-training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
-# Saving last variable into a file, see then if feaseable the exists
-with open('training_data_files.tex', 'w') as file:
-    file.writelines(line for line in training_data_files)
-
-
-o_sdss_names = []
-o_sdss_paths = []
-
-for spec_idx in most_oulying:
-    sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
-    training_data_files=training_data_files)
-    o_sdss_names.append(sdss_name)
-    o_sdss_paths.append(sdss_name_path)
-
 # print(f"Generating explanmations for the following outlying spectra")
-# for name in o_sdss_names:
-#     print(name)
-t2 = time.time()
-print(f't2: {t2-t1:.2f} s')
+# # From last array an by visual exploration, I'll like to explain:
+# tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
+# tmp = [most_oulying[i] for i in tmp]
+# spec_2xpl = [training_data[i, :] for i in tmp]
+#
+# # Training data files
+# training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
+# # Saving last variable into a file, see then if feaseable the exists
+# with open('training_data_files.tex', 'w') as file:
+#     file.writelines(line for line in training_data_files)
+#
+#
+# o_sdss_names = []
+# o_sdss_paths = []
+#
+# for spec_idx in most_oulying:
+#     sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
+#     training_data_files=training_data_files)
+#     o_sdss_names.append(sdss_name)
+#     o_sdss_paths.append(sdss_name_path)
+#
+# # print(f"Working with the following outlying spectra")
+# # for name in o_sdss_names:
+# #     print(name)
+# t2 = time.time()
+# print(f't2: {t2-t1:.2f} s')
 ################################################################################
 ## Creating explainer
 
 # defining variables
 
-# ftr_selectt = ['highest_weights', 'lasso_path', 'none']
 # training_data = np.load(training_data_file)
 explainer_type="tabular"
 training_labels = o_score_mse
@@ -93,50 +93,60 @@ feature_selection = 'highest_weights'
 # verbose = True
 # mode = "regression"
 
-print(f'Creating explainer with feature selection: {feature_selection}')
-tabular_explainer = Explainer(explainer_type, training_data,
-    training_labels, feature_names, kernel_width, feature_selection,
-    training_data_stats=None, sample_around_instance=False,
-    discretize_continuous=False, discretizer="decile", verbose=True,
-    mode="regression")
-t3 = time.time()
-print(f't3: {t3-t2:.2f} s')
-################################################################################
-# Generating an explanation for last explainer
-# The explanation wil be saved in a text file
+kernel_widths = [kernel_width]
+features_selection = ["highest_weights", "lasso_path"] # , "none"]
+sample_around_instance = [True, False]
+print(f'Creating explainers')
+print(explainer_type)
+tabular_explainers = Explainer_parallel(explainer_type, training_data,
+    training_labels, feature_names, kernel_widths, features_selection,
+    sample_around_instance)
 
-exp_list = tabular_explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
-
-with open(f'test_tmp.csv', 'w', newline='\n') as explanations_csv:
-    wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
-    wr.writerow(exp_list)
-
-t4 = time.time()
-print(f't4: {t4-t3:.2f} s')
-################################################################################
-# processing the explanation
-explanation = Explanation()
-wave_exp, flx_exp, weights_exp = explanation.analyze_explanation(spec_2xpl[0],
-    "test_tmp.csv")
-
-explanation.plot(spec_2xpl[0], wave_exp, flx_exp, weights_exp, show=True)
-# scatter lime weights vs mse outlier score
-
-################################################################################
-################################################################################
-################################################################################
-# print(f"Generating explanmations for the most normal spectra")
+print(len(list(tabular_explainers.get_explainers())))
+# print(f'Creating explainer with feature selection: {feature_selection}')
+# tabular_explainer = Explainer(explainer_type, training_data,
+#     training_labels, feature_names, kernel_width, feature_selection,
+#     training_data_stats=None, sample_around_instance=False,
+#     discretize_continuous=False, discretizer="decile", verbose=True,
+#     mode="regression")
+# t3 = time.time()
+# print(f't3: {t3-t2:.2f} s')
+# ################################################################################
+# # Generating an explanation for last explainer
+# # The explanation wil be saved in a text file
 #
-# n_sdss_names = []
-# n_sdss_paths = []
+# exp_list = tabular_explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
 #
-# for spec_idx in most_normal:
-#     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
-#     training_data_files=training_data_files)
-#     n_sdss_names.append(sdss_name)
-#     n_sdss_paths.append(sdss_name_path)
+# with open(f'test_tmp.csv', 'w', newline='\n') as explanations_csv:
+#     wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
+#     wr.writerow(exp_list)
 #
-# print(n_sdss_names)
+# t4 = time.time()
+# print(f't4: {t4-t3:.2f} s')
+# ################################################################################
+# # processing the explanation
+# explanation = Explanation()
+# wave_exp, flx_exp, weights_exp = explanation.analyze_explanation(spec_2xpl[0],
+#     "test_tmp.csv")
+#
+# explanation.plot(spec_2xpl[0], wave_exp, flx_exp, weights_exp, show=True)
+# # scatter lime weights vs mse outlier score
+#
+# ################################################################################
+# ################################################################################
+# ################################################################################
+# # print(f"Generating explanmations for the most normal spectra")
+# #
+# # n_sdss_names = []
+# # n_sdss_paths = []
+# #
+# # for spec_idx in most_normal:
+# #     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
+# #     training_data_files=training_data_files)
+# #     n_sdss_names.append(sdss_name)
+# #     n_sdss_paths.append(sdss_name_path)
+# #
+# # print(n_sdss_names)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')

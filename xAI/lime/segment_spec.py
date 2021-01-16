@@ -4,7 +4,7 @@ import time
 
 import numpy as np
 
-from lib_explain_spec import Spec_segmenter
+from lib_explanations import Spec_segmenter
 
 ###############################################################################
 ti = time.time()
@@ -20,7 +20,7 @@ for n, idx in enumerate(idxs):
     if n==0:
         pass
     elif n%2 == 0:
-        print(idxs[n]-idxs[n-2]) 
+        print(idxs[n]-idxs[n-2])
 ###############################################################################
 tf = time.time()
 print(f"Runing time: {tf-ti:.2f} s")
