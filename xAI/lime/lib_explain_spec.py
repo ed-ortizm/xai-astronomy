@@ -2,51 +2,26 @@ import csv
 import glob
 import os
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
 import lime
 import lime.lime_tabular
-from tensorflow.keras.models import load_model
-###############################################################################
-# def top_reconstructions(scores, n_normal_outliers=30):
-#     """Selecting top outliers for a given outlier score and its SDSS metadata"""
-#
-#     spec_idxs = np.argpartition(scores,
-#     [n_normal_outliers, -1*n_normal_outliers])
-#
-#     most_normal = spec_idxs[: n_normal_outliers]
-#     most_oulying = spec_idxs[-1*n_normal_outliers:]
-#
-#     return most_normal, most_oulying
-###############################################################################
-AE_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
 
-# def mse_score(O, model_path=AE_path):
-#
-#     """
-#     Using my UL ODA together with the outlier score to transfor the model
-#     into a regression model to feed it to the LIME explanations
-#     f: outlier_score(O, AE.predict(O))
-#     """
-#
-#     model_name = model_path.split('/')[-1]
-#     print(f'Loading model: {model_name}')
-#     AE = load_model(f'{model_path}')
-#
-#     if O.shape[0] == 3801:
-#         O = O.reshape(1,-1)
-#
-#     print(f'Computing the predictions of {model_name}')
-#     R = AE.predict(O)
-#
-#     return np.square(R-O).mean(axis=1)
+from skimage.color import rgb2gray
+from skimage.filters import sobel
+from skimage.segmentation import felzenszwalb, slic, quickshift, watershed
+from skimage.segmentation import mark_boundaries
+from skimage.util import img_as_float
+
+from tensorflow.keras.models import load_model
 ###############################################################################
 class Explainer:
     def __init__(self, explainer_type, training_data, training_labels,
-    feature_names, kernel_width, feature_selection, training_data_stats=None,
-    sample_around_instance=False, discretize_continuous=False,
-    discretizer='decile', verbose=True, mode='regression'):
+        feature_names, kernel_width, feature_selection,
+        training_data_stats=None, sample_around_instance=False,
+        discretize_continuous=False, discretizer='decile', verbose=True,
+        mode='regression'):
 
         self.xpl_type = explainer_type
         self.tr_data = training_data
@@ -466,4 +441,118 @@ def segment_spec(spec, n_segments, training_data_path):
     segments = ['median', 'gray?', 'average', 'flat', 'other']
     pass
 ###############################################################################
-# scatter lime weights vs mse outlier score
+## Case for spectra
+class Spec_segmenter:
+    def __init__(self):
+        pass
+# segments_slic = slic(spec_test, n_segments=30, compactness=100,
+#     sigma=1, multichannel=False)
+#
+# boundaries = mark_boundaries(spec_test, segments_slic)
+#
+# diff = boundaries[0, :, 0] - spec_test[0, :]
+#
+# idxs = np.nonzero(diff)[0]
+#
+# plot(spec_test[0, :], color='black', linewidth=0.7)
+#
+# for vline in idxs:
+#     axvline(x=vline, color='red', linewidth=0.5)
+
+###############################################################################
+# print(f"Felzenszwalb's efficient graph based segmentation")
+# segments_fz = felzenszwalb(img, scale=100, sigma=0.5, min_size=50)
+# print(f"Felzenszwalb number of segments: {len(np.unique(segments_fz))}")
+#
+# print(f'Quickshift image segmentation')
+# segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
+# print(f"Quickshift number of segments: {len(np.unique(segments_quick))}")
+#
+# print(f'Compact watershed segmentation of gradient images')
+# gradient = sobel(rgb2gray(img))
+# segments_watershed = watershed(gradient, markers=250, compactness=0.001)
+# print(f"Watershed number of segments: {len(np.unique(segments_watershed))}")
+"""
+====================================================
+Comparison of segmentation and superpixel algorithms
+====================================================
+
+This example compares four popular low-level image segmentation methods.  As
+it is difficult to obtain good segmentations, and the definition of "good"
+often depends on the application, these methods are usually used for obtaining
+an oversegmentation, also known as superpixels. These superpixels then serve as
+a basis for more sophisticated algorithms such as conditional random fields
+(CRF).
+
+
+Felzenszwalb's efficient graph based segmentation
+-------------------------------------------------
+This fast 2D image segmentation algorithm, proposed in [1]_ is popular in the
+computer vision community.
+The algorithm has a single ``scale`` parameter that influences the segment
+size. The actual size and number of segments can vary greatly, depending on
+local contrast.
+
+.. [1] Efficient graph-based image segmentation, Felzenszwalb, P.F. and
+       Huttenlocher, D.P.  International Journal of Computer Vision, 2004
+
+
+Quickshift image segmentation
+-----------------------------
+
+Quickshift is a relatively recent 2D image segmentation algorithm, based on an
+approximation of kernelized mean-shift. Therefore it belongs to the family of
+local mode-seeking algorithms and is applied to the 5D space consisting of
+color information and image location [2]_.
+
+One of the benefits of quickshift is that it actually computes a
+hierarchical segmentation on multiple scales simultaneously.
+
+Quickshift has two main parameters: ``sigma`` controls the scale of the local
+density approximation, ``max_dist`` selects a level in the hierarchical
+segmentation that is produced. There is also a trade-off between distance in
+color-space and distance in image-space, given by ``ratio``.
+
+.. [2] Quick shift and kernel methods for mode seeking,
+       Vedaldi, A. and Soatto, S.
+       European Conference on Computer Vision, 2008
+
+
+SLIC - K-Means based image segmentation
+---------------------------------------
+
+This algorithm simply performs K-means in the 5d space of color information and
+image location and is therefore closely related to quickshift. As the
+clustering method is simpler, it is very efficient. It is essential for this
+algorithm to work in Lab color space to obtain good results.  The algorithm
+quickly gained momentum and is now widely used. See [3]_ for details.  The
+``compactness`` parameter trades off color-similarity and proximity, as in the
+case of Quickshift, while ``n_segments`` chooses the number of centers for
+kmeans.
+
+.. [3] Radhakrishna Achanta, Appu Shaji, Kevin Smith, Aurelien Lucchi,
+    Pascal Fua, and Sabine Suesstrunk, SLIC Superpixels Compared to
+    State-of-the-art Superpixel Methods, TPAMI, May 2012.
+
+
+Compact watershed segmentation of gradient images
+-------------------------------------------------
+
+Instead of taking a color image as input, watershed requires a grayscale
+*gradient* image, where bright pixels denote a boundary between regions.
+The algorithm views the image as a landscape, with bright pixels forming high
+peaks. This landscape is then flooded from the given *markers*, until separate
+flood basins meet at the peaks. Each distinct basin then forms a different
+image segment. [4]_
+
+As with SLIC, there is an additional *compactness* argument that makes it
+harder for markers to flood faraway pixels. This makes the watershed regions
+more regularly shaped. [5]_
+
+.. [4] https://en.wikipedia.org/wiki/Watershed_%28image_processing%29
+
+.. [5] Peer Neubert & Peter Protzel (2014). Compact Watershed and
+       Preemptive SLIC: On Improving Trade-offs of Superpixel Segmentation
+       Algorithms. ICPR 2014, pp 996-1001. :DOI:`10.1109/ICPR.2014.181`
+       https://www.tu-chemnitz.de/etit/proaut/publications/cws_pSLIC_ICPR.pdf
+"""

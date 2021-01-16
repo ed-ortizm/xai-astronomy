@@ -120,6 +120,8 @@ wave_exp, flx_exp, weights_exp = explanation.analyze_explanation(spec_2xpl[0],
     "test_tmp.csv")
 
 explanation.plot(spec_2xpl[0], wave_exp, flx_exp, weights_exp, show=True)
+# scatter lime weights vs mse outlier score
+
 ################################################################################
 ################################################################################
 ################################################################################
