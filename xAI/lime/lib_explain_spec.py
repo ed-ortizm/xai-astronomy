@@ -245,6 +245,15 @@ class Outlier:
         if self.custom:
             self.custom_metric = custom_metric
 
+    def _get_OR(self, O, model):
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return O, R
+
     def score(self, O):
         """
         Computes the outlier score according to the metric used to define
@@ -263,21 +272,23 @@ class Outlier:
         print(f'Loading model: {model_name}')
         model = load_model(f'{self.model_path}')
 
+        O, R = self._get_OR(O, model)
+
         if self.custom:
             print(f'Computing the predictions of {model_name}')
-            return self.user_metric(O=O, model=model)
+            return self.user_metric(O=O, R=R)
 
         elif self.metric == 'mse':
             print(f'Computing the predictions of {model_name}')
-            return self._mse(O=O, model=model)
+            return self._mse(O=O, R=R)
 
         elif self.metric == 'chi2':
             print(f'Computing the predictions of {model_name}')
-            return self._chi2(O=O, model=model)
+            return self._chi2(O=O, R=R)
 
         elif self.metric == 'mad':
             print(f'Computing the predictions of {model_name}')
-            return self._mad(O=O, model=model)
+            return self._mad(O=O, R=R)
 
         elif self.metric == 'lp':
 
@@ -286,36 +297,13 @@ class Outlier:
                 return None
 
             print(f'Computing the predictions of {model_name}')
-            return self._lp(O=O, model=model)
+            return self._lp(O=O, R=R)
 
         else:
             print(f'The provided metric: {self.metric} is not implemented yet')
             return None
-# gotta code conditionals to make sure that the user inputs a "good one"
-    def user_metric(self, custom_metric, O, model):
-        """
-        Computes the custom metric for the reconstruction of the input objects
-        as defined by the user
 
-        Args:
-            O: (2D np.array) with the original objects where index 0 denotes
-                indicates the objec and index 1 the features of the object.
-
-            model: (tensorflow.keras model) the generative model
-
-        Returns:
-            A one dimensional numpy array with the mean square error for objects
-            present in O
-        """
-
-        if O.shape[0] == 3801:
-            O = O.reshape(1,-1)
-
-        R = model.predict(O)
-
-        return self.custom_metric(O, R)
-
-    def _mse(self, O, model):
+    def _mse(self, O, R):
         """
         Computes the mean square error for the reconstruction of the input
         objects
@@ -324,21 +312,17 @@ class Outlier:
             O: (2D np.array) with the original objects where index 0 denotes
                 indicates the objec and index 1 the features of the object.
 
-            model: (tensorflow.keras model) the generative model
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
 
         Returns:
             A one dimensional numpy array with the mean square error for objects
             present in O
         """
 
-        if O.shape[0] == 3801:
-            O = O.reshape(1,-1)
-
-        R = model.predict(O)
-
         return np.square(R-O).mean(axis=1)
 
-    def _chi2(self, O, model):
+    def _chi2(self, O, R):
         """
         Computes the chi square error for the reconstruction of the input
         objects
@@ -347,20 +331,17 @@ class Outlier:
             O: (2D np.array) with the original objects where index 0 denotes
                 indicates the objec and index 1 the features of the object.
 
-            model: (tensorflow.keras model) the generative model
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
 
         Returns:
             A one dimensional numpy array with the chi square error for objects
             present in O
         """
-        if O.shape[0] == 3801:
-            O = O.reshape(1,-1)
-
-        R = model.predict(O)
 
         return (np.square(R-O)*(1/np.abs(R))).mean(axis=1)
 
-    def _mad(self, O, model):
+    def _mad(self, O, R):
         """
         Computes the maximum absolute deviation from the reconstruction of the
         input objects
@@ -369,20 +350,17 @@ class Outlier:
             O: (2D np.array) with the original objects where index 0 denotes
                 indicates the objec and index 1 the features of the object.
 
-            model: (tensorflow.keras model) the generative model
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
 
         Returns:
             A one dimensional numpy array with the maximum absolute deviation
             from the objects present in O
         """
-        if O.shape[0] == 3801:
-            O = O.reshape(1,-1)
-
-        R = model.predict(O)
 
         return np.abs(R-O).mean(axis=1)
 
-    def _lp(self, O, model):
+    def _lp(self, O, R):
         """
         Computes the lp distance from the reconstruction of the input objects
 
@@ -390,19 +368,53 @@ class Outlier:
             O: (2D np.array) with the original objects where index 0 denotes
                 indicates the objec and index 1 the features of the object.
 
-            model: (tensorflow.keras model) the generative model
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
 
         Returns:
             A one dimensional numpy array with the lp distance from the objects
             present in O
         """
 
-        if O.shape[0] == 3801:
-            O = O.reshape(1,-1)
-
-        R = model.predict(O)
-
         return (np.sum((np.abs(R-O))**self.p, axis=1))**(1/self.p)
+# gotta code conditionals to make sure that the user inputs a "good one"
+    def user_metric(self, custom_metric, O, R):
+        """
+        Computes the custom metric for the reconstruction of the input objects
+        as defined by the user
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
+
+        Returns:
+            A one dimensional numpy array with the score produced by the user
+            defiend metric of objects present in O
+        """
+
+        return self.custom_metric(O, R)
+#  Explore this idea: like the setters and getters for the custom fucntion ;)
+# class Helper(object):
+#
+#     def add(self, a, b):
+#         return a + b
+#
+#     def mul(self, a, b):
+#         return a * b
+#
+#
+# class MyClass(Helper):
+#
+#     def __init__(self):
+#         Helper.__init__(self)
+#         print self.add(1, 1)
+#
+#
+# if __name__ == '__main__':
+#     obj = MyClass()
 
     def metadata(self, spec_idx, training_data_files):
         """
