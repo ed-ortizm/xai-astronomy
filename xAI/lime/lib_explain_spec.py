@@ -43,16 +43,17 @@ AE_path = '/home/edgar/zorro/outlier_AEs/trained_models/AutoEncoder'
 #     return np.square(R-O).mean(axis=1)
 ###############################################################################
 class Explainer:
-    def __init__(self, training_data, training_labels, feature_names,
-    kernel_width, feature_selection, training_data_stats=None,
+    def __init__(self, explainer_type, training_data, training_labels,
+    feature_names, kernel_width, feature_selection, training_data_stats=None,
     sample_around_instance=False, discretize_continuous=False,
-    discretizer='decile',verbose=True,mode='regression'):
+    discretizer='decile', verbose=True, mode='regression'):
 
+        self.xpl_type = explainer_type
         self.tr_data = training_data
-        slef.tr_labels = training_labels
+        self.tr_labels = training_labels
         self.ftr_names = feature_names
         self.k_width = kernel_width
-        self.ftr_selct = feature_selection
+        self.ftr_select = feature_selection
         self.tr_data_stats = training_data_stats
         self.sar_instance = sample_around_instance
         self.discretize = discretize_continuous
@@ -60,7 +61,8 @@ class Explainer:
         self.verbose = verbose
         self.mode = mode
 
-        self.explainer = self._tabular_explainer()
+        if self.xpl_type == "tabular":
+            self.explainer = self._tabular_explainer()
 
     def _tabular_explainer(self):
 
@@ -75,17 +77,16 @@ class Explainer:
 
         return explainer
 
-    def explanation(self, sdss_name='sdss_name', html=False, figure=False):
+    def explanation(self, x, regressor, sdss_name='sdss_name', html=False,
+    figure=False):
 
-        xpl = self.explainer.explain_instance(outlier, mse_score,
-              num_features=num_features)
+        xpl = self.explainer.explain_instance(x, regressor,
+            num_features=x.shape[0])
 
         if html:
-
             xpl.save_to_file(file_path = f'{html_name}.html')
 
         if figure:
-
             fig = xpl.as_pyplot_figure()
             fig.savefig(f'{sdss_name}.pdf')
 
@@ -159,13 +160,7 @@ class Explanation:
 
         return feature_weight
 
-    def analyze_explanation(self, spec_path, exp_file_path):
-
-        if os.path.exists(spec_path):
-            spec = np.load(spec_path)
-        else:
-            print(f'There is no file {spec_path}')
-            return None
+    def analyze_explanation(self, x, exp_file_path):
 
         if os.path.exists(exp_file_path):
             exp = self.process_explanation(exp_file_path)
@@ -173,23 +168,14 @@ class Explanation:
             print(f'There is no file {exp_file_path}')
             return None
 
-
         wave_exp = exp[:, 0].astype(np.int)
-        flx_exp = spec[wave_exp]
+        flx_exp = x[wave_exp]
         weights_exp = exp[:, 1]
 
         return wave_exp, flx_exp, weights_exp
 
-    def plot_explanation(self, spec_path, exp_file_path, linewidth=0.2, cmap='plasma_r'):
-
-        if os.path.exists(spec_path):
-            spec = np.load(spec_path)
-        else:
-            print(f'There is no file {spec_path}')
-            return None
-
-        wave_exp, flx_exp, weights_exp = self.analyze_explanation(spec_path,
-        exp_file_path)
+    def plot(self, spec, wave_exp, flx_exp, weights_exp, linewidth=0.2,
+        cmap='plasma_r', show=False):
 
         c = weights_exp/np.max(weights_exp)
 
@@ -202,7 +188,8 @@ class Explanation:
 
         fig.savefig(f'test.png')
         fig.savefig(f'test.pdf')
-
+        if show:
+            plt.show()
         plt.close()
 
 class Outlier:
