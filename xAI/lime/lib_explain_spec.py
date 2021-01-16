@@ -212,7 +212,7 @@ class Outlier:
     """
 
     def __init__(self, model_path, o_scores_path='.', metric='mse', p='p',
-        n_spec=30):
+        n_spec=30, custom=False, custom_metric=None):
         """
         Init fucntion
 
@@ -241,6 +241,9 @@ class Outlier:
         self.metric = metric
         self.p = p
         self.n_spec = n_spec
+        self.custom = custom
+        if self.custom:
+            self.custom_metric = custom_metric
 
     def score(self, O):
         """
@@ -260,7 +263,11 @@ class Outlier:
         print(f'Loading model: {model_name}')
         model = load_model(f'{self.model_path}')
 
-        if self.metric == 'mse':
+        if self.custom:
+            print(f'Computing the predictions of {model_name}')
+            return self.user_metric(O=O, model=model)
+
+        elif self.metric == 'mse':
             print(f'Computing the predictions of {model_name}')
             return self._mse(O=O, model=model)
 
@@ -284,6 +291,29 @@ class Outlier:
         else:
             print(f'The provided metric: {self.metric} is not implemented yet')
             return None
+# gotta code conditionals to make sure that the user inputs a "good one"
+    def user_metric(self, custom_metric, O, model):
+        """
+        Computes the custom metric for the reconstruction of the input objects
+        as defined by the user
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            model: (tensorflow.keras model) the generative model
+
+        Returns:
+            A one dimensional numpy array with the mean square error for objects
+            present in O
+        """
+
+        if O.shape[0] == 3801:
+            O = O.reshape(1,-1)
+
+        R = model.predict(O)
+
+        return self.custom_metric(O, R)
 
     def _mse(self, O, model):
         """
@@ -434,7 +464,7 @@ class Outlier:
 ################################################################################
 def segment_spec(spec, n_segments, training_data_path):
 
-    segments = ['median', 'gray?', 'average', 'flat']
+    segments = ['median', 'gray?', 'average', 'flat', 'other']
     pass
 ###############################################################################
 # scatter lime weights vs mse outlier score

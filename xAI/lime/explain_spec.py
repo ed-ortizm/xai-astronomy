@@ -7,7 +7,7 @@ import time
 import csv
 import numpy as np
 from lib_explain_spec import Explainer, Outlier
-
+# kk
 ti = time.time()
 ################################################################################
 # Naive parallelization
