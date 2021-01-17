@@ -30,11 +30,12 @@ training_data = np.load(training_data_file)
 
 metric = 'mse'
 n_spec = 30
+
 outlier = Outlier(model_path = model_path, o_scores_path=o_scores_path,
     metric=metric, n_spec=n_spec)
 
 print(f'Computing/loading outlier scores: the labels ')
-print(o_scores_path)
+
 if os.path.exists(f'{o_scores_path}/{metric}_o_score.npy'):
     o_score_mse = np.load(f'{o_scores_path}/{metric}_o_score.npy')
 else:
@@ -97,12 +98,15 @@ kernel_widths = [kernel_width]
 features_selection = ["highest_weights", "lasso_path"] # , "none"]
 sample_around_instance = [True, False]
 print(f'Creating explainers')
-print(explainer_type)
+
 tabular_explainers = Explainer_parallel(explainer_type, training_data,
     training_labels, feature_names, kernel_widths, features_selection,
-    sample_around_instance)
+    sample_around_instance, n_processes=20)
 
-print(len(list(tabular_explainers.get_explainers())))
+xpl = tabular_explainers._get_explainer(None, "highest_weights", False)
+print('working')
+xpl = tabular_explainers.get_explainers()
+# print(len(tabular_explainers.get_explainers()))
 # print(f'Creating explainer with feature selection: {feature_selection}')
 # tabular_explainer = Explainer(explainer_type, training_data,
 #     training_labels, feature_names, kernel_width, feature_selection,

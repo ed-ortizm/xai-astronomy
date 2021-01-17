@@ -48,33 +48,36 @@ class Explainer_parallel:
         self.verbose = verbose
         self.mode = mode
 
-        self.explainers = self._generate_explainers()
-
-    def _generate_explainers(self):
-        print(self.xpl_type)
-        explainer_partial = partial(Explainer, explainer_type=self.xpl_type,
+        self.Ex_partial = partial(Explainer, explainer_type=self.xpl_type,
         training_data=self.t_dat, training_labels=self.t_lbls,
         feature_names=self.ftr_names, training_data_stats=self.t_dat_stats,
         discretize_continuous=self.discretize, discretizer=self.discretizer,
         verbose=self.verbose, mode=self.mode)
 
-        params_grid = product(
-            self.k_widths, self.ftrs_slect, self.around_instance)
-        for p in params_grid:
-            print(p)
+        self.explainers = None
 
-        with mp.Pool(processes=self.n_processes) as pool:
-            return pool.starmap(explainer_partial, params_grid)
+    def _get_explainer(self, kernel_width, feature_selection,
+        sample_around_instance):
+
+        return self.Ex_partial(kernel_width, feature_selection,
+            sample_around_instance)
+
 
     def get_explainers(self):
 
-        return self.explainers
+        params_grid = product(
+            self.k_widths, self.ftrs_slect, self.around_instance)
+
+        with mp.Pool(processes=self.n_processes) as pool:
+            print('inside pool')
+            return pool.starmap(self._get_explainer, params_grid)
+
 
 
 class Explainer:
-    def __init__(self, explainer_type, training_data, training_labels,
-        feature_names, kernel_width, feature_selection,
-        sample_around_instance=False, training_data_stats=None,
+    def __init__(self, kernel_width, feature_selection,
+        sample_around_instance, explainer_type, training_data,
+        training_labels, feature_names, training_data_stats=None,
         discretize_continuous=False, discretizer='decile', verbose=True,
         mode='regression'):
 
