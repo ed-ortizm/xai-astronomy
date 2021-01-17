@@ -106,17 +106,22 @@ tabular_explainers = Explainer_parallel(explainer_type, training_data,
     training_labels, feature_names, kernel_widths, features_selection,
     sample_around_instance)
 
-# Getting explainers")
-
-xpls = tabular_explainers.get_explainers()
-print(len(tabular_explainers.get_explainers()))
-
-t3 = time.time()
-print(f't3: {t3-t2:.2f} s')
-################################################################################
-# The explanation wil be saved in a text file
-# Generating explanations
-
+# xpl = tabular_explainers._get_explainer(None, "highest_weights", False)
+print("Getting explainers")
+xpl = tabular_explainers.get_explainers()
+# print(len(tabular_explainers.get_explainers()))
+# print(f'Creating explainer with feature selection: {feature_selection}')
+# tabular_explainer = Explainer(explainer_type, training_data,
+#     training_labels, feature_names, kernel_width, feature_selection,
+#     training_data_stats=None, sample_around_instance=False,
+#     discretize_continuous=False, discretizer="decile", verbose=True,
+#     mode="regression")
+# t3 = time.time()
+# print(f't3: {t3-t2:.2f} s')
+# ################################################################################
+# # Generating an explanation for last explainer
+# # The explanation wil be saved in a text file
+#
 # exp_list = tabular_explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
 #
 # with open(f'test_tmp.csv', 'w', newline='\n') as explanations_csv:

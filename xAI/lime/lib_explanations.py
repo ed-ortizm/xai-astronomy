@@ -4,6 +4,8 @@ import glob
 from itertools import product
 import os
 
+import dill
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -27,14 +29,18 @@ class Explainer_parallel:
         feature_names, kernel_widths, features_selection,
         sample_around_instance, training_data_stats=None,
         discretize_continuous=False, discretizer='decile', verbose=True,
-        mode='regression', n_processes=4):
+        mode='regression', n_processes=None):
         # The input variable are lists
 
         self.k_widths = kernel_widths
         self.ftrs_slect = features_selection
         self.around_instance = sample_around_instance
 
-        self.n_processes = n_processes
+        if n_processes == None:
+            self.n_processes = mp.cpu_count()-1 or 1
+        else:
+            self.n_processes = n_processes
+
 
         # Fixed values
 
@@ -63,15 +69,26 @@ class Explainer_parallel:
             sample_around_instance)
 
 
-    def get_explainers(self):
+    def _get_explainers(self):
 
         params_grid = product(
             self.k_widths, self.ftrs_slect, self.around_instance)
 
         with mp.Pool(processes=self.n_processes) as pool:
-            print('inside pool')
+            print('Generating explainers')
             return pool.starmap(self._get_explainer, params_grid)
 
+    def _explain(self, explainer, x, regressor, sdss_name):
+
+        return [sdss_name, explainer.explanation(x, regressor)]
+
+    def explanations(self, x, regressor, sdss_name):
+        # list of explanations
+        params_grid = product(self._get_explainers, x, regressor, sdss_name)
+
+        with mp.Pool(processes=self.n_processes) as pool:
+            print('Generating explanations')
+            return pool.starmap(self._explain, params_grid)
 
 
 class Explainer:
@@ -95,7 +112,9 @@ class Explainer:
         self.mode = mode
 
         if self.xpl_type == "tabular":
-            self.explainer = self._tabular_explainer()
+            self.explainer = dill.dumps(self._tabular_explainer())
+            # I had to use dill.dumps to save the explainer as a string
+            # otherwise pool.starmap wouldn't generate the list
 
     def _tabular_explainer(self):
 
@@ -107,21 +126,13 @@ class Explainer:
             sample_around_instance=self.sar_instance,
             discretize_continuous=self.discretize, discretizer=self.discretizer,
             verbose = self.verbose, mode=self.mode)
-        print(':P')
         return explainer
 
-    def explanation(self, x, regressor, sdss_name='sdss_name', html=False,
-    figure=False):
+    def explanation(self, x, regressor):
 
-        xpl = self.explainer.explain_instance(x, regressor,
-            num_features=x.shape[0])
+        xpl = dill.loads(self.explainer)
 
-        if html:
-            xpl.save_to_file(file_path = f'{html_name}.html')
-
-        if figure:
-            fig = xpl.as_pyplot_figure()
-            fig.savefig(f'{sdss_name}.pdf')
+        xpl = xpl.explain_instance(x, regressor, num_features=x.shape[0])
 
         return xpl.as_list()
 
