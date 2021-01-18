@@ -1,9 +1,8 @@
-import csv
 from functools import partial
 import glob
 from itertools import product
 import os
-
+import sys
 import dill
 
 import matplotlib.pyplot as plt
@@ -76,7 +75,17 @@ class Explainer_parallel:
 
         with mp.Pool(processes=self.n_processes) as pool:
             print('Generating explainers')
-            return pool.starmap(self._get_explainer, params_grid)
+
+            explainers = pool.starmap(self._get_explainer, params_grid)
+            size = 0
+            for p in explainers:
+                x = sys.getsizeof(p)*1e-6
+                print(f'The size of the explainer is: {x:.2f} Mbs')
+                size += x
+
+            print("The total size of the explainers is {zise:.2f} Mbs")
+
+            return explainers
 
     def _explain(self, explainer, x, regressor, sdss_name):
 
@@ -84,12 +93,23 @@ class Explainer_parallel:
 
     def explanations(self, x, regressor, sdss_name):
         # list of explanations
-        params_grid = product(self._get_explainers, x, regressor, sdss_name)
+        explainers = self._get_explainers()
+        params_grid = product(explainers, [x], [regressor], [sdss_name])
 
         with mp.Pool(processes=self.n_processes) as pool:
             print('Generating explanations')
-            return pool.starmap(self._explain, params_grid)
 
+            explanations = pool.starmap(self._explain, params_grid)
+
+            size = 0
+            for p in explanations:
+                x = sys.getsizeof(p)*1e-6
+                print(f'The size of the explanation is: {x:.2f} Mbs')
+                size += x
+
+            print("The total size of the explanations is {zise:.2f} Mbs")
+
+            return explanations
 
 class Explainer:
     def __init__(self, kernel_width, feature_selection,

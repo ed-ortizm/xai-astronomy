@@ -94,11 +94,11 @@ feature_selection = 'highest_weights'
 # verbose = True
 # mode = "regression"
 kernel_width_default = np.sqrt(training_data.shape[1])*0.75
-kernel_widths = [kernel_width_default*weight for weight in np.hstack((
-    np.linspace(0.1, 0.9, 9), np.linspace(1, 10, 10)))]
+kernel_widths = [kernel_width_default*weight for weight in np.linspace(0.1, 1, 2)]
+    # np.hstack((np.linspace(0.1, 0.9, 9), np.linspace(1, 10, 10)))]
 
 features_selection = ["highest_weights", "lasso_path"] # , "none"]
-sample_around_instance = [True, False]
+sample_around_instance = [True]
 
 print(f'Creating explainers')
 
@@ -106,10 +106,12 @@ tabular_explainers = Explainer_parallel(explainer_type, training_data,
     training_labels, feature_names, kernel_widths, features_selection,
     sample_around_instance)
 
-# Getting explainers")
+explanations = tabular_explainers.explanations(x=spec_2xpl[0],
+    regressor=outlier.score, sdss_name=o_sdss_names[0])
 
-xpls = tabular_explainers.get_explainers()
-print(len(tabular_explainers.get_explainers()))
+# Saving explanations:
+with open('testing/explanatios_parallel.exp', 'w') as file:
+    file.writelines(line for line in explanations)
 
 t3 = time.time()
 print(f't3: {t3-t2:.2f} s')
