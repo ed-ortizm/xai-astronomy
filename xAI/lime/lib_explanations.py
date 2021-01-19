@@ -140,10 +140,14 @@ class Explainer:
         if self.xpl_type == "tabular":
 
             self.explainer = self._tabular_explainer()
-            self.explainer_dill = dill.dumps(self._tabular_explainer())
+            x = sys.getsizeof(self.explainer)*1e-6
+            print(f'The size of the explainer is: {x:.2f} Mbs')
+
+            # self.explainer_dill = dill.dumps(self.explainer)
+            # x = sys.getsizeof(self.explainer_dill)*1e-6
+            # print(f'The size of the dilled explainer is: {x:.2f} Mbs')
             # I had to use dill.dumps to save the explainer as a string
             # otherwise pool.starmap wouldn't generate the list
-
     def _tabular_explainer(self):
 
         explainer = lime.lime_tabular.LimeTabularExplainer(
@@ -159,11 +163,12 @@ class Explainer:
 
     def explanation(self, x, regressor):
 
-        print(f"Explaining, here the shape of x: {x.shape}")
-        print(f"type of x: {type(x)}")
-        print(type(regressor))
-        plt.figure()
-        plt.plot(x)
+        # print(f"Explaining, here the shape of x: {x.shape}")
+        # print(f"type of x: {type(x)}")
+        # print(type(regressor))
+        # plt.figure()
+        # plt.plot(x)
+        # plt.show()
         xpl = self.explainer.explain_instance(x, regressor, num_features=x.shape[0])
         print(f"Explanation finished")
         return xpl.as_list()

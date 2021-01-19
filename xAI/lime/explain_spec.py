@@ -14,9 +14,7 @@ ti = time.time()
 ################################################################################
 # Naive parallelization
 if len(sys.argv) > 1:
-    k_width = float(sys.argv[1])
-else:
-    k_width = None
+    simple = sys.argv[1] == "simple"
 ################################################################################
 # Relevant paths
 training_data_file =\
@@ -63,64 +61,52 @@ else:
     training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
     # Saving last variable into a file, see then if feaseable the exists
     with open('./testing/training_data_files.tex', 'w') as file:
-        file.writelines(line for line in training_data_files)
+        file.writelines(f"{line}\n" for line in training_data_files)
 
-print(training_data_files[0])
+## see how can I to atomate this process of loading checking for files to load
 
-# o_sdss_names = []
-# o_sdss_paths = []
-#
-# for spec_idx in most_oulying:
-#     sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
-#     training_data_files=training_data_files)
-#     o_sdss_names.append(sdss_name)
-#     o_sdss_paths.append(sdss_name_path)
-#
-# # print(f"Working with the following outlying spectra")
-# # for name in o_sdss_names:
-# #     print(name)
-# t2 = time.time()
-# print(f't2: {t2-t1:.2f} s')
-# ################################################################################
-# ## Creating explainers in parallel
-#
-# # defining variables
-#
-# explainer_type="tabular"
-# training_labels = o_score_mse
-# feature_names = [f'flux {i}' for i in range(training_data.shape[1])]
-# kernel_width = k_width
-# feature_selection = 'highest_weights'
-# # training_data = np.load(training_data_file)
-# # training_data_stats = None
-# # sample_around_instance = False
-# # discretize_continuous = False
-# # discretizer = 'decile'
-# # verbose = True
-# # mode = "regression"
-# kernel_width_default = np.sqrt(training_data.shape[1])*0.75
-# kernel_widths = [kernel_width_default*weight for weight in np.linspace(0.1, 1, 2)]
-#     # np.hstack((np.linspace(0.1, 0.9, 9), np.linspace(1, 10, 10)))]
-#
-# features_selection = ["highest_weights"]#, "lasso_path"] # , "none"]
-# sample_around_instance = [False]
-#
-# print(f'Creating explainers')
-#
-# tabular_explainers = Explainer_parallel(explainer_type, training_data,
-#     training_labels, feature_names, kernel_widths, features_selection,
-#     sample_around_instance)
-#
-# print(type(outlier.score))
-# explanations = tabular_explainers.explanations(x=spec_2xpl[0],
-#     regressor=outlier.score, sdss_name=o_sdss_names[0])
-#
-# # Saving explanations:
-# with open('testing/explanatios_parallelI.exp', 'w') as file:
-#     file.writelines(line for line in explanations)
-#
-# t3 = time.time()
-# print(f't3: {t3-t2:.2f} s')
+
+o_sdss_names = []
+o_sdss_paths = []
+
+for spec_idx in most_oulying:
+    sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
+    training_data_files=training_data_files)
+    o_sdss_names.append(sdss_name)
+    o_sdss_paths.append(sdss_name_path)
+
+# print(f"Working with the following outlying spectra")
+# for name in o_sdss_names:
+#     print(name)
+t2 = time.time()
+print(f"t2: {t2-t1:.2f} s")
+################################################################################
+print(f"Creating explainer")
+# defining variables
+kernel_width_default = np.sqrt(training_data.shape[1])*0.75
+feature_selection = "highest_weights"
+sample_around_instance = False
+explainer_type="tabular"
+training_labels = o_score_mse
+feature_names = [f"flux {i}" for i in range(training_data.shape[1])]
+
+explainer = Explainer(kernel_width=kernel_width_default,
+    feature_selection=feature_selection,
+    sample_around_instance=sample_around_instance,
+    explainer_type=explainer_type, training_data=training_data,
+    training_labels=training_labels, feature_names=feature_names)
+
+x = sys.getsizeof(explainer)*1e-6
+print(f'The size of the dilled explainer is: {x:.2f} Mbs')
+
+explanation = explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
+
+# Saving explanations:
+with open('testing/explain_spec.exp', 'w') as file:
+    file.writelines(f"{line}\n" for line in explanation)
+
+t3 = time.time()
+print(f't3: {t3-t2:.2f} s')
 ################################################################################
 # The explanation wil be saved in a text file
 # Generating explanations
