@@ -94,11 +94,13 @@ class Explainer_parallel:
         print(f"Explaining: {sdss_name}")
 
         explainer = dill.loads(explainer)
+        regressor = dill.loads(regressor)
 
         return [sdss_name, explainer.explanation(x, regressor)]
 
     def explanations(self, x, regressor, sdss_name):
         # list of explanations
+        regressor = dill.dumps(regressor)
         explainers = self._get_explainers()
         params_grid = product(explainers, [x], [regressor], [sdss_name])
 
