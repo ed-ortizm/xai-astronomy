@@ -64,8 +64,10 @@ class Explainer_parallel:
     def _get_explainer(self, kernel_width, feature_selection,
         sample_around_instance):
 
-        return self.Ex_partial(kernel_width, feature_selection,
-            sample_around_instance)
+        explainer = dill.dumps(self.Ex_partial(kernel_width, feature_selection,
+            sample_around_instance))
+
+        return explainer
 
 
     def _get_explainers(self):
@@ -76,18 +78,22 @@ class Explainer_parallel:
         with mp.Pool(processes=self.n_processes) as pool:
             print('Generating explainers')
 
-            explainers = pool.starmap(self._get_explainer, params_grid)
+            self.explainers = pool.starmap(self._get_explainer, params_grid)
             size = 0
-            for p in explainers:
+            for p in self.explainers:
                 x = sys.getsizeof(p)*1e-6
                 print(f'The size of the explainer is: {x:.2f} Mbs')
                 size += x
 
-            print("The total size of the explainers is {zise:.2f} Mbs")
+            print(f"The total size of the explainers is {size:.2f} Mbs")
 
-            return explainers
+        return self.explainers
 
     def _explain(self, explainer, x, regressor, sdss_name):
+
+        print(f"Explaining: {sdss_name}")
+
+        explainer = dill.loads(explainer)
 
         return [sdss_name, explainer.explanation(x, regressor)]
 
@@ -107,9 +113,9 @@ class Explainer_parallel:
                 print(f'The size of the explanation is: {x:.2f} Mbs')
                 size += x
 
-            print("The total size of the explanations is {zise:.2f} Mbs")
+            print(f"The total size of the explanations is {zise:.2f} Mbs")
 
-            return explanations
+        return explanations
 
 class Explainer:
     def __init__(self, kernel_width, feature_selection,
@@ -132,7 +138,9 @@ class Explainer:
         self.mode = mode
 
         if self.xpl_type == "tabular":
-            self.explainer = dill.dumps(self._tabular_explainer())
+
+            self.explainer = self._tabular_explainer()
+            self.explainer_dill = dill.dumps(self._tabular_explainer())
             # I had to use dill.dumps to save the explainer as a string
             # otherwise pool.starmap wouldn't generate the list
 
@@ -146,14 +154,18 @@ class Explainer:
             sample_around_instance=self.sar_instance,
             discretize_continuous=self.discretize, discretizer=self.discretizer,
             verbose = self.verbose, mode=self.mode)
+
         return explainer
 
     def explanation(self, x, regressor):
 
-        xpl = dill.loads(self.explainer)
-
-        xpl = xpl.explain_instance(x, regressor, num_features=x.shape[0])
-
+        print(f"Explaining, here the shape of x: {x.shape}")
+        print(f"type of x: {type(x)}")
+        print(type(regressor))
+        plt.figure()
+        plt.plot(x)
+        xpl = self.explainer.explain_instance(x, regressor, num_features=x.shape[0])
+        print(f"Explanation finished")
         return xpl.as_list()
 
 class Explanation:
@@ -306,6 +318,7 @@ class Outlier:
         return O, R
 
     def score(self, O):
+        print("Score working in parallelization")
         """
         Computes the outlier score according to the metric used to define
         instantiate the class.
