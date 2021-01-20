@@ -107,17 +107,24 @@ else:
 
 print(f'Creating explainers')
 
+ti_exp = time.time()
+n_processes = 12
 tabular_explainers = Explainer_parallel(explainer_type, training_data,
     training_labels, feature_names, kernel_widths, features_selection,
-    sample_around_instance)
+    sample_around_instance, n_processes=n_processes)
 
-print(type(outlier.score))
-explanations = tabular_explainers.explanations(x=spec_2xpl[0],
+print(f'Generating explanations')
+
+explanations = tabular_explainers.get_explanations(x=spec_2xpl[0],
     regressor=outlier.score, sdss_name=o_sdss_names[0])
-
+tf_exp = time.time()
 # Saving explanations:
-with open('testing/explanatios_parallelI.exp', 'w') as file:
-    file.writelines(f"{line}\n" for line in explanations)
+if simple:
+    with open('testing/explanatios_parallel_simple.exp', 'w') as file:
+        file.writelines(f"{line}\n" for line in explanations)
+else:
+    with open('testing/explanatios_parallel.exp', 'w') as file:
+        file.writelines(f"{line}\n" for line in explanations)
 
 t3 = time.time()
 print(f't3: {t3-t2:.2f} s')
@@ -159,4 +166,5 @@ print(f't3: {t3-t2:.2f} s')
 # # print(n_sdss_names)
 ################################################################################
 tf = time.time()
+print(f'Running time for explanations: {tf_exp-ti_exp:.2f} s')
 print(f'Running time: {tf-ti:.2f} s')

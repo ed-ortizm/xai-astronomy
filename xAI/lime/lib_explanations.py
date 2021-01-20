@@ -60,66 +60,42 @@ class Explainer_parallel:
         discretize_continuous=self.discretize, discretizer=self.discretizer,
         verbose=self.verbose, mode=self.mode)
 
-        self.explainers = None
+        self.explanations = None
 
-    def _get_explainer(self, kernel_width, feature_selection,
-        sample_around_instance):
+    def get_explanations(self, x, regressor, sdss_name):
 
-        explainer = dill.dumps(self.Ex_partial(kernel_width, feature_selection,
-            sample_around_instance))
-
-        return explainer
-
-
-    def _get_explainers(self):
-
-        params_grid = product(
+        params_grid = product([x], [regressor], [sdss_name],
             self.k_widths, self.ftrs_slect, self.around_instance)
 
         with mp.Pool(processes=self.n_processes) as pool:
-            print('Generating explainers')
+            self.explanations = pool.starmap(self._get_explanation, params_grid)
+            self._sizeof(self.explanations, itr_name='explanations')
 
-            self.explainers = pool.starmap(self._get_explainer, params_grid)
-            size = 0
-            for p in self.explainers:
-                x = sys.getsizeof(p)*1e-6
-                print(f'The size of the explainer is: {x:.2f} Mbs')
-                # print(dill.loadsp)
-                size += x
+        return self.explanations
 
-            print(f"The total size of the explainers is {size:.2f} Mbs")
+    def _get_explanation(self, x, regressor, sdss_name,
+        kernel_width, feature_selection, sample_around_instance):
 
-        return self.explainers
+        explainer = self.Ex_partial(kernel_width, feature_selection,
+            sample_around_instance)
 
-    def _explain(self, explainer, x, regressor, sdss_name):
-
-        print(f"Explaining: {sdss_name}")
-
-        explainer = dill.loads(explainer)
-        regressor = dill.loads(regressor)
+        self._sizeof(explainer, itr_name='explainer', is_itr=False)
 
         return [sdss_name, explainer.explanation(x, regressor)]
 
-    def explanations(self, x, regressor, sdss_name):
-        # list of explanations
-        regressor = dill.dumps(regressor)
-        explainers = self._get_explainers()
-        params_grid = product(explainers, [x], [regressor], [sdss_name])
+    def _sizeof(self, iterable, itr_name="iterable", is_itr=True):
 
-        with mp.Pool(processes=self.n_processes) as pool:
-            print('Generating explanations')
-
-            explanations = pool.starmap(self._explain, params_grid)
-
+        if is_itr:
             size = 0
-            for p in explanations:
-                x = sys.getsizeof(p)*1e-6
-                print(f'The size of the explanation is: {x:.2f} Mbs')
+            for itr in iterable:
+                x = sys.getsizeof(itr)*1e-6
+                print(f'The size of object from {itr_name} is: {x:.2f} Mbs')
+                # print(dill.loadsp)
                 size += x
-
-            print(f"The total size of the explanations is {size:.2f} Mbs")
-
-        return explanations
+            print(f"The total size of {itr_name} is {size:.2f} Mbs")
+        else:
+            size =  sys.getsizeof(iterable)
+            print(f"The total size of {itr_name} is {size:.2f} Mbs")
 
 class Explainer:
     def __init__(self, kernel_width, feature_selection,
@@ -174,7 +150,6 @@ class Explainer:
         # plt.plot(x)
         # plt.show()
         xpl = self.explainer.explain_instance(x, regressor, num_features=x.shape[0])
-        print(f"Explanation finished, why are u working now??")
         return xpl.as_list()
 
 class Explanation:
@@ -469,25 +444,6 @@ class Outlier:
         """
 
         return self.custom_metric(O, R)
-#  Explore this idea: like the setters and getters for the custom fucntion ;)
-# class Helper(object):
-#
-#     def add(self, a, b):
-#         return a + b
-#
-#     def mul(self, a, b):
-#         return a * b
-#
-#
-# class MyClass(Helper):
-#
-#     def __init__(self):
-#         Helper.__init__(self)
-#         print self.add(1, 1)
-#
-#
-# if __name__ == '__main__':
-#     obj = MyClass()
 
     def metadata(self, spec_idx, training_data_files):
         """
@@ -540,7 +496,7 @@ class Outlier:
             scores = self.score(O)
 
         spec_idxs = np.argpartition(scores,
-        [self.n_spec, -1*self.n_spec])ll
+        [self.n_spec, -1*self.n_spec])
 
         most_normal = spec_idxs[: self.n_spec]
         most_oulying = spec_idxs[-1*self.n_spec:]
@@ -593,106 +549,122 @@ class Spec_segmenter:
 
         if show:
             plt.show()
-#
-#
-#
-# for vline in idxs:
-#     axvline(x=vline, color='red', linewidth=0.5)
 
-###############################################################################
-# print(f"Felzenszwalb's efficient graph based segmentation")
-# segments_fz = felzenszwalb(img, scale=100, sigma=0.5, min_size=50)
-# print(f"Felzenszwalb number of segments: {len(np.unique(segments_fz))}")
-#
-# print(f'Quickshift image segmentation')
-# segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
-# print(f"Quickshift number of segments: {len(np.unique(segments_quick))}")
-#
-# print(f'Compact watershed segmentation of gradient images')
-# gradient = sobel(rgb2gray(img))
-# segments_watershed = watershed(gradient, markers=250, compactness=0.001)
-# print(f"Watershed number of segments: {len(np.unique(segments_watershed))}")
-"""
-====================================================
-Comparison of segmentation and superpixel algorithms
-====================================================
+    ###########################################################################
+    # print(f"Felzenszwalb's efficient graph based segmentation")
+    # segments_fz = felzenszwalb(img, scale=100, sigma=0.5, min_size=50)
+    # print(f"Felzenszwalb number of segments: {len(np.unique(segments_fz))}")
+    #
+    # print(f'Quickshift image segmentation')
+    # segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
+    # print(f"Quickshift number of segments: {len(np.unique(segments_quick))}")
+    #
+    # print(f'Compact watershed segmentation of gradient images')
+    # gradient = sobel(rgb2gray(img))
+    # segments_watershed = watershed(gradient, markers=250, compactness=0.001)
+    # print(f"Watershed number of segments: {len(np.unique(segments_watershed))}")
+    """
+    ====================================================
+    Comparison of segmentation and superpixel algorithms
+    ====================================================
 
-This example compares four popular low-level image segmentation methods.  As
-it is difficult to obtain good segmentations, and the definition of "good"
-often depends on the application, these methods are usually used for obtaining
-an oversegmentation, also known as superpixels. These superpixels then serve as
-a basis for more sophisticated algorithms such as conditional random fields
-(CRF).
+    This example compares four popular low-level image segmentation methods.  As
+    it is difficult to obtain good segmentations, and the definition of "good"
+    often depends on the application, these methods are usually used for obtaining
+    an oversegmentation, also known as superpixels. These superpixels then serve as
+    a basis for more sophisticated algorithms such as conditional random fields
+    (CRF).
 
 
-Felzenszwalb's efficient graph based segmentation
--------------------------------------------------
-This fast 2D image segmentation algorithm, proposed in [1]_ is popular in the
-computer vision community.
-The algorithm has a single ``scale`` parameter that influences the segment
-size. The actual size and number of segments can vary greatly, depending on
-local contrast.
+    Felzenszwalb's efficient graph based segmentation
+    -------------------------------------------------
+    This fast 2D image segmentation algorithm, proposed in [1]_ is popular in the
+    computer vision community.
+    The algorithm has a single ``scale`` parameter that influences the segment
+    size. The actual size and number of segments can vary greatly, depending on
+    local contrast.
 
-.. [1] Efficient graph-based image segmentation, Felzenszwalb, P.F. and
-       Huttenlocher, D.P.  International Journal of Computer Vision, 2004
-
-
-Quickshift image segmentation
------------------------------
-
-Quickshift is a relatively recent 2D image segmentation algorithm, based on an
-approximation of kernelized mean-shift. Therefore it belongs to the family of
-local mode-seeking algorithms and is applied to the 5D space consisting of
-color information and image location [2]_.
-
-One of the benefits of quickshift is that it actually computes a
-hierarchical segmentation on multiple scales simultaneously.
-
-Quickshift has two main parameters: ``sigma`` controls the scale of the local
-density approximation, ``max_dist`` selects a level in the hierarchical
-segmentation that is produced. There is also a trade-off between distance in
-color-space and distance in image-space, given by ``ratio``.
-
-.. [2] Quick shift and kernel methods for mode seeking,
-       Vedaldi, A. and Soatto, S.
-       European Conference on Computer Vision, 2008
+    .. [1] Efficient graph-based image segmentation, Felzenszwalb, P.F. and
+           Huttenlocher, D.P.  International Journal of Computer Vision, 2004
 
 
-SLIC - K-Means based image segmentation
----------------------------------------
+    Quickshift image segmentation
+    -----------------------------
 
-This algorithm simply performs K-means in the 5d space of color information and
-image location and is therefore closely related to quickshift. As the
-clustering method is simpler, it is very efficient. It is essential for this
-algorithm to work in Lab color space to obtain good results.  The algorithm
-quickly gained momentum and is now widely used. See [3]_ for details.  The
-``compactness`` parameter trades off color-similarity and proximity, as in the
-case of Quickshift, while ``n_segments`` chooses the number of centers for
-kmeans.
+    Quickshift is a relatively recent 2D image segmentation algorithm, based on an
+    approximation of kernelized mean-shift. Therefore it belongs to the family of
+    local mode-seeking algorithms and is applied to the 5D space consisting of
+    color information and image location [2]_.
 
-.. [3] Radhakrishna Achanta, Appu Shaji, Kevin Smith, Aurelien Lucchi,
-    Pascal Fua, and Sabine Suesstrunk, SLIC Superpixels Compared to
-    State-of-the-art Superpixel Methods, TPAMI, May 2012.
+    One of the benefits of quickshift is that it actually computes a
+    hierarchical segmentation on multiple scales simultaneously.
+
+    Quickshift has two main parameters: ``sigma`` controls the scale of the local
+    density approximation, ``max_dist`` selects a level in the hierarchical
+    segmentation that is produced. There is also a trade-off between distance in
+    color-space and distance in image-space, given by ``ratio``.
+
+    .. [2] Quick shift and kernel methods for mode seeking,
+           Vedaldi, A. and Soatto, S.
+           European Conference on Computer Vision, 2008
 
 
-Compact watershed segmentation of gradient images
--------------------------------------------------
+    SLIC - K-Means based image segmentation
+    ---------------------------------------
 
-Instead of taking a color image as input, watershed requires a grayscale
-*gradient* image, where bright pixels denote a boundary between regions.
-The algorithm views the image as a landscape, with bright pixels forming high
-peaks. This landscape is then flooded from the given *markers*, until separate
-flood basins meet at the peaks. Each distinct basin then forms a different
-image segment. [4]_
+    This algorithm simply performs K-means in the 5d space of color information and
+    image location and is therefore closely related to quickshift. As the
+    clustering method is simpler, it is very efficient. It is essential for this
+    algorithm to work in Lab color space to obtain good results.  The algorithm
+    quickly gained momentum and is now widely used. See [3]_ for details.  The
+    ``compactness`` parameter trades off color-similarity and proximity, as in the
+    case of Quickshift, while ``n_segments`` chooses the number of centers for
+    kmeans.
 
-As with SLIC, there is an additional *compactness* argument that makes it
-harder for markers to flood faraway pixels. This makes the watershed regions
-more regularly shaped. [5]_
+    .. [3] Radhakrishna Achanta, Appu Shaji, Kevin Smith, Aurelien Lucchi,
+        Pascal Fua, and Sabine Suesstrunk, SLIC Superpixels Compared to
+        State-of-the-art Superpixel Methods, TPAMI, May 2012.
 
-.. [4] https://en.wikipedia.org/wiki/Watershed_%28image_processing%29
 
-.. [5] Peer Neubert & Peter Protzel (2014). Compact Watershed and
-       Preemptive SLIC: On Improving Trade-offs of Superpixel Segmentation
-       Algorithms. ICPR 2014, pp 996-1001. :DOI:`10.1109/ICPR.2014.181`
-       https://www.tu-chemnitz.de/etit/proaut/publications/cws_pSLIC_ICPR.pdf
-"""
+    Compact watershed segmentation of gradient images
+    -------------------------------------------------
+
+    Instead of taking a color image as input, watershed requires a grayscale
+    *gradient* image, where bright pixels denote a boundary between regions.
+    The algorithm views the image as a landscape, with bright pixels forming high
+    peaks. This landscape is then flooded from the given *markers*, until separate
+    flood basins meet at the peaks. Each distinct basin then forms a different
+    image segment. [4]_
+
+    As with SLIC, there is an additional *compactness* argument that makes it
+    harder for markers to flood faraway pixels. This makes the watershed regions
+    more regularly shaped. [5]_
+
+    .. [4] https://en.wikipedia.org/wiki/Watershed_%28image_processing%29
+
+    .. [5] Peer Neubert & Peter Protzel (2014). Compact Watershed and
+           Preemptive SLIC: On Improving Trade-offs of Superpixel Segmentation
+           Algorithms. ICPR 2014, pp 996-1001. :DOI:`10.1109/ICPR.2014.181`
+           https://www.tu-chemnitz.de/etit/proaut/publications/cws_pSLIC_ICPR.pdf
+    """
+def helper_idea():
+    #  Explore this idea: like the setters and getters for the custom fucntion ;)
+    # class Helper(object):
+    #
+    #     def add(self, a, b):
+    #         return a + b
+    #
+    #     def mul(self, a, b):
+    #         return a * b
+    #
+    #
+    # class MyClass(Helper):
+    #
+    #     def __init__(self):
+    #         Helper.__init__(self)
+    #         print self.add(1, 1)
+    #
+    #
+    # if __name__ == '__main__':
+    #     obj = MyClass()
+    pass

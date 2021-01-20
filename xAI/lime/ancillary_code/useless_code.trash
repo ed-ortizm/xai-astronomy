@@ -1,0 +1,35 @@
+    def _get_explainer(self, kernel_width, feature_selection, 
+        sample_around_instance, x, regressor, sdss_name): explainer = 
+        dill.dumps(self.Ex_partial(kernel_width, feature_selection,
+            sample_around_instance)) return explainer def 
+    _get_explainers(self):
+        params_grid = product( self.k_widths, self.ftrs_slect, 
+            self.around_instance)
+        with mp.Pool(processes=self.n_processes) as pool: 
+            print('Generating explainers') self.explainers = 
+            pool.starmap(self._get_explainer, params_grid) size = 0 for p 
+            in self.explainers:
+                x = sys.getsizeof(p)*1e-6 print(f'The size of the 
+                explainer is: {x:.2f} Mbs')
+                # print(dill.loadsp)
+                size += x print(f"The total size of the explainers is 
+            {size:.2f} Mbs")
+        return self.explainers def _explain(self, explainer, x, 
+    regressor, sdss_name):
+        print(f"Explaining: {sdss_name}") explainer = 
+        dill.loads(explainer) regressor = dill.loads(regressor) return 
+        [sdss_name, explainer.explanation(x, regressor)]
+    def explanations(self, x, regressor, sdss_name):
+        # list of explanations
+        regressor = dill.dumps(regressor) explainers = 
+        self._get_explainers() params_grid = product(explainers, [x], 
+        [regressor], [sdss_name]) with 
+        mp.Pool(processes=self.n_processes) as pool:
+            print('Generating explanations') explanations = 
+            pool.starmap(self._explain, params_grid) size = 0 for p in 
+            explanations:
+                x = sys.getsizeof(p)*1e-6 print(f'The size of the 
+                explanation is: {x:.2f} Mbs') size += x
+            print(f"The total size of the explanations is {size:.2f} 
+            Mbs")
+        return explanations
