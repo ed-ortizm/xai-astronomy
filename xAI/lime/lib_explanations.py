@@ -540,7 +540,7 @@ class Outlier:
             scores = self.score(O)
 
         spec_idxs = np.argpartition(scores,
-        [self.n_spec, -1*self.n_spec])
+        [self.n_spec, -1*self.n_spec])ll
 
         most_normal = spec_idxs[: self.n_spec]
         most_oulying = spec_idxs[-1*self.n_spec:]
