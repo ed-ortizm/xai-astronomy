@@ -15,6 +15,8 @@ ti = time.time()
 # Naive parallelization
 if len(sys.argv) > 1:
     simple = sys.argv[1] == "simple"
+else:
+    simple = False
 ################################################################################
 # Relevant paths
 training_data_file =\

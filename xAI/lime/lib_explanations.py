@@ -9,8 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import lime
-import lime.lime_tabular
-
+# import lime.lime_tabular
+from lime import lime_tabular
+from lime import lime_image
 import multiprocessing as mp
 
 from skimage.color import rgb2gray
@@ -83,6 +84,7 @@ class Explainer_parallel:
             for p in self.explainers:
                 x = sys.getsizeof(p)*1e-6
                 print(f'The size of the explainer is: {x:.2f} Mbs')
+                # print(dill.loadsp)
                 size += x
 
             print(f"The total size of the explainers is {size:.2f} Mbs")
@@ -115,7 +117,7 @@ class Explainer_parallel:
                 print(f'The size of the explanation is: {x:.2f} Mbs')
                 size += x
 
-            print(f"The total size of the explanations is {zise:.2f} Mbs")
+            print(f"The total size of the explanations is {size:.2f} Mbs")
 
         return explanations
 
@@ -172,7 +174,7 @@ class Explainer:
         # plt.plot(x)
         # plt.show()
         xpl = self.explainer.explain_instance(x, regressor, num_features=x.shape[0])
-        print(f"Explanation finished")
+        print(f"Explanation finished, why are u working now??")
         return xpl.as_list()
 
 class Explanation:
@@ -545,10 +547,9 @@ class Outlier:
 
         return most_normal, most_oulying
 ################################################################################
-def segment_spec(spec, n_segments, training_data_path):
-
-    segments = ['median', 'gray?', 'average', 'flat', 'other']
-    pass
+class ImageExplainer:
+    def __init__(self):
+        pass
 ###############################################################################
 ## Case for spectra
 class Spec_segmenter:

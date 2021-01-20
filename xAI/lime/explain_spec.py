@@ -12,10 +12,6 @@ from lib_explanations import Outlier
 # kk
 ti = time.time()
 ################################################################################
-# Naive parallelization
-if len(sys.argv) > 1:
-    simple = sys.argv[1] == "simple"
-################################################################################
 # Relevant paths
 training_data_file =\
     '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
