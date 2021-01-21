@@ -28,67 +28,15 @@ o_scores_path = "/home/edgar/zorro/AEs/outlier_scores"
 # Outlier scores to have a regression model
 training_data = np.load(training_data_file)
 
-metric = 'mse'
-n_spec = 30
-
-outlier = Outlier(model_path = model_path, o_scores_path=o_scores_path,
-    metric=metric, n_spec=n_spec)
-
-print(f'Computing/loading outlier scores: the labels ')
-
-if os.path.exists(f'{o_scores_path}/{metric}_o_score.npy'):
-    o_score_mse = np.load(f'{o_scores_path}/{metric}_o_score.npy')
-else:
-    o_score_mse = outlier.score(O=training_data)
-    np.save(f'{o_scores_path}/{metric}_o_score.npy', o_score_mse)
-
-t1 = time.time()
-print(f't1: {t1-ti:.2f} s')
-################################################################################
-## Selecting top outliers
-print(f'Computing top reconstructions for {metric} metric')
-most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
-###############################################################################
-print(f"Generating explanmations for the following outlying spectra")
-# From last array an by visual exploration, I'll like to explain:
-tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
-tmp = [most_oulying[i] for i in tmp]
-spec_2xpl = [training_data[i, :] for i in tmp]
-
 # Training data files
 if os.path.exists(f"./testing/training_data_files.tex"):
     with open('./testing/training_data_files.tex', 'r') as file:
         training_data_files = file.readlines()
 else:
     training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
-    # Saving last variable into a file, see then if feaseable the exists
     with open('./testing/training_data_files.tex', 'w') as file:
         file.writelines(f"{line}\n" for line in training_data_files)
 
-## see how can I to atomate this process of loading checking for files to load
-
-
-o_sdss_names = []
-o_sdss_paths = []
-
-for spec_idx in most_oulying:
-    sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
-    training_data_files=training_data_files)
-    o_sdss_names.append(sdss_name)
-    o_sdss_paths.append(sdss_name_path)
-
-# print(f"Working with the following outlying spectra")
-# for name in o_sdss_names:
-#     print(name)
-t2 = time.time()
-print(f't2: {t2-t1:.2f} s')
-################################################################################
-## Creating explainers in parallel
-
-# defining variables
-
-explainer_type="tabular"
-training_labels = o_score_mse
 feature_names = [f'flux {i}' for i in range(training_data.shape[1])]
 kernel_width_default = np.sqrt(training_data.shape[1])*0.75
 
@@ -100,34 +48,96 @@ if simple:
 
 else:
 # Creates many explainers
-    kernel_widths = [kernel_width_default*weight for weight in np.linspace(0.1, 1, 5)]
-        # np.hstack((np.linspace(0.1, 0.9, 9), np.linspace(1, 10, 10)))]
+    kernel_widths = [kernel_width_default*weight for weight in
+        np.hstack((np.linspace(0.1, 0.9, 9), np.linspace(1, 10, 10)))] #np.linspace(0.1, 1, 10)]
     features_selection = ["highest_weights", "lasso_path"] # , "none"]
     sample_around_instance = [True, False]
 
-print(f'Creating explainers')
 
-ti_exp = time.time()
-n_processes = 12
-tabular_explainers = Explainer_parallel(explainer_type, training_data,
-    training_labels, feature_names, kernel_widths, features_selection,
-    sample_around_instance, n_processes=n_processes)
+metrics = ["mse", "chi2","mad","lp"]
+pp = np.linspace(0.1, 1, 10)
+n_spec = 20
 
-print(f'Generating explanations')
+for metric in metrics:
 
-explanations = tabular_explainers.get_explanations(x=spec_2xpl[0],
-    regressor=outlier.score, sdss_name=o_sdss_names[0])
-tf_exp = time.time()
-# Saving explanations:
-if simple:
-    with open('testing/explanatios_parallel_simple.exp', 'w') as file:
-        file.writelines(f"{line}\n" for line in explanations)
-else:
-    with open('testing/explanatios_parallel.exp', 'w') as file:
-        file.writelines(f"{line}\n" for line in explanations)
+    if metric == "lp":
+        p = 0.1
+        outlier = Outlier(model_path = model_path, o_scores_path=o_scores_path,
+            metric=metric, n_spec=n_spec, p=p)
 
-t3 = time.time()
-print(f't3: {t3-t2:.2f} s')
+    else:
+        outlier = Outlier(model_path = model_path, o_scores_path=o_scores_path,
+            metric=metric, n_spec=n_spec)
+
+    print(f'Computing/loading outlier scores: the labels ')
+
+    if os.path.exists(f'{o_scores_path}/{metric}_o_score.npy'):
+        o_score_mse = np.load(f'{o_scores_path}/{metric}_o_score.npy')
+    else:
+        o_score_mse = outlier.score(O=training_data)
+        np.save(f'{o_scores_path}/{metric}_o_score.npy', o_score_mse)
+
+    t1 = time.time()
+    print(f't1: {t1-ti:.2f} s')
+    ################################################################################
+    ## Selecting top outliers
+    print(f'Computing top reconstructions for {metric} metric')
+    most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
+    ###############################################################################
+    print(f"Generating explanmations for the following outlying spectra")
+    # From last array an by visual exploration, I'll like to explain:
+    # tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
+    # tmp = [most_oulying[i] for i in tmp]
+    # spec_2xpl = [training_data[i, :] for i in tmp]
+    spec_2xpl = [training_data[i, :] for i in most_oulying]
+
+
+    o_sdss_names = []
+    o_sdss_paths = []
+
+    for spec_idx in most_oulying:
+        sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
+        training_data_files=training_data_files)
+        o_sdss_names.append(sdss_name)
+        o_sdss_paths.append(sdss_name_path)
+
+    # print(f"Working with the following outlying spectra")
+    # for name in o_sdss_names:
+    #     print(name)
+    t2 = time.time()
+    print(f't2: {t2-t1:.2f} s')
+    ################################################################################
+    ## Creating explainers in parallel
+
+    # defining variables
+
+    explainer_type="tabular"
+    training_labels = o_score_mse
+
+    print(f'Creating explainers')
+
+    ti_exp = time.time()
+    n_processes = 20
+    tabular_explainers = Explainer_parallel(explainer_type, training_data,
+        training_labels, feature_names, kernel_widths, features_selection,
+        sample_around_instance)
+
+    print(f'Generating explanations')
+
+    for n, x in enumerate(spec_2xpl):
+        explanations = tabular_explainers.get_explanations(
+            x=x, regressor=outlier.score, sdss_name=o_sdss_names[n])
+        tf_exp = time.time()
+        # Saving explanations:
+        if simple:
+            with open(f"testing/{o_sdss_names[n]}_simple_{metric}.exp", 'w') as file:
+                file.writelines(f"{line}\n" for line in explanations)
+        else:
+            with open(f"testing/{o_sdss_names[n]}_{metric}.exp", 'w') as file:
+                file.writelines(f"{line}\n" for line in explanations)
+
+    t3 = time.time()
+    print(f't3: {t3-t2:.2f} s')
 ################################################################################
 # The explanation wil be saved in a text file
 # Generating explanations

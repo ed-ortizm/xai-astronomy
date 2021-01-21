@@ -81,7 +81,8 @@ class Explainer_parallel:
 
         self._sizeof(explainer, itr_name='explainer', is_itr=False)
 
-        return [sdss_name, explainer.explanation(x, regressor)]
+        return [sdss_name, kernel_width, feature_selection, sample_around_instance,
+            explainer.explanation(x, regressor)]
 
     def _sizeof(self, iterable, itr_name="iterable", is_itr=True):
 
