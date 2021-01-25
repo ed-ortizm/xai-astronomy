@@ -171,44 +171,69 @@ class Explanation:
         metric = exp_file_path.split("/")[-1].split("_")[1].strip(".exp")
         print(metric)
         i = 0
+
+        # Opening .exp for a spectrum: line[i] = sdss_name, k_width, ftr_selct,
+        # around_instance, [(feature, weight), ...]
+
         with open(exp_file_path, "r") as file:
-            lines = file.readlines()
+
             ftr_select = []
             around = []
             kernel_widths = {}
+
+            lines = file.readlines()
+
+            n_line = 0
             for line in lines:
-                i += 1
+
+                n_line += 1
+
+                # convert line to list [sdss_name, k_width,
+                # ftr_selct, around_instance, flux_name, exp_weight, repeat...]
                 line = self._line_curation(line)
-                k_width = np.float(line[1])
+
+                k_width = line[1] # string
                 feature_selection = line[2]
                 sample_around_instance = line[3]
                 # print(line[1], line[2], line[3])
-                fluxes_weights = self._fluxex_weights(line=line[4:])
-                length = np.int(len(line[4:])/2)
+
+                # obtaining explanations array for configuration in the
+                # explanation of the current line
+                line_exp_arr = self._fluxex_weights(line=line[4:])
+
+                # length = np.int(len(line[4:])/2)
                 # print(f"length of array: {length}")
                 # print(f"the size of the array is: {fluxes_weights.shape}")
 
-                if line[1] in kernel_widths:
-                    kernel_widths[line[1]].append(
-                        [k_width, fluxes_weights, feature_selection,
-                        sample_around_instance])
-                else:
-                    kernel_widths[line[1]] = [k_width, fluxes_weights,
-                        feature_selection, sample_around_instance]
+                # kernel_widths: dictionary where the key is the k_with and value
+                # [k_width, line_exp_arr, ftr_select, around_instance]
+                # if k_width in kernel_widths:
+                #     kernel_widths[k_width].append(
+                #         [np.float(k_width), line_exp_arr, feature_selection,
+                #         sample_around_instance])
+                # else:
+                #     kernel_widths[k_width] = [np.float(k_width), line_exp_arr,
+                #     feature_selection, sample_around_instance]
+                if k_width not in kernel_widths:
+                        kernel_widths[k_width] = []
+                kernel_widths[k_width].append(
+                    [np.float(k_width), line_exp_arr, feature_selection,
+                    sample_around_instance])
 
-                print(f"Length of kernel_widths: {len(kernel_widths)}")
-                for _, val in kernel_widths.items(): print(_, len(val))
+            # return kernel_widths
+            # print(f"Length of kernel_widths: {len(kernel_widths)}")
+            # for _, val in kernel_widths.items(): print(_, val[:])
 
-                if feature_selection not in ftr_select:
-                    ftr_select.append(feature_selection)
-
-                if sample_around_instance not in around:
-                    around.append(sample_around_instance)
-                # Final arrays
-            # print(f"Number of explanations: {i}")
-
-            return self._exp_arrays(exp_dict=kernel_widths,
-                ftr_select=ftr_select, around=around, save=save)
+            #     if feature_selection not in ftr_select:
+            #         ftr_select.append(feature_selection)
+            #
+            #     if sample_around_instance not in around:
+            #         around.append(sample_around_instance)
+            #     # Final arrays
+            # # print(f"Number of explanations: {i}")
+            #
+            # return self._exp_arrays(exp_dict=kernel_widths,
+            #     ftr_select=ftr_select, around=around, save=save)
 
     def _exp_arrays(self, exp_dict, ftr_select, around, save=False):
 
