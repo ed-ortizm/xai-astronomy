@@ -159,7 +159,7 @@ class Explanation:
     def __init__(self, discretize_continuous=False):
         self.discretize_continuous = discretize_continuous
 
-    def analyze_explanation(self, exp_file_path, save=False):
+    def analyze_explanation(self, exp_file_path, save=True):
 
         if not os.path.exists(exp_file_path):
 
@@ -167,22 +167,34 @@ class Explanation:
             return None
 
         sdss_name = exp_file_path.split("/")[-1].split("_")[0]
+        print(sdss_name)
         metric = exp_file_path.split("/")[-1].split("_")[1].strip(".exp")
-
+        print(metric)
+        i = 0
         with open(exp_file_path, "r") as file:
             lines = file.readlines()
+            ftr_select = {}
+            around = {}
+            ftr_slect_around = {}
             for line in lines:
+                i += 1
                 line = self._line_curation(line)
                 k_width = np.float(line[1])
                 feature_selection = line[2]
                 sample_around_instance = line[3]
                 fluxes_weights = self._fluxex_weights(line[4:])
-                np.save(
-                    f"./testing/{sdss_name}_kw_{k_width:.2f}_ftrsel_{feature_selection}_around_{sample_around_instance}.npy", fluxes_weights)
-                return fluxes_weights
+                ftr_slect_around{line[2]+line[3]} = fluxes_weights
+                if save:
+                    np.save(
+                        f"./testing/{sdss_name}_kw_{k_width:.2f}_ftrsel_{feature_selection}_around_{sample_around_instance}.npy", fluxes_weights)
+            print(f"Number of explanations: {i}")
+
+            return None
+
     def _fluxex_weights(self, line):
 
         length = np.int(len(line)/2)
+        print(f"length of array: {length}")
         fluxes_weights = np.empty((length,2))
 
         for idx, fw in enumerate(fluxes_weights):
@@ -192,7 +204,7 @@ class Explanation:
         return fluxes_weights
 
     def _line_curation(self, line):
-        for charater in "()[]":
+        for charater in "()[]'":
             line = line.replace(charater, "")
         return [element.strip(" \n") for element in line.split(",")]
     #     n_features = len(explanation)
