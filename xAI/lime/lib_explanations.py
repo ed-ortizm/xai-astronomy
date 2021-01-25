@@ -173,28 +173,56 @@ class Explanation:
         i = 0
         with open(exp_file_path, "r") as file:
             lines = file.readlines()
-            ftr_select = {}
-            around = {}
-            ftr_slect_around = {}
+            ftr_select = []
+            around = []
+            kernel_widths = {}
             for line in lines:
                 i += 1
                 line = self._line_curation(line)
                 k_width = np.float(line[1])
                 feature_selection = line[2]
                 sample_around_instance = line[3]
-                fluxes_weights = self._fluxex_weights(line[4:])
-                ftr_slect_around{line[2]+line[3]} = fluxes_weights
-                if save:
-                    np.save(
-                        f"./testing/{sdss_name}_kw_{k_width:.2f}_ftrsel_{feature_selection}_around_{sample_around_instance}.npy", fluxes_weights)
+                print(line[1], line[2], line[3])
+                fluxes_weights = self._fluxex_weights(line=line[4:])
+                length = np.int(len(line[4:])/2)
+                print(f"length of array: {length}")
+                print(f"the size of the array is: {fluxes_weights.shape}")
+
+                if line[1] in kernel_widths:
+                    kernel_widths[line[1]].append(
+                        [k_width, fluxes_weights, feature_selection,
+                        sample_around_instance])
+                else:
+                    kernel_widths[line[1]] = [k_width, fluxes_weights,
+                        feature_selection, sample_around_instance]
+
+                if feature_selection not in ftr_select:
+                    ftr_select.append(feature_selection)
+
+                if sample_around_instance not in around:
+                    around.append(sample_around_instance)
+                # Final arrays
             print(f"Number of explanations: {i}")
 
-            return None
+            return self._exp_arrays(exp_dict=kernel_widths,
+                ftr_select=ftr_select, around=around, save=save)
 
+    def _exp_arrays(self, exp_dict, ftr_select, around, save=False):
+
+        n_kenels = len(exp_dict)
+
+        array_name = list(product(ftr_select, around))
+
+        for _, val in exp_dict.items():
+            for name_id in array_name:
+
+                if (name_id[0] in val) and (name_id[1] in val):
+
+
+        return None
     def _fluxex_weights(self, line):
 
         length = np.int(len(line)/2)
-        print(f"length of array: {length}")
         fluxes_weights = np.empty((length,2))
 
         for idx, fw in enumerate(fluxes_weights):
