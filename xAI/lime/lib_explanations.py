@@ -183,11 +183,7 @@ class Explanation:
 
             lines = file.readlines()
 
-            n_line = 0
             for line in lines:
-
-                n_line += 1
-
                 # convert line to list [sdss_name, k_width,
                 # ftr_selct, around_instance, flux_name, exp_weight, repeat...]
                 line = self._line_curation(line)
@@ -207,47 +203,41 @@ class Explanation:
 
                 # kernel_widths: dictionary where the key is the k_with and value
                 # [k_width, line_exp_arr, ftr_select, around_instance]
-                # if k_width in kernel_widths:
-                #     kernel_widths[k_width].append(
-                #         [np.float(k_width), line_exp_arr, feature_selection,
-                #         sample_around_instance])
-                # else:
-                #     kernel_widths[k_width] = [np.float(k_width), line_exp_arr,
-                #     feature_selection, sample_around_instance]
+
                 if k_width not in kernel_widths:
                         kernel_widths[k_width] = []
                 kernel_widths[k_width].append(
-                    [np.float(k_width), line_exp_arr, feature_selection,
-                    sample_around_instance])
+                    [np.float(k_width), line_exp_arr,
+                    f"{feature_selection}_around_{sample_around_instance}"])
 
             # return kernel_widths
-            # print(f"Length of kernel_widths: {len(kernel_widths)}")
-            # for _, val in kernel_widths.items(): print(_, val[:])
 
-            #     if feature_selection not in ftr_select:
-            #         ftr_select.append(feature_selection)
-            #
-            #     if sample_around_instance not in around:
-            #         around.append(sample_around_instance)
-            #     # Final arrays
-            # # print(f"Number of explanations: {i}")
-            #
-            # return self._exp_arrays(exp_dict=kernel_widths,
-            #     ftr_select=ftr_select, around=around, save=save)
+                # Svaing identifiers for the name of the final arrays
+                if feature_selection not in ftr_select:
+                    ftr_select.append(feature_selection)
 
-    def _exp_arrays(self, exp_dict, ftr_select, around, save=False):
+                if sample_around_instance not in around:
+                    around.append(sample_around_instance)
+
+                arrays_names = [f"{val[0]}_around_{val[1]}"
+                    for val in product(ftr_select, around)]
+
+            self._exp_arrays(exp_dict=kernel_widths,
+                arrays_names=arrays_names, save=save)
+
+            return kernel_widths
+
+    def _exp_arrays(self, exp_dict, arrays_names, save=False):
 
         n_kenels = len(exp_dict)
 
-        array_name = list(product(ftr_select, around))
+        # dictionary to store the explanation data, where the identifiers will
+        # will be the names of the arrays
+        data = {f"{array_name}":[] for array_name in arrays_names}
 
-        # exp_arr = np.empty((n_kernels, ))
-        exp_data = {f"{name_id[0]}_{name_id[1]}":[] for name_id in array_name}
-        # exp_data = {f"{name_id[0]}_{name_id[1]}":[] for name_id in array_name}
+        for _, val in exp_dict.items():
 
-        # for _, val in exp_dict.items():
-            # print(len(val[:]))
-            # for name_id in array_name: pass
+            for name_id in arrays_names: pass
                 # print(name_id[:])
         #         if (name_id[0] in val[2:]) and (name_id[1] in val[2:]):
         #             exp_data[f"{name_id[0]}_{name_id[1]}"].append(
