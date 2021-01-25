@@ -54,7 +54,7 @@ else:
     sample_around_instance = [True, False]
 
 
-metrics = ["mse", "chi2","mad","lp"]
+metrics = ["lp"]#, "mse", "chi2", "mad"]
 pp = np.linspace(0.1, 1, 10)
 n_spec = 20
 

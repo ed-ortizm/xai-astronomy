@@ -1,35 +1,113 @@
-    def _get_explainer(self, kernel_width, feature_selection, 
-        sample_around_instance, x, regressor, sdss_name): explainer = 
+Code for processing explanation files
+#
+#     if os.path.exists(exp_file_path):
+#         # Extracting kernel width
+#         # k_width = exp_file_path.split('/')[-1].split('_')[0]
+#     else:
+#         print(f'There is no file {exp_file_path}')
+#         return None
+#
+#     explanation = None
+#
+#     with open(f'{exp_file_path}', newline='\n') as file:
+#
+#         for line in file:
+#             explanation = line
+#
+#     explanation = explanation.split('"')
+#     explanation = list(dict.fromkeys(explanation))
+#     explanation.remove(',')
+#     explanation.remove('')
+#     explanation.remove('\r\n')
+#
+#     n_features = len(explanation)
+#     n_values = len(explanation[0].split(','))
+#
+#     feature_weight = np.empty((n_features, n_values))
+#
+#
+#     if not self.discretize_continuous:
+#
+#         for feature_idx, tuple in enumerate(explanation):
+#
+#             tuple = tuple.split(',')
+#
+#             tuple[0] = np.float(tuple[0].strip("('flux")) - 1.0
+#             tuple[1] = np.float(tuple[1].strip(')'))
+#
+#             feature_weight[feature_idx, :] = np.array(tuple)
+#
+#     else:
+#
+#         tuple = tuple.split(',')
+#
+#         tuple[0] = tuple[0][2:-1]
+#         tuple[1] = np.float(tuple[1][:-1])
+#
+#         if '<' in tuple[0]:
+#
+#             if len(tuple[0].split('<'))==2:
+#                 tuple[0] = np.int(tuple[0].split('<')[0])
+#             else:
+#                 tuple[0] = np.int(tuple[0].split('<')[1])
+#
+#         else:
+#
+#             tuple[0] = np.int(tuple[0].split('>')[0])
+#
+#         feature_weight[feature_idx, :] = np.array(tuple)
+#
+#     print(f'numpy array created: [feature, lime_weight]')
+#
+#     return feature_weight
+#
+# def analyze_explanation(self, x, exp_file_path):
+#
+#     if os.path.exists(exp_file_path):
+#         exp = self.process_explanation(exp_file_path)
+#     else:
+#         print(f'There is no file {exp_file_path}')
+#         return None
+#
+#     wave_exp = exp[:, 0].astype(np.int)
+#     flx_exp = x[wave_exp]
+#     weights_exp = exp[:, 1]
+#
+#     return wave_exp, flx_exp, weights_exp
+
+################################################################################
+    def _get_explainer(self, kernel_width, feature_selection,
+        sample_around_instance, x, regressor, sdss_name): explainer =
         dill.dumps(self.Ex_partial(kernel_width, feature_selection,
-            sample_around_instance)) return explainer def 
+            sample_around_instance)) return explainer def
     _get_explainers(self):
-        params_grid = product( self.k_widths, self.ftrs_slect, 
+        params_grid = product( self.k_widths, self.ftrs_slect,
             self.around_instance)
-        with mp.Pool(processes=self.n_processes) as pool: 
-            print('Generating explainers') self.explainers = 
-            pool.starmap(self._get_explainer, params_grid) size = 0 for p 
+        with mp.Pool(processes=self.n_processes) as pool:
+            print('Generating explainers') self.explainers =
+            pool.starmap(self._get_explainer, params_grid) size = 0 for p
             in self.explainers:
-                x = sys.getsizeof(p)*1e-6 print(f'The size of the 
+                x = sys.getsizeof(p)*1e-6 print(f'The size of the
                 explainer is: {x:.2f} Mbs')
                 # print(dill.loadsp)
-                size += x print(f"The total size of the explainers is 
+                size += x print(f"The total size of the explainers is
             {size:.2f} Mbs")
-        return self.explainers def _explain(self, explainer, x, 
+        return self.explainers def _explain(self, explainer, x,
     regressor, sdss_name):
-        print(f"Explaining: {sdss_name}") explainer = 
-        dill.loads(explainer) regressor = dill.loads(regressor) return 
+        print(f"Explaining: {sdss_name}") explainer =
+        dill.loads(explainer) regressor = dill.loads(regressor) return
         [sdss_name, explainer.explanation(x, regressor)]
     def explanations(self, x, regressor, sdss_name):
         # list of explanations
-        regressor = dill.dumps(regressor) explainers = 
-        self._get_explainers() params_grid = product(explainers, [x], 
-        [regressor], [sdss_name]) with 
+        regressor = dill.dumps(regressor) explainers =
+        self._get_explainers() params_grid = product(explainers, [x],
+        [regressor], [sdss_name]) with
         mp.Pool(processes=self.n_processes) as pool:
-            print('Generating explanations') explanations = 
-            pool.starmap(self._explain, params_grid) size = 0 for p in 
+            print('Generating explanations') explanations =
+            pool.starmap(self._explain, params_grid) size = 0 for p in
             explanations:
-                x = sys.getsizeof(p)*1e-6 print(f'The size of the 
+                x = sys.getsizeof(p)*1e-6 print(f'The size of the
                 explanation is: {x:.2f} Mbs') size += x
-            print(f"The total size of the explanations is {size:.2f} 
+            print(f"The total size of the explanations is {size:.2f}
             Mbs")
         return explanations

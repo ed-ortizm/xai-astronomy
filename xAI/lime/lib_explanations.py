@@ -150,7 +150,8 @@ class Explainer:
         # plt.figure()
         # plt.plot(x)
         # plt.show()
-        xpl = self.explainer.explain_instance(x, regressor, num_features=x.shape[0])
+        xpl = self.explainer.explain_instance(x, regressor,
+            num_features=x.shape[0])
         return xpl.as_list()
 
 class Explanation:
@@ -158,82 +159,62 @@ class Explanation:
     def __init__(self, discretize_continuous=False):
         self.discretize_continuous = discretize_continuous
 
-    def process_explanation(self, exp_file_path):
+    def analyze_explanation(self, exp_file_path, save=False):
 
-        if os.path.exists(exp_file_path):
-            # Extracting kernel width
-            k_width = exp_file_path.split('/')[-1].split('_')[0]
-        else:
+        if not os.path.exists(exp_file_path):
+
             print(f'There is no file {exp_file_path}')
             return None
 
-        explanation = None
+        sdss_name = exp_file_path.split("/")[-1].split("_")[0]
+        metric = exp_file_path.split("/")[-1].split("_")[1].strip(".exp")
 
-        with open(f'{exp_file_path}', newline='\n') as file:
+        with open(exp_file_path, "r") as file:
+            lines = file.readlines()
+            for line in lines:
+                line = self._line_curation(line)
+                k_width = np.float(line[1])
+                feature_selection = line[2]
+                sample_around_instance = line[3]
+                fluxes_weights = self._fluxex_weights(line[4:])
+                np.save(
+                    f"./testing/{sdss_name}_kw_{k_width:.2f}_ftrsel_{feature_selection}_around_{sample_around_instance}.npy", fluxes_weights)
+                return fluxes_weights
+    def _fluxex_weights(self, line):
 
-            for line in file:
-                explanation = line
+        length = np.int(len(line)/2)
+        fluxes_weights = np.empty((length,2))
 
-        explanation = explanation.split('"')
-        explanation = list(dict.fromkeys(explanation))
-        explanation.remove(',')
-        explanation.remove('')
-        explanation.remove('\r\n')
+        for idx, fw in enumerate(fluxes_weights):
+            fw[0] = np.float(line[2*idx].strip("'flux "))
+            fw[1] = np.float(line[2*idx+1])
 
-        n_features = len(explanation)
-        n_values = len(explanation[0].split(','))
+        return fluxes_weights
 
-        feature_weight = np.empty((n_features, n_values))
-
-
-        if not self.discretize_continuous:
-
-            for feature_idx, tuple in enumerate(explanation):
-
-                tuple = tuple.split(',')
-
-                tuple[0] = np.float(tuple[0].strip("('flux")) - 1.0
-                tuple[1] = np.float(tuple[1].strip(')'))
-
-                feature_weight[feature_idx, :] = np.array(tuple)
-
-        else:
-
-            tuple = tuple.split(',')
-
-            tuple[0] = tuple[0][2:-1]
-            tuple[1] = np.float(tuple[1][:-1])
-
-            if '<' in tuple[0]:
-
-                if len(tuple[0].split('<'))==2:
-                    tuple[0] = np.int(tuple[0].split('<')[0])
-                else:
-                    tuple[0] = np.int(tuple[0].split('<')[1])
-
-            else:
-
-                tuple[0] = np.int(tuple[0].split('>')[0])
-
-            feature_weight[feature_idx, :] = np.array(tuple)
-
-        print(f'numpy array created: [feature, lime_weight]')
-
-        return feature_weight
-
-    def analyze_explanation(self, x, exp_file_path):
-
-        if os.path.exists(exp_file_path):
-            exp = self.process_explanation(exp_file_path)
-        else:
-            print(f'There is no file {exp_file_path}')
-            return None
-
-        wave_exp = exp[:, 0].astype(np.int)
-        flx_exp = x[wave_exp]
-        weights_exp = exp[:, 1]
-
-        return wave_exp, flx_exp, weights_exp
+    def _line_curation(self, line):
+        for charater in "()[]":
+            line = line.replace(charater, "")
+        return [element.strip(" \n") for element in line.split(",")]
+    #     n_features = len(explanation)
+    #     n_values = len(explanation[0].split(','))
+    #
+    #     feature_weight = np.empty((n_features, n_values))
+    #
+    #     return feature_weight
+    #
+    # def analyze_explanation(self, x, exp_file_path):
+    #
+    #     if os.path.exists(exp_file_path):
+    #         exp = self.process_explanation(exp_file_path)
+    #     else:
+    #         print(f'There is no file {exp_file_path}')
+    #         return None
+    #
+    #     wave_exp = exp[:, 0].astype(np.int)
+    #     flx_exp = x[wave_exp]
+    #     weights_exp = exp[:, 1]
+    #
+    #     return wave_exp, flx_exp, weights_exp
 
     def plot(self, spec, wave_exp, flx_exp, weights_exp, linewidth=0.2,
         cmap='plasma_r', show=False):
