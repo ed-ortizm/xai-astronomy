@@ -222,35 +222,42 @@ class Explanation:
                 arrays_names = [f"{val[0]}_around_{val[1]}"
                     for val in product(ftr_select, around)]
 
-            self._exp_arrays(exp_dict=kernel_widths,
-                arrays_names=arrays_names, save=save)
+            return kernel_widths, self._get_arrays(exp_dict=kernel_widths,
+                arrays_names=arrays_names, sdss_name=sdss_name, save=save)
 
-            return kernel_widths
+            # return kernel_widths
 
-    def _exp_arrays(self, exp_dict, arrays_names, save=False):
+    def _get_arrays(self, exp_dict, arrays_names, sdss_name, save=False):
 
-        n_kenels = len(exp_dict)
+        n_kernels = len(exp_dict)
 
         # dictionary to store the explanation data, where the identifiers will
         # will be the names of the arrays
-        data = {f"{array_name}":[] for array_name in arrays_names}
+        data_dict = {f"{array_name}":[] for array_name in arrays_names}
+        # exp_dict has as keys the kernel_widths
+        for key, val in exp_dict.items():
 
-        for _, val in exp_dict.items():
+            for exp_data in val:
+                for array_name in arrays_names:
+                    print(array_name == exp_data[2], array_name, exp_data[2])
+                    if array_name == exp_data[2]:
+                        data_dict[array_name].append(
+                            [exp_data[0], exp_data[1]])
 
-            for name_id in arrays_names: pass
-                # print(name_id[:])
-        #         if (name_id[0] in val[2:]) and (name_id[1] in val[2:]):
-        #             exp_data[f"{name_id[0]}_{name_id[1]}"].append(
-        #                 [val[0], val[1]])
-        # for _, val in exp_data.items(): print(len(val))
-        # print(f"The number of explanation arrays is: {len(exp_data)}")
-        # i = 0
-        # for key, val in exp_data.items():
-            # n_fluxes = val[1].shape[0]
-            # n_values = val[1].shape[1]
-            # i += 1
-            # print(i, type(val[1]))#n_fluxes, n_values)
-            # exp_array = np.empty((n_kernels,n_fluxes, n_weights))
+        data_array = np.empty((n_kernels, 3801, 3))
+        data_array[:] = np.nan
+
+        for key, val in data_dict.items():
+
+            for idx, row in enumerate(data_array):
+                row[:, 0] = val[idx][0]
+                limit = val[idx][1].shape[0]
+                row[:limit, 1:] = val[idx][1]
+
+            np.save(f"testing/{sdss_name}_{key}.npy", data_array)
+
+        return data_dict
+        # exp_array = np.empty((n_kernels,n_fluxes, n_weights))
 
 
 
