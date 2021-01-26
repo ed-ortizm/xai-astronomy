@@ -5,6 +5,7 @@ import os
 import sys
 import dill
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -167,10 +168,7 @@ class Explanation:
             return None
 
         sdss_name = exp_file_path.split("/")[-1].split("_")[0]
-        print(sdss_name)
         metric = exp_file_path.split("/")[-1].split("_")[1].strip(".exp")
-        print(metric)
-        i = 0
 
         # Opening .exp for a spectrum: line[i] = sdss_name, k_width, ftr_selct,
         # around_instance, [(feature, weight), ...]
@@ -223,11 +221,13 @@ class Explanation:
                     for val in product(ftr_select, around)]
 
             return kernel_widths, self._get_arrays(exp_dict=kernel_widths,
-                arrays_names=arrays_names, sdss_name=sdss_name, save=save)
+                arrays_names=arrays_names, sdss_name=sdss_name, metric=metric,
+                save=save)
 
             # return kernel_widths
 
-    def _get_arrays(self, exp_dict, arrays_names, sdss_name, save=False):
+    def _get_arrays(self, exp_dict, arrays_names, sdss_name, metric,
+        save=False):
 
         n_kernels = len(exp_dict)
 
@@ -239,29 +239,27 @@ class Explanation:
 
             for exp_data in val:
                 for array_name in arrays_names:
-                    print(array_name == exp_data[2], array_name, exp_data[2])
+                    # print(array_name == exp_data[2], array_name, exp_data[2])
                     if array_name == exp_data[2]:
                         data_dict[array_name].append(
                             [exp_data[0], exp_data[1]])
 
         data_array = np.empty((n_kernels, 3801, 3))
-        data_array[:] = np.nan
 
         for key, val in data_dict.items():
-
+            data_array[:] = np.nan
             for idx, row in enumerate(data_array):
                 row[:, 0] = val[idx][0]
+
                 limit = val[idx][1].shape[0]
+                # print(limit)
+
                 row[:limit, 1:] = val[idx][1]
 
-            np.save(f"testing/{sdss_name}_{key}.npy", data_array)
+            np.save(f"testing/{sdss_name}_metric_{metric}_{key}.npy",
+                data_array)
 
         return data_dict
-        # exp_array = np.empty((n_kernels,n_fluxes, n_weights))
-
-
-
-        return None
 
     def _fluxex_weights(self, line):
 
@@ -278,29 +276,27 @@ class Explanation:
         for charater in "()[]'":
             line = line.replace(charater, "")
         return [element.strip(" \n") for element in line.split(",")]
-    #     n_features = len(explanation)
-    #     n_values = len(explanation[0].split(','))
-    #
-    #     feature_weight = np.empty((n_features, n_values))
-    #
-    #     return feature_weight
-    #
-    # def analyze_explanation(self, x, exp_file_path):
-    #
-    #     if os.path.exists(exp_file_path):
-    #         exp = self.process_explanation(exp_file_path)
-    #     else:
-    #         print(f'There is no file {exp_file_path}')
-    #         return None
-    #
-    #     wave_exp = exp[:, 0].astype(np.int)
-    #     flx_exp = x[wave_exp]
-    #     weights_exp = exp[:, 1]
-    #
-    #     return wave_exp, flx_exp, weights_exp
+
+    def process_array(self, spec, data_array):
+
+        wave_exp = data_array[:, :, 1]
+        weights_exp = data_array[:, :, 2]
+
+        flx_exp = np.empty(wave_exp.shape)
+        flx_exp[:] = np.nan
+
+        for idx, flx in enumerate(flx_exp):
+            # print(f"Iteration {idx}")
+            index = [np.int(i) for i in wave_exp[idx] if not np.isnan(i)]
+            print(f"Index length: {len(index)}")
+            flx[index] = spec[index]
+            print(np.count_nonzero(np.isnan(spec)))
+            print(np.count_nonzero(np.isnan(flx)))
+
+        return wave_exp, flx_exp, weights_exp
 
     def plot(self, spec, wave_exp, flx_exp, weights_exp, linewidth=0.2,
-        cmap='plasma_r', show=False):
+        cmap='plasma_r', show=False, ipython=False):
 
         c = weights_exp/np.max(weights_exp)
 
@@ -311,11 +307,12 @@ class Explanation:
 
         fig.colorbar(matplotlib.cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
 
-        fig.savefig(f'test.png')
-        fig.savefig(f'test.pdf')
+        fig.savefig(f'testing/test.png')
+        fig.savefig(f'testing/test.pdf')
         if show:
             plt.show()
-        plt.close()
+        if not ipython:
+            plt.close()
 
 class Outlier:
     """

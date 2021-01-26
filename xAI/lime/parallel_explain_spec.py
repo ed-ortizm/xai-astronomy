@@ -22,8 +22,9 @@ else:
 training_data_file =\
     '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
 training_data_path = '/home/edgar/zorro/SDSSdata/data_proc'
-model_path = '/home/edgar/zorro/AEs/trained_models/AutoEncoder'
-o_scores_path = "/home/edgar/zorro/AEs/outlier_scores"
+model_path = '/home/edgar/zorro/AEsII/trained_models/AutoEncoder'
+o_scores_path = "/home/edgar/zorro/AEsII/outlier_scores"
+spec_top_path = "/home/edgar/zorro/AEsII/xAI/lime/spec_top"
 ################################################################################
 # Outlier scores to have a regression model
 training_data = np.load(training_data_file)
@@ -100,6 +101,7 @@ for metric in metrics:
         training_data_files=training_data_files)
         o_sdss_names.append(sdss_name)
         o_sdss_paths.append(sdss_name_path)
+        np.save(f"{spec_top_path}/{sdss_name}.npy", np.load(sdss_name_path))
 
     # print(f"Working with the following outlying spectra")
     # for name in o_sdss_names:
