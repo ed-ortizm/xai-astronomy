@@ -6,6 +6,7 @@ import sys
 import dill
 
 import matplotlib
+import matplotlib.collections as mcoll
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -22,7 +23,12 @@ from skimage.segmentation import mark_boundaries
 from skimage.util import img_as_float
 
 from tensorflow.keras.models import load_model
-
+###############################################################################
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 ###############################################################################
 class Explainer_parallel:
 
@@ -244,10 +250,16 @@ class Explanation:
                         data_dict[array_name].append(
                             [exp_data[0], exp_data[1]])
 
-        data_array = np.empty((n_kernels, 3801, 3))
+        # data_array = np.empty((n_kernels, 3801, 3))
+        data_array = np.full((n_kernels, 3801, 3), np.nan)
+# kiss
+# kiss
+# kiss
+# Something that works kiss
+# improve and check, improve and check
 
         for key, val in data_dict.items():
-            data_array[:] = np.nan
+            # data_array[:] = np.nan
             for idx, row in enumerate(data_array):
                 row[:, 0] = val[idx][0]
 
@@ -413,6 +425,62 @@ class Outlier:
             print(f'The provided metric: {self.metric} is not implemented yet')
             return None
 
+    def _coscine_similarity(self, O, R):
+        """
+        Computes the coscine similarity between the reconstruction of the input
+        objects
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
+
+        Returns:
+            A one dimensional numpy array with the cosine similarity between
+            objects O and their reconstructiob
+        """
+
+        pass
+
+    def _jaccard_index(self, O, R):
+        """
+        Computes the mean square error for the reconstruction of the input
+        objects
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
+
+        Returns:
+            A one dimensional numpy array with the mean square error for objects
+            present in O
+        """
+
+        pass
+
+    def _sorensen_dice_index(self, O, R):
+        """
+        Computes the mean square error for the reconstruction of the input
+        objects
+
+        Args:
+            O: (2D np.array) with the original objects where index 0 denotes
+                indicates the objec and index 1 the features of the object.
+
+            R: Reconstruction of O by (tensorflow.keras model) the generative
+            model
+
+        Returns:
+            A one dimensional numpy array with the mean square error for objects
+            present in O
+        """
+        pass
+# Mahalanobis, Canberra, Braycurtis, and KL-divergence
     def _mse(self, O, R):
         """
         Computes the mean square error for the reconstruction of the input
