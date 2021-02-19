@@ -3,7 +3,6 @@ import glob
 from itertools import product
 import os
 import sys
-import dill
 
 import matplotlib
 import matplotlib.collections as mcoll
@@ -15,7 +14,7 @@ import lime
 from lime import lime_tabular
 from lime import lime_image
 import multiprocessing as mp
-
+import pickle
 from skimage.color import rgb2gray
 from skimage.filters import sobel
 from skimage.segmentation import felzenszwalb, slic, quickshift, watershed
@@ -30,12 +29,50 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 ###############################################################################
+def get_explanation_data(explanation_dictionary, key, spec):
+
+    exp_array = explanation_dictionary[f'{key}'][1]
+    wave_exp = exp_array[:, 0].astype(np.int)
+    flx_exp = spec[wave_exp]
+    weights_exp = exp_array[:, 1]
+
+    k_width = float(explanation_dictionary[f'{key}'][0])
+    k_width = float(f'{k_width/1.:.2f}')
+    feature_selection = explanation_dictionary[f'{key}'][4]
+    metric = explanation_dictionary[f'{key}'][3]
+
+    return wave_exp, flx_exp, weights_exp, k_width, feature_selection, metric
+
+
+def get_exp_dict(
+    explanation_file=
+        '/home/edgar/zorro/AEsII/xAI/lime/results/spec-1246-54478-0144_exp_dict.dill'):
+
+     sdss_directory = "/home/edgar/zorro/SDSSdata/data_proc"
+     sdss_name = explanation_file.split('/')[-1].split('_')[0]
+     with open(f'{explanation_file}', 'rb') as file:
+         exp_dict = pickle.load(file)
+
+     spec = np.load(f'{sdss_directory}/{sdss_name}.npy')
+
+     return spec, exp_dict, sdss_name
+
+def plot_explanation(sdss_name, k_width, feature_selection, metric, spec, wave_exp, flx_exp, weights_exp, s=10, linewidth=1., alpha=1., cmap='plasma_r'):
+
+    c = weights_exp/np.max(weights_exp)
+
+    plt.plot(spec, linewidth=linewidth, alpha=alpha)
+    plt.scatter(wave_exp, flx_exp, s=s, c=c, cmap=cmap)
+    plt.title(f'{sdss_name}: {metric}, {feature_selection}, k_width={k_width}')
+
+    plt.colorbar()
+
 class Explainer_parallel:
 
     def __init__(self, explainer_type, training_data, training_labels,
         feature_names, kernel_widths, features_selection,
         sample_around_instance, training_data_stats=None,
-        discretize_continuous=False, discretizer='decile', verbose=True,
+        discretize_continuous=False, discretizer='decile', verbose=False,
         mode='regression', n_processes=None):
         # The input variable are lists
 
@@ -98,7 +135,6 @@ class Explainer_parallel:
             for itr in iterable:
                 x = sys.getsizeof(itr)*1e-6
                 print(f'The size of object from {itr_name} is: {x:.2f} Mbs')
-                # print(dill.loadsp)
                 size += x
             print(f"The total size of {itr_name} is {size:.2f} Mbs")
         else:
@@ -131,11 +167,6 @@ class Explainer:
             x = sys.getsizeof(self.explainer)*1e-6
             print(f'The size of the explainer is: {x:.2f} Mbs')
 
-            # self.explainer_dill = dill.dumps(self.explainer)
-            # x = sys.getsizeof(self.explainer_dill)*1e-6
-            # print(f'The size of the dilled explainer is: {x:.2f} Mbs')
-            # I had to use dill.dumps to save the explainer as a string
-            # otherwise pool.starmap wouldn't generate the list
     def _tabular_explainer(self):
 
         explainer = lime.lime_tabular.LimeTabularExplainer(
@@ -151,12 +182,7 @@ class Explainer:
 
     def explanation(self, x, regressor):
 
-        # print(f"Explaining, here the shape of x: {x.shape}")
-        # print(f"type of x: {type(x)}")
-        # print(type(regressor))
-        # plt.figure()
-        # plt.plot(x)
-        # plt.show()
+
         xpl = self.explainer.explain_instance(x, regressor,
             num_features=x.shape[0])
         return xpl.as_list()
@@ -214,16 +240,16 @@ class Explanation:
             line = line.replace(charater, "")
         return [element.strip(" \n") for element in line.split(",")]
 
-    def plot(self, spec, wave_exp, flx_exp, weights_exp, linewidth=0.2, cmap='plasma_r', show=False, ipython=False):
+    def plot_explanation(self, spec, wave_exp, flx_exp, weights_exp, s=10., linewidth=0.2, cmap='plasma_r', show=False, ipython=False):
 
         c = weights_exp/np.max(weights_exp)
 
         fig, ax = plt.subplots(figsize=(15, 5))
 
         ax.plot(spec, linewidth=linewidth)
-        ax.scatter(wave_exp, flx_exp, c=c, cmap=cmap)
+        ax.scatter(wave_exp, flx_exp, s=s, c=c, cmap=cmap)
 
-        fig.colorbar(matplotlib.cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
+        fig.colorbar()
 
         fig.savefig(f'testing/test.png')
         fig.savefig(f'testing/test.pdf')

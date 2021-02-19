@@ -4,6 +4,8 @@ xAI/lime/lime_code/
 .vscode/*
 # Explanations
 *.exp
+*.dill
+*.pk
 #Images and html
 *.png
 *.jpg
