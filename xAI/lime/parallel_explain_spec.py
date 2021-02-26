@@ -101,7 +101,9 @@ for metric in metrics:
         training_data_files=training_data_files)
         o_sdss_names.append(sdss_name)
         o_sdss_paths.append(sdss_name_path)
-        np.save(f"{spec_top_path}/{sdss_name}.npy", np.load(sdss_name_path))
+        np.save(
+            f"{spec_top_path}/{sdss_name}_processed.npy",
+            training_data[spec_idx, :])
 
     # print(f"Working with the following outlying spectra")
     # for name in o_sdss_names:

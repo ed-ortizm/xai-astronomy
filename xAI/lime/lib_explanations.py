@@ -7,6 +7,7 @@ import sys
 import matplotlib
 import matplotlib.collections as mcoll
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 import numpy as np
 
 import lime
@@ -29,44 +30,99 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 ###############################################################################
-def get_explanation_data(explanation_dictionary, key, spec):
+class PlotData:
 
-    exp_array = explanation_dictionary[f'{key}'][1]
-    wave_exp = exp_array[:, 0].astype(np.int)
-    flx_exp = spec[wave_exp]
-    weights_exp = exp_array[:, 1]
+    def __init__(self, spec, sdss_name, vmin, vmax):
+        self.spec = spec
+        self.sdss_name = sdss_name
+        self.vmin = vmin
+        self.vmax = vmax
+        self._fig = None
+        self._cmap = None
 
-    k_width = float(explanation_dictionary[f'{key}'][0])
-    k_width = float(f'{k_width/1.:.2f}')
-    feature_selection = explanation_dictionary[f'{key}'][4]
-    metric = explanation_dictionary[f'{key}'][3]
+    def _colorbar_explanation(self):
+        # Make axes with dimensions as desired.
+        ax_cb = self._fig.add_axes([0.91, 0.05, 0.03, 0.9])
 
-    return wave_exp, flx_exp, weights_exp, k_width, feature_selection, metric
+        # Set the colormap and norm to correspond to the data for which
+        # the colorbar will be used.
+        self._cmap = mpl.cm.plasma
+        norm = mpl.colors.Normalize(vmin=self.vmin, vmax=self.vmax)
+
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb = mpl.colorbar.ColorbarBase(ax_cb, cmap=self._cmap,
+                                        norm=norm,
+                                        orientation='vertical', extend='both')
+        cb.set_label('Normalized weights')
 
 
-def get_exp_dict(
-    explanation_file=
-        '/home/edgar/zorro/AEsII/xAI/lime/results/spec-1246-54478-0144_exp_dict.dill'):
+        return cb
 
-     sdss_directory = "/home/edgar/zorro/SDSSdata/data_proc"
-     sdss_name = explanation_file.split('/')[-1].split('_')[0]
-     with open(f'{explanation_file}', 'rb') as file:
-         exp_dict = pickle.load(file)
+    def plot_explanation(self,
+        wave_exp, flx_exp, weights_explanation,
+        kernel_width, feature_selection, metric,
+        s=3., linewidth=1., alpha=0.7):
 
-     spec = np.load(f'{sdss_directory}/{sdss_name}.npy')
+        a = np.sort(weights_explanation)
+        print([f'{i:.2E}' for i in a[:2]])
+        print([f'{i:.2E}' for i in a[-2:]])
 
-     return spec, exp_dict, sdss_name
+        self._fig, ax = plt.subplots(figsize=(10, 5))
+        plt.subplots_adjust(left=0.08, right=0.9)
 
-def plot_explanation(sdss_name, k_width, feature_selection, metric, spec, wave_exp, flx_exp, weights_exp, s=10, linewidth=1., alpha=1., cmap='plasma_r'):
+        line, = ax.plot(self.spec, linewidth=linewidth, alpha=alpha)
 
-    c = weights_exp/np.max(weights_exp)
+        scatter = ax.scatter(wave_exp, flx_exp, s=s,
+            c=weights_explanation, cmap='plasma',
+            vmin=self.vmin, vmax=self.vmax, alpha=1.)
 
-    plt.plot(spec, linewidth=linewidth, alpha=alpha)
-    plt.scatter(wave_exp, flx_exp, s=s, c=c, cmap=cmap)
-    plt.title(f'{sdss_name}: {metric}, {feature_selection}, k_width={k_width}')
+        ax_cb = self._colorbar_explanation()
+        ax.set_title(
+        f'{self.sdss_name}: {metric}, {feature_selection}, k_width={kernel_width}')
 
-    plt.colorbar()
+        # plt.tight_layout()
 
+        return self._fig, ax, ax_cb, line, scatter
+###############################################################################
+class ExplanationData:
+
+    def __init__(self, explanation_file):
+
+        self.explanation_file = explanation_file
+        self.sdss_directory = "/home/edgar/Documents/pyhacks/interactive_plotting"
+        # "/home/edgar/zorro/SDSSdata/data_proc"
+        self.sdss_name = self.explanation_file.split('_')[0]
+        # self.explanation_file.split('/')[-1].split('_')[0]
+        self.spec = np.load(f'{self.sdss_directory}/{self.sdss_name}.npy')
+
+    def get_explanation_data(self, n_line):
+
+        explanation_dictionary = self.get_serialized_data()
+
+        kernel_width = explanation_dictionary[f'{n_line}'][0]
+        kernel_width = float(kernel_width)
+
+        array_explanation = explanation_dictionary[f'{n_line}'][1]
+        wave_explanation = array_explanation[:, 0].astype(np.int)
+        flux_explanation = self.spec[wave_explanation]
+        weights_explanation = array_explanation[:, 1]
+        metric = explanation_dictionary[f'{n_line}'][3]
+        feature_selection = explanation_dictionary[f'{n_line}'][4]
+
+        return (wave_explanation,
+                flux_explanation,
+                weights_explanation,
+                kernel_width, metric, feature_selection)
+
+    def get_serialized_data(self):
+
+         with open(f'{self.explanation_file}', 'rb') as file:
+             return pickle.load(file)
+###############################################################################
 class Explainer_parallel:
 
     def __init__(self, explainer_type, training_data, training_labels,
@@ -140,7 +196,7 @@ class Explainer_parallel:
         else:
             size =  sys.getsizeof(iterable)
             print(f"The total size of {itr_name} is {size:.2f} Mbs")
-
+###############################################################################
 class Explainer:
     def __init__(self, kernel_width, feature_selection,
         sample_around_instance, explainer_type, training_data,
@@ -186,7 +242,7 @@ class Explainer:
         xpl = self.explainer.explain_instance(x, regressor,
             num_features=x.shape[0])
         return xpl.as_list()
-
+###############################################################################
 class Explanation:
 
     def __init__(self, discretize_continuous=False):
@@ -257,7 +313,7 @@ class Explanation:
             plt.show()
         if not ipython:
             plt.close()
-
+###############################################################################
 class Outlier:
     """
     Class for dealing with the outliers based on a generative model trained with
@@ -265,7 +321,7 @@ class Outlier:
     """
 
     def __init__(self, model_path, o_scores_path='.', metric='mse', p='p',
-        n_spec=30, custom=False, custom_metric=None):
+        n_spec=100, custom=False, custom_metric=None):
         """
         Init fucntion
 
@@ -284,7 +340,7 @@ class Outlier:
             p: (float > 0) in case the metric is the lp metric, p needs to be a non null
                 possitive float [Aggarwal 2001]
 
-            n_spec: (int > 0) this parameter contros the number of objects identifiers to
+            n_spec: (int > 0) this parameter controls the number of objects identifiers to
                 return for the top reconstruction, that is the most oulying and
                 the most normal objects
         """
@@ -564,7 +620,7 @@ class Outlier:
         most_oulying = spec_idxs[-1*self.n_spec:]
 
         return most_normal, most_oulying
-################################################################################
+###############################################################################
 class ImageExplainer:
     def __init__(self):
         pass
@@ -709,24 +765,4 @@ class Spec_segmenter:
            Algorithms. ICPR 2014, pp 996-1001. :DOI:`10.1109/ICPR.2014.181`
            https://www.tu-chemnitz.de/etit/proaut/publications/cws_pSLIC_ICPR.pdf
     """
-def helper_idea():
-    #  Explore this idea: like the setters and getters for the custom fucntion ;)
-    # class Helper(object):
-    #
-    #     def add(self, a, b):
-    #         return a + b
-    #
-    #     def mul(self, a, b):
-    #         return a * b
-    #
-    #
-    # class MyClass(Helper):
-    #
-    #     def __init__(self):
-    #         Helper.__init__(self)
-    #         print self.add(1, 1)
-    #
-    #
-    # if __name__ == '__main__':
-    #     obj = MyClass()
-    pass
+###############################################################################
