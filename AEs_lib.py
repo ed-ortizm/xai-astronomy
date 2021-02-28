@@ -149,17 +149,6 @@ class VAE:
         # return K.mean(vae_loss)
         return vae_loss
 
-    # def _reconstruction_loss(self, y_true, y_pred):
-    #
-    #     return keras.losses.mse(y_true, y_pred)
-    #
-    # def _kl_loss(self, z_m, z_s):
-    #
-    #     kl_loss = 1 + z_s - K.square(z_m) - K.exp(z_s)
-    #
-    #     return -0.5*K.sum(kl_loss, axis=-1)
-
-
 class AEpca:
 
     def __init__(self, in_dim, lat_dim=2, batch_size=32, epochs=10, lr= 1e-4):
@@ -275,7 +264,6 @@ class Outlier:
             names.write(f'{self.fnames[idx].split("/")[-1][:-4]}\n')
         names.close()
 
-
 class PcA:
 
     def __init__(self, n_comps = False):
@@ -333,22 +321,3 @@ def plot_2D(data, title):
     plt.savefig(f'{title}.png')
     plt.show()
     plt.close()
-
-# ## Checking the percentages of explained variance
-#
-# tot_var = sum(pca.explained_variance_)
-#
-# expl_var = [(i/tot_var)*100 for i in sorted(pca.explained_variance_, reverse=True)]
-
-# n = 10
-# for i in range(n):
-#     print(f'Component N° {i} explains {expl_var[i]:.3}% of the vatiance')
-#
-# print(f'These first {n} components explain {sum(expl_var[:n]):.6}% of the variance')
-
-#lr_schedule = keras.optimizers.schedules.ExponentialDecay(
-#    initial_learning_rate=1e-4,
-#    decay_steps=10000,
-#    decay_rate=0.9)
-##optimizer = keras.optimizers.SGD(learning_rate=lr_schedule)
-#autoencoder.compile(loss=keras.losses.MeanSquaredError(), optimizer=keras.optimizers.Adam(learning_rate=lr_schedule))
