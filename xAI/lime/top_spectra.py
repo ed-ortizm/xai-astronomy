@@ -4,7 +4,10 @@ import os
 import time
 
 import numpy as np
+
 from constants_lime import sdss_dir, sdss_data_proc, AE_data_dir
+from lib_explanations import Outlier
+################################################################################
 ti = time.time()
 ################################################################################
 # Relevant paths
@@ -28,7 +31,7 @@ else:
     with open('./testing/sdss_spec_paths.txt', 'w') as file:
         file.writelines(f"{line}\n" for line in sdss_spec_paths)
 
-metrics = ["lp", "mse", "chi2", "mad"]
+metrics = ["lp"]#, "mse", "chi2", "mad"]
 n_top_spectra = 500
 
 for metric in metrics:
@@ -56,7 +59,7 @@ for metric in metrics:
     ################################################################################
     ## Selecting top outliers
     print(f'Computing top reconstructions for {metric} metric')
-    most_normal_ids, most_oulying_ids = outlier.top_reconstructions(
+    most_normal_ids, most_oulying_ids = outlier.top_reconstructions(O=training_data, n_top_spectra=n_top_spectra)
     ###############################################################################
     print(f"Getting top spectra")
     print(f'Top outlier spectra...')
@@ -73,7 +76,7 @@ for metric in metrics:
         o_sdss_names.append(sdss_name)
         o_sdss_paths.append(sdss_name_path)
 
-        top_outliers[idx] = training_data[spec_idx, :]
+        top_outliers.append(training_data[spec_idx, :])
         np.save(
             f"{spec_top_path}/{sdss_name}_model_input.npy",
             training_data[spec_idx, :])
@@ -99,7 +102,7 @@ for metric in metrics:
         o_sdss_names.append(sdss_name)
         o_sdss_paths.append(sdss_name_path)
 
-        top_inliers[idx] = training_data[spec_idx, :]
+        top_inliers.append(training_data[spec_idx, :])
         np.save(
             f"{spec_top_path}/{sdss_name}_model_input.npy",
             training_data[spec_idx, :])
