@@ -13,7 +13,7 @@ from tensorflow.keras.losses import mse
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 
-from constants_AEs import data_proc
+from constants_AEs import sdss_data_proc
 
 class VAE:
     """ VAE for outlier detection using tf.keras
@@ -213,7 +213,7 @@ class AEpca:
 
 class Outlier:
 
-    def __init__(self, dbPath=data_proc, N=20):
+    def __init__(self, dbPath=sdss_data_proc, N=20):
         self.scores = None
         self.N = N
         self.fnames = glob(f'{dbPath}/*')

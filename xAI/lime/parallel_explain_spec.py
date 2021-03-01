@@ -4,12 +4,12 @@ import os
 import sys
 import time
 
-import csv
 import numpy as np
 from lib_explanations import Explainer, Explainer_parallel
 from lib_explanations import Explanation
 from lib_explanations import Outlier
-# kk
+
+from constants_lime import sdss_dir, sdss_data_proc, AE_data_dir
 ti = time.time()
 ################################################################################
 # Naive parallelization
@@ -19,24 +19,25 @@ else:
     simple = False
 ################################################################################
 # Relevant paths
-training_data_file =\
-    '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
-training_data_path = '/home/edgar/zorro/SDSSdata/data_proc'
+working_dir = '/home/edgar/zorro/AEsII/xAI/lime/'
+AE_in_data_fname ='spec_99356.npy'
+AE_pred_fname = 'pred_99356.npy'
 model_path = '/home/edgar/zorro/AEsII/trained_models/AutoEncoder'
+
 o_scores_path = "/home/edgar/zorro/AEsII/outlier_scores"
 spec_top_path = "/home/edgar/zorro/AEsII/xAI/lime/spec_top"
 ################################################################################
 # Outlier scores to have a regression model
-training_data = np.load(training_data_file)
-
+training_data = np.load(f'{sdss_dir}/data/{AE_in_data_fname}')
+predicted_data = np.load(f'{AE_data_dir}/{AE_pred_fname}')
 # Training data files
-if os.path.exists(f"./testing/training_data_files.tex"):
-    with open('./testing/training_data_files.tex', 'r') as file:
-        training_data_files = file.readlines()
+if os.path.exists(f'{working_dir}/data/sdss_spec_paths.txt'):
+    with open(f'{working_dir}/data/sdss_spec_paths.txt', 'r') as file:
+        sdss_spec_paths = file.readlines()
 else:
-    training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
-    with open('./testing/training_data_files.tex', 'w') as file:
-        file.writelines(f"{line}\n" for line in training_data_files)
+    sdss_spec_paths = glob.glob(f'{sdss_data_proc}/*-*[0-9].npy')
+    with open('./testing/sdss_spec_paths.txt', 'w') as file:
+        file.writelines(f"{line}\n" for line in sdss_spec_paths)
 
 feature_names = [f'flux {i}' for i in range(training_data.shape[1])]
 kernel_width_default = np.sqrt(training_data.shape[1])*0.75
@@ -56,7 +57,6 @@ else:
 
 
 metrics = ["lp"]#, "mse", "chi2", "mad"]
-pp = np.linspace(0.1, 1, 10)
 n_spec = 20
 
 for metric in metrics:
@@ -73,37 +73,44 @@ for metric in metrics:
     print(f'Computing/loading outlier scores: the labels ')
 
     if os.path.exists(f'{o_scores_path}/{metric}_o_score.npy'):
-        o_score_mse = np.load(f'{o_scores_path}/{metric}_o_score.npy')
+        o_scores = np.load(f'{o_scores_path}/{metric}_o_score.npy')
     else:
-        o_score_mse = outlier.score(O=training_data)
-        np.save(f'{o_scores_path}/{metric}_o_score.npy', o_score_mse)
+        o_scores = outlier.score(O=training_data)
+        np.save(f'{o_scores_path}/{metric}_o_score.npy', o_scores)
 
     t1 = time.time()
+    # Check if they are normalized
     print(f't1: {t1-ti:.2f} s')
     ################################################################################
     ## Selecting top outliers
     print(f'Computing top reconstructions for {metric} metric')
-    most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
+    most_normal_ids, most_oulying_ids = outlier.top_reconstructions(
+        O=training_data)
     ###############################################################################
     print(f"Generating explanmations for the following outlying spectra")
     # From last array an by visual exploration, I'll like to explain:
     # tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
     # tmp = [most_oulying[i] for i in tmp]
     # spec_2xpl = [training_data[i, :] for i in tmp]
-    spec_2xpl = [training_data[i, :] for i in most_oulying]
+    spec_2xpl = [training_data[i, :] for i in most_oulying_ids]
 
 
     o_sdss_names = []
     o_sdss_paths = []
 
-    for spec_idx in most_oulying:
+    for spec_idx in most_oulying_ids:
         sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
-        training_data_files=training_data_files)
+        training_data_files=sdss_spec_paths)
         o_sdss_names.append(sdss_name)
         o_sdss_paths.append(sdss_name_path)
+
         np.save(
-            f"{spec_top_path}/{sdss_name}_processed.npy",
+            f"{spec_top_path}/{sdss_name}_model_input.npy",
             training_data[spec_idx, :])
+
+        np.save(
+            f"{spec_top_path}/{sdss_name}_model_pred.npy",
+            predicted_data[spec_idx, :])
 
     # print(f"Working with the following outlying spectra")
     # for name in o_sdss_names:
@@ -116,7 +123,7 @@ for metric in metrics:
     # defining variables
 
     explainer_type="tabular"
-    training_labels = o_score_mse
+    training_labels = o_scores
 
     print(f'Creating explainers')
 
@@ -173,7 +180,7 @@ for metric in metrics:
 # #
 # # for spec_idx in most_normal:
 # #     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
-# #     training_data_files=training_data_files)
+# #     training_data_files=sdss_spec_paths)
 # #     n_sdss_names.append(sdss_name)
 # #     n_sdss_paths.append(sdss_name_path)
 # #

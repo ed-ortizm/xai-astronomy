@@ -342,7 +342,7 @@ class Outlier:
 
             n_spec: (int > 0) this parameter controls the number of objects identifiers to
                 return for the top reconstruction, that is the most oulying and
-                the most normal objects
+                the most normal objects --> move it to the method
         """
 
         self.model_path = model_path
@@ -605,7 +605,7 @@ class Outlier:
         Returns:
             most_normal, most_oulying: (1D np.array, 1D np.array) numpy arrays
                 with the location indexes of the most normal and outlying
-                object in the training set.
+                object in the training (and pred) set.
         """
 
         if os.path.exists(f"{self.o_scores_path}/{self.metric}_o_score.npy"):

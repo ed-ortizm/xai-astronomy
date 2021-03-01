@@ -51,10 +51,10 @@ else:
 #
 ## Saving AE predictions
 #pred = AE.predict(input_data)
-#np.save('pred_AE.npy', pred)
+#np.save('pred_99356.npy', pred)
 
 
-pred = np.load('pred_AE.npy')
+pred = np.load(f'{working_dir}/data/pred_99356.npy')
 # Outlier scores
 outlier = Outlier(N=10)
 
