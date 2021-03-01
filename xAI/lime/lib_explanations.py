@@ -321,7 +321,7 @@ class Outlier:
     """
 
     def __init__(self, model_path, o_scores_path='.', metric='mse', p='p',
-        n_spec=100, custom=False, custom_metric=None):
+        custom=False, custom_metric=None):
         """
         Init fucntion
 
@@ -339,17 +339,12 @@ class Outlier:
 
             p: (float > 0) in case the metric is the lp metric, p needs to be a non null
                 possitive float [Aggarwal 2001]
-
-            n_spec: (int > 0) this parameter controls the number of objects identifiers to
-                return for the top reconstruction, that is the most oulying and
-                the most normal objects --> move it to the method
         """
 
         self.model_path = model_path
         self.o_scores_path = o_scores_path
         self.metric = metric
         self.p = p
-        self.n_spec = n_spec
         self.custom = custom
         if self.custom:
             self.custom_metric = custom_metric
@@ -364,14 +359,13 @@ class Outlier:
         return O, R
 
     def score(self, O):
-        print("Score working in parallelization")
         """
-        Computes the outlier score according to the metric used to define
-        instantiate the class.
+        Computes the outlier score according to the metric used to instantiate
+        the class.
 
         Args:
-            O: (2D np.array) with the original objects where index 0 denotes
-                indicates the objec and index 1 the features of the object.
+            O: (2D np.array) with the original objects where index 0 indicates
+            the object and index 1 the features of the object.
 
         Returns:
             A one dimensional numpy array with the outlier scores for objects
@@ -594,13 +588,18 @@ class Outlier:
 
         return sdss_name, sdss_name_path
 
-    def top_reconstructions(self, O):
+    def top_reconstructions(self, O, n_top_spectra):
         """
         Selects the most normal and outlying objecs
 
         Args:
             O: (2D np.array) with the original objects where index 0 denotes
                 indicates the objec and index 1 the features of the object.
+
+            n_top_spectra: (int > 0) this parameter controls the number of
+                objects identifiers to return for the top reconstruction,
+                that is, the idices for the most oulying and the most normal
+                objects.
 
         Returns:
             most_normal, most_oulying: (1D np.array, 1D np.array) numpy arrays
@@ -614,12 +613,12 @@ class Outlier:
             scores = self.score(O)
 
         spec_idxs = np.argpartition(scores,
-        [self.n_spec, -1*self.n_spec])
+        [n_top_spectra, -1*n_top_spectra])
 
-        most_normal = spec_idxs[: self.n_spec]
-        most_oulying = spec_idxs[-1*self.n_spec:]
+        most_normal_ids = spec_idxs[: n_top_spectra]
+        most_oulying_ids = spec_idxs[-1*n_top_spectra:]
 
-        return most_normal, most_oulying
+        return most_normal_ids, most_oulying_ids
 ###############################################################################
 class ImageExplainer:
     def __init__(self):
