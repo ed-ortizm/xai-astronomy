@@ -1,9 +1,4 @@
-import numpy as np
+normalization_schemes = ['median', 'min_max', 'Z']
 
-sdss_dir = '/home/edgar/zorro/SDSSdata'
-sdss_data_proc = f'{sdss_dir}/data/data_proc'
-n_wl = 4_001
-m_wl = np.linspace(3_500, 7_500, n_wl)
-
-###############################################################################
-AE_data_dir = '/home/edgar/zorro/AEsII/data'
+spectra_dir = '/home/edgar/oso/data_sdss/spectra'
+working_dir = '/home/edgar/oso/xAI-outlier'
