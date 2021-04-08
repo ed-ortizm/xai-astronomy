@@ -197,7 +197,7 @@ class Explainer_parallel:
             size =  sys.getsizeof(iterable)
             print(f"The total size of {itr_name} is {size:.2f} Mbs")
 ###############################################################################
-class Explainer:
+class TabularExplainer:
     def __init__(self, kernel_width, feature_selection,
         sample_around_instance, explainer_type, training_data,
         training_labels, feature_names, training_data_stats=None,
@@ -217,11 +217,10 @@ class Explainer:
         self.verbose = verbose
         self.mode = mode
 
-        if self.xpl_type == "tabular":
 
-            self.explainer = self._tabular_explainer()
-            x = sys.getsizeof(self.explainer)*1e-6
-            print(f'The size of the explainer is: {x:.2f} Mbs')
+        self.explainer = self._tabular_explainer()
+        x = sys.getsizeof(self.explainer)*1e-6
+        print(f'The size of the explainer is: {x:.2f} Mbs')
 
     def _tabular_explainer(self):
 
