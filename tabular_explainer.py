@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 from argparse import ArgumentParser
-import glob
+from functools import partial
 import os
 import time
 
@@ -10,7 +10,8 @@ from lime import lime_tabular
 import numpy as np
 
 from constants_lime import working_dir, spectra_dir, normalization_schemes
-from library_lime import load_data, Outlier
+from library_lime import load_data
+from library_outlier import Outlier
 ################################################################################
 ti = time.time()
 ################################################################################
@@ -81,6 +82,22 @@ scores_name = f'{metric}_o_score_{percent}_{tail_outlier_name}'
 scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
 scores = load_data(scores_name, scores_name_path)
 ################################################################################
+# loading relevant spectra
+tail_top_name = f'{percent}_nTop_{number_top_spectra}_{tail_outlier_name}'
+
+top_outlier_name = f'{metric}_outlier_spectra_{percent}_{tail_top_name}'
+top_outlier_path =
+
+top_outlier_reconstructed_name = (f'{metric}_outlier_reconstructed_spectra_')
+    f'{percent}_{tail_top_name}'
+top_outlier_reconstructed_path =
+
+top_normal_name = f'{metric}_normal_spectra_{percent}_{tail_top_name}'
+top_normal_path =
+
+top_normal_reconstructed_name = (f'{metric}_normal_reconstructed_spectra_')
+    f'{percent}_{tail_top_name}'
+top_normal_reconstructed_path =
 ################################################################################
 print(f"Creating explainer")
 # defining variables
@@ -105,9 +122,14 @@ explainer = lime_tabular.LimeTabularExplainer(
             discretizer='quartile',
             sample_around_instance=True,
             training_data_stats=None)
-
+################################################################################
+spectrum_explain_name =
+spectrum_explain = np.load()
+reconstructed_spectrum_explain =
+################################################################################
 outlier = Outlier(metric=metric)
-# outlier_score = partial(outlier.score,
+outlier_score = partial(outlier.score, R=reconstructed_spectrum_explain,
+    percentages=precent)
 # # explanation = explainer.explain_instance(
 # #     x=trainingData[0, :],
 # #     regressor=,
