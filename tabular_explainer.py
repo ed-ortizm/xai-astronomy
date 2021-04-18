@@ -19,16 +19,22 @@ ti = time.time()
 parser = ArgumentParser()
 
 parser.add_argument('--server', '-s', type=str)
+
 parser.add_argument('--number_spectra','-n_spec', type=int)
-parser.add_argument('--encoder_layers', type=str)
-parser.add_argument('--decoder_layers', type=str)
 parser.add_argument('--normalization_type', '-n_type', type=str)
-parser.add_argument('--latent_dimensions', '-lat_dims', type=int)
-parser.add_argument('--metric', type=str)
+
 parser.add_argument('--model', type=str)
-parser.add_argument('--top_spectra', '-top', type=int)
+parser.add_argument('--encoder_layers', type=str)
+parser.add_argument('--latent_dimensions', '-lat_dims', type=int)
+parser.add_argument('--decoder_layers', type=str)
 parser.add_argument('--loss', type=str)
-parser.add_argument('--percent', '-%', type=str)
+
+parser.add_argument('--metric', type=str)
+parser.add_argument('--top_spectra', '-top', type=int)
+parser.add_argument('--percent', '-%', type=float)
+
+parser.add_argument('--id_explain', '-id_xpl', type=int)
+
 
 script_arguments = parser.parse_args()
 ################################################################################
@@ -45,7 +51,11 @@ model = script_arguments.model
 number_top_spectra = script_arguments.top_spectra
 
 loss = script_arguments.loss
-percent = f'percentage_{script_arguments.percent}'
+
+percent = script_arguments.percent
+percent_str = f'percentage_{int(percent*100)}'
+
+id_explain = script_arguments.id_explain
 ################################################################################
 # Relevant directories
 layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
@@ -69,7 +79,7 @@ if local:
 
 reconstructed_set_path = f'{generated_data_dir}/{reconstructed_set_name}.npy'
 
-reconstructed_set = load_data(reconstructed_set_name, reconstructed_set_path)
+reconstructed_data = load_data(reconstructed_set_name, reconstructed_set_path)
 ###############################################################################
 # loading outlier scores
 tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
@@ -77,41 +87,29 @@ tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
 if local:
     tail_outlier_name = f'{tail_outlier_name}_local'
 
-scores_name = f'{metric}_o_score_{percent}_{tail_outlier_name}'
+scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
 
 scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
 scores = load_data(scores_name, scores_name_path)
 ################################################################################
-# loading relevant spectra
-tail_top_name = f'{percent}_nTop_{number_top_spectra}_{tail_outlier_name}'
-
-top_outlier_name = f'{metric}_outlier_spectra_{percent}_{tail_top_name}'
-top_outlier_path =
-
-top_outlier_reconstructed_name = (f'{metric}_outlier_reconstructed_spectra_')
-    f'{percent}_{tail_top_name}'
-top_outlier_reconstructed_path =
-
-top_normal_name = f'{metric}_normal_spectra_{percent}_{tail_top_name}'
-top_normal_path =
-
-top_normal_reconstructed_name = (f'{metric}_normal_reconstructed_spectra_')
-    f'{percent}_{tail_top_name}'
-top_normal_reconstructed_path =
-################################################################################
 print(f"Creating explainer")
 # defining variables
+################################################################################
+spectrum_explain = training_data[id_explain]
+reconstructed_spectrum_explain = reconstructed_data[id_explain]
+print(spectrum_explain.shape, reconstructed_spectrum_explain.shape)
+
 mode = 'regression'
-kernel_width = np.sqrt(training_data.shape[1])*0.75
+kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
 # feature_selection: selects the features that have the highest
 # product of absolute weight * original data point when
 # learning with all the features
 feature_selection = 'highest_weights'
 sample_around_instance = False
-feature_names = [f"flux {i}" for i in range(training_data.shape[1])]
-# ################################################################################
+feature_names = [i for i in range(spectrum_explain[:-5].size)]
+################################################################################
 explainer = lime_tabular.LimeTabularExplainer(
-            training_data=training_data,
+            training_data=training_data[:, :-5],
             mode=mode,
             training_labels=scores,
             feature_names=feature_names,
@@ -123,18 +121,30 @@ explainer = lime_tabular.LimeTabularExplainer(
             sample_around_instance=True,
             training_data_stats=None)
 ################################################################################
-spectrum_explain_name =
-spectrum_explain = np.load()
-reconstructed_spectrum_explain =
-################################################################################
 outlier = Outlier(metric=metric)
 outlier_score = partial(outlier.score, R=reconstructed_spectrum_explain,
-    percentages=precent)
-# # explanation = explainer.explain_instance(
-# #     x=trainingData[0, :],
-# #     regressor=,
-# #     num_features=300)
-# #         return xpl.as_list()
+    percentage=percent)
+################################################################################
+explanation = explainer.explain_instance(
+    data_row=spectrum_explain[:-5],
+    predict_fn=outlier_score,
+    num_features=100)
+
+spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
+spectrum_name = "_".join(spectrum_name)
+
+with open(f'spectrum_{spectrum_name}_fluxId_weight_explanation.txt', 'w'
+    ) as file:
+
+    for explanation_weight in explanation.as_list():
+
+        explanation_weight = (f'{explanation_weight[0]},'
+            f'{explanation_weight[1]}\n')
+            
+        file.write(explanation_weight)
+
+
+        # return xpl.as_list()
 # # with open('testing/explain_spec.exp', 'w') as file:
 # #     file.writelines(f"{line}\n" for line in explanation)
 
@@ -142,3 +152,4 @@ outlier_score = partial(outlier.score, R=reconstructed_spectrum_explain,
 # ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
+# ################################################################################
