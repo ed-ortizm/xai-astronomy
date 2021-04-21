@@ -1,144 +1,152 @@
 #! /usr/bin/env python3
-import glob
+from argparse import ArgumentParser
+from functools import partial
 import os
-import sys
 import time
 
-import csv
+import lime
+from lime import lime_image
+
 import numpy as np
-from lib_explanations import Explainer, Explainer_parallel
-from lib_explanations import Explanation
-from lib_explanations import Outlier
-# kk
+
+from constants_lime import working_dir, spectra_dir, normalization_schemes, models_dir
+from library_lime import LoadAE, load_data
+from library_outlier import Outlier
+################################################################################
 ti = time.time()
 ################################################################################
-# Relevant paths
-training_data_file =\
-    '/home/edgar/zorro/SDSSdata/SDSS_data_curation/spec_99356.npy'
-training_data_path = '/home/edgar/zorro/SDSSdata/data_proc'
-model_path = '/home/edgar/zorro/AEs/trained_models/AutoEncoder'
-o_scores_path = "/home/edgar/zorro/AEs/outlier_scores"
-################################################################################
-# Outlier scores to have a regression model
-training_data = np.load(training_data_file)
-
-metric = 'mse'
-n_spec = 30
-
-outlier = Outlier(model_path = model_path, o_scores_path=o_scores_path,
-    metric=metric, n_spec=n_spec)
-
-print(f'Computing/loading outlier scores: the labels ')
-
-if os.path.exists(f'{o_scores_path}/{metric}_o_score.npy'):
-    o_score_mse = np.load(f'{o_scores_path}/{metric}_o_score.npy')
-else:
-    o_score_mse = outlier.score(O=training_data)
-    np.save(f'{o_scores_path}/{metric}_o_score.npy', o_score_mse)
-
-t1 = time.time()
-print(f't1: {t1-ti:.2f} s')
-################################################################################
-## Selecting top outliers
-print(f'Computing top reconstructions for {metric} metric')
-most_normal, most_oulying = outlier.top_reconstructions(O=training_data)
 ###############################################################################
-print(f"Generating explanmations for the following outlying spectra")
-# From last array an by visual exploration, I'll like to explain:
-tmp = [24, 28, 23, 21, 20, 19, 18, 17, 16]
-tmp = [most_oulying[i] for i in tmp]
-spec_2xpl = [training_data[i, :] for i in tmp]
+parser = ArgumentParser()
 
-# Training data files
-if os.path.exists(f"./testing/training_data_files.tex"):
-    with open('./testing/training_data_files.tex', 'r') as file:
-        training_data_files = file.readlines()
-else:
-    training_data_files = glob.glob(f'{training_data_path}/*-*[0-9].npy')
-    # Saving last variable into a file, see then if feaseable the exists
-    with open('./testing/training_data_files.tex', 'w') as file:
-        file.writelines(f"{line}\n" for line in training_data_files)
+parser.add_argument('--server', '-s', type=str)
 
-## see how can I to atomate this process of loading checking for files to load
+parser.add_argument('--number_spectra','-n_spec', type=int)
+parser.add_argument('--normalization_type', '-n_type', type=str)
+
+parser.add_argument('--model', type=str)
+parser.add_argument('--encoder_layers', type=str)
+parser.add_argument('--latent_dimensions', '-lat_dims', type=int)
+parser.add_argument('--decoder_layers', type=str)
+parser.add_argument('--loss', type=str)
+
+parser.add_argument('--metric', type=str)
+parser.add_argument('--top_spectra', '-top', type=int)
+parser.add_argument('--percent', '-%', type=float)
+
+parser.add_argument('--id_explain', '-id_xpl', type=int)
 
 
-o_sdss_names = []
-o_sdss_paths = []
+script_arguments = parser.parse_args()
+################################################################################
+number_spectra = script_arguments.number_spectra
+normalization_type = script_arguments.normalization_type
+local = script_arguments.server == 'local'
 
-for spec_idx in most_oulying:
-    sdss_name, sdss_name_path = outlier.metadata(spec_idx=spec_idx,
-    training_data_files=training_data_files)
-    o_sdss_names.append(sdss_name)
-    o_sdss_paths.append(sdss_name_path)
+number_latent_dimensions = script_arguments.latent_dimensions
+layers_encoder = script_arguments.encoder_layers
+layers_decoder = script_arguments.decoder_layers
 
-# print(f"Working with the following outlying spectra")
-# for name in o_sdss_names:
-#     print(name)
-t2 = time.time()
-print(f"t2: {t2-t1:.2f} s")
+metric = script_arguments.metric
+model = script_arguments.model
+number_top_spectra = script_arguments.top_spectra
+
+loss = script_arguments.loss
+
+percent = script_arguments.percent
+percent_str = f'percentage_{int(percent*100)}'
+
+id_explain = script_arguments.id_explain
+################################################################################
+# Relevant directories
+layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
+training_data_dir = f'{spectra_dir}/normalized_data'
+generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
+###############################################################################
+# Loading training data
+train_set_name = f'spectra_{number_spectra}_{normalization_type}'
+train_set_path = f'{training_data_dir}/{train_set_name}.npy'
+
+training_data = load_data(train_set_name, train_set_path)
+###############################################################################
+# Loading a reconstructed data
+tail_reconstructed = f'AE_{layers_str}_loss_{loss}'
+
+reconstructed_set_name = (
+    f'{train_set_name}_reconstructed_{tail_reconstructed}')
+
+if local:
+    reconstructed_set_name = f'{reconstructed_set_name}_local'
+
+reconstructed_set_path = f'{generated_data_dir}/{reconstructed_set_name}.npy'
+
+reconstructed_data = load_data(reconstructed_set_name, reconstructed_set_path)
+###############################################################################
+# loading outlier scores
+tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
+
+if local:
+    tail_outlier_name = f'{tail_outlier_name}_local'
+
+scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
+
+scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
+scores = load_data(scores_name, scores_name_path)
 ################################################################################
 print(f"Creating explainer")
 # defining variables
-kernel_width_default = np.sqrt(training_data.shape[1])*0.75
-feature_selection = "highest_weights"
-sample_around_instance = False
-explainer_type="tabular"
-training_labels = o_score_mse
-feature_names = [f"flux {i}" for i in range(training_data.shape[1])]
-
-explainer = Explainer(kernel_width=kernel_width_default,
-    feature_selection=feature_selection,
-    sample_around_instance=sample_around_instance,
-    explainer_type=explainer_type, training_data=training_data,
-    training_labels=training_labels, feature_names=feature_names)
-
-x = sys.getsizeof(explainer)*1e-6
-print(f'The size of the dilled explainer is: {x:.2f} Mbs')
-
-explanation = explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
-
-# Saving explanations:
-with open('testing/explain_spec.exp', 'w') as file:
-    file.writelines(f"{line}\n" for line in explanation)
-
-t3 = time.time()
-print(f't3: {t3-t2:.2f} s')
 ################################################################################
-# The explanation wil be saved in a text file
-# Generating explanations
+# add model to predict a spec to explain because of the sampling than by lime
+spectrum_explain = training_data[id_explain]
+reconstructed_spectrum_explain = reconstructed_data[id_explain]
 
-# exp_list = tabular_explainer.explanation(x=spec_2xpl[0], regressor=outlier.score)
-#
-# with open(f'test_tmp.csv', 'w', newline='\n') as explanations_csv:
-#     wr = csv.writer(explanations_csv, quoting=csv.QUOTE_ALL)
-#     wr.writerow(exp_list)
-#
-# t4 = time.time()
-# print(f't4: {t4-t3:.2f} s')
-# ################################################################################
-# # processing the explanation
-# explanation = Explanation()
-# wave_exp, flx_exp, weights_exp = explanation.analyze_explanation(spec_2xpl[0],
-#     "test_tmp.csv")
-#
-# explanation.plot(spec_2xpl[0], wave_exp, flx_exp, weights_exp, show=True)
-# # scatter lime weights vs mse outlier score
-#
-# ################################################################################
-# ################################################################################
-# ################################################################################
-# # print(f"Generating explanmations for the most normal spectra")
+kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
+# feature_selection: selects the features that have the highest
+# product of absolute weight * original data point when
+# learning with all the features
+feature_selection = 'highest_weights'
+
+################################################################################
+explainer = lime_image.LimeImageExplainer(
+    kernel_width = kernel_width,
+    verbose=True,
+    feature_selection= feature_selection)
+################################################################################
+model_head = f'{models_dir}/{model}/{layers_str}/Dense'
+model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
+    f'nType_{normalization_type}')
+if local:
+    model_tail = f'{model_tail}_local'
+
+ae_path = f'{model_head}{model}_{model_tail}'
+encoder_path = f'{model_head}Encoder_{model_tail}'
+decoder_path = f'{model_head}Decoder_{model_tail}'
+
+ae = LoadAE(ae_path, encoder_path, decoder_path)
+
+outlier = Outlier(metric=metric, model=ae)
+outlier_score = partial(outlier.score, percentage=percent, image=True)
+################################################################################
+explanation = explainer.explain_instance(
+    image=spectrum_explain[:-5].reshape(1,-1),
+    classifier_fn=outlier_score,
+    # top_labels=1,
+    hide_color=1,
+    num_features=10,
+    num_samples=100)
 # #
-# # n_sdss_names = []
-# # n_sdss_paths = []
-# #
-# # for spec_idx in most_normal:
-# #     sdss_name, sdss_name_path = outlier.metadata(spec_idx,
-# #     training_data_files=training_data_files)
-# #     n_sdss_names.append(sdss_name)
-# #     n_sdss_paths.append(sdss_name_path)
-# #
-# # print(n_sdss_names)
+# spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
+# spectrum_name = "_".join(spectrum_name)
+#
+# with open(f'spectrum_{spectrum_name}_fluxId_weight_explanation.txt', 'w'
+#     ) as file:
+#
+#     for explanation_weight in explanation.as_list():
+#
+#         explanation_weight = (f'{explanation_weight[0]},'
+#             f'{explanation_weight[1]}\n')
+#
+#         file.write(explanation_weight)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
+################################################################################

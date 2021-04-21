@@ -6,11 +6,15 @@ import time
 
 import lime
 from lime import lime_tabular
+neu_lower
+
+when going un giveth opponent diagnose came molecular near that has not yet, like of
 
 import numpy as np
 
-from constants_lime import working_dir, spectra_dir, normalization_schemes
-from library_lime import load_data
+from constants_lime import normalization_schemes
+from constants_lime import explanation_dir, models_dir, spectra_dir, working_dir
+from library_lime import load_data, LoadAE
 from library_outlier import Outlier
 ################################################################################
 ti = time.time()
@@ -95,9 +99,9 @@ scores = load_data(scores_name, scores_name_path)
 print(f"Creating explainer")
 # defining variables
 ################################################################################
+# add model to predict a spec to explain because of the sampling than by lime
 spectrum_explain = training_data[id_explain]
 reconstructed_spectrum_explain = reconstructed_data[id_explain]
-print(spectrum_explain.shape, reconstructed_spectrum_explain.shape)
 
 mode = 'regression'
 kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
@@ -121,35 +125,44 @@ explainer = lime_tabular.LimeTabularExplainer(
             sample_around_instance=True,
             training_data_stats=None)
 ################################################################################
-outlier = Outlier(metric=metric)
-outlier_score = partial(outlier.score, R=reconstructed_spectrum_explain,
-    percentage=percent)
+model_head = f'{models_dir}/{model}/{layers_str}/Dense'
+model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
+    f'nType_{normalization_type}')
+if local:
+    model_tail = f'{model_tail}_local'
+
+ae_path = f'{model_head}{model}_{model_tail}'
+encoder_path = f'{model_head}Encoder_{model_tail}'
+decoder_path = f'{model_head}Decoder_{model_tail}'
+
+ae = LoadAE(ae_path, encoder_path, decoder_path)
+
+outlier = Outlier(metric=metric, model=ae)
+outlier_score = partial(outlier.score, percentage=percent)
 ################################################################################
 explanation = explainer.explain_instance(
     data_row=spectrum_explain[:-5],
     predict_fn=outlier_score,
+    top_labels = 1,
     num_features=100)
 
 spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
 spectrum_name = "_".join(spectrum_name)
 
-with open(f'spectrum_{spectrum_name}_fluxId_weight_explanation.txt', 'w'
-    ) as file:
+if not os.path.exists(explanation_dir):
+    os.makedirs(explanation_dir)
+
+with open(
+    f'{explanation_dir}/spectrum_{spectrum_name}_fluxId_weight_explanation.txt',
+    'w') as file:
 
     for explanation_weight in explanation.as_list():
 
         explanation_weight = (f'{explanation_weight[0]},'
             f'{explanation_weight[1]}\n')
-            
+
         file.write(explanation_weight)
-
-
-        # return xpl.as_list()
-# # with open('testing/explain_spec.exp', 'w') as file:
-# #     file.writelines(f"{line}\n" for line in explanation)
-
-# ################################################################################
-# ################################################################################
+################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
-# ################################################################################
+################################################################################

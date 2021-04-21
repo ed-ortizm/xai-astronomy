@@ -10,6 +10,9 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 import numpy as np
 
+import tensorflow as tf
+from tensorflow import keras
+
 import lime
 from lime import lime_tabular
 from lime import lime_image
@@ -17,6 +20,74 @@ import multiprocessing as mp
 import pickle
 
 from constants_lime import normalization_schemes
+
+class LoadAE:
+    """ Load AE for outlier detection using tf.keras """
+    ############################################################################
+    def __init__(self, ae_path, encoder_path, decoder_path)->'None':
+
+        self.ae = keras.models.load_model(f'{ae_path}')
+        self.encoder = keras.models.load_model(f'{encoder_path}')
+        self.decoder = keras.models.load_model(f'{decoder_path}')
+    ############################################################################
+    def predict(self, spectra:'2D np.array')-> '2D np.array':
+
+        if spectra.ndim == 1:
+            spectra = spectra.reshape(1, -1)
+
+        elif spectra.ndim == 3:
+
+            reconstructed_image = np.empty((spectra.shape))
+
+            spectra = spectra[0, :, 0]
+            R = self.ae.predict(spectra)
+
+            reconstructed_image[0, :, 0] = R[:]
+            reconstructed_image[0, :, 1] = R[:]
+            reconstructed_image[0, :, 2] = R[:]
+
+            return reconstructed_image
+
+
+        elif spectra.ndim == 4: # for image explainer
+
+            reconstructed_image = np.empty((spectra.shape))
+
+            spectra = spectra[:, 0, :, 0]
+            R = self.ae.predict(spectra)
+
+            reconstructed_image[:, 0, :, 0] = R[:, :]
+            reconstructed_image[:, 0, :, 1] = R[:, :]
+            reconstructed_image[:, 0, :, 2] = R[:, :]
+
+            return reconstructed_image
+
+        return self.ae.predict(spectra)
+    ############################################################################
+    def encode(self, spectra:'2D np.array')-> '2D np.array':
+
+        if spectra.ndim == 1:
+            spectra = spectra.reshape(1, -1)
+        return self.encoder(spectra)
+    ############################################################################
+    def decode(self, coding:'2D np.array')->'2D np.aray':
+
+        if coding.ndim==1:
+            coding = coding.reshape(1,-1)
+
+        return self.decoder(coding)
+    ############################################################################
+    def plot_model(self):
+
+        plot_model(self.ae, to_file='DenseVAE.png', show_shapes='True')
+        plot_model(self.encoder, to_file='DenseEncoder.png', show_shapes='True')
+        plot_model(self.decoder, to_file='DenseDecoder.png', show_shapes='True')
+    ############################################################################
+    def summary(self):
+        self.encoder.summary()
+        self.decoder.summary()
+        self.ae.summary()
+###############################################################################
 ###############################################################################
 def load_data(file_name, file_path):
 
