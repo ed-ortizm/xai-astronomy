@@ -4,7 +4,7 @@ from itertools import product
 import os
 import sys
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.collections as mcoll
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
@@ -88,6 +88,64 @@ class LoadAE:
         self.decoder.summary()
         self.ae.summary()
 ###############################################################################
+class PlotExplanation:
+    ############################################################################
+    def plot_explanation(self, wave, spectrum, lime_array,
+        s=3., linewidth=1., alpha=.7):
+
+        # a = np.sort(weights_explanation)
+        # print([f'{i:.2E}' for i in a[:2]])
+        # print([f'{i:.2E}' for i in a[-2:]])
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        plt.subplots_adjust(left=0.08, right=0.9)
+        ########################################################################
+        # line, = ax.plot(wave, spectrum[:-5], linewidth=linewidth, alpha=alpha)
+        ########################################################################
+        wave_explanation = wave[lime_array[:, 0].astype(np.int)]
+        flux_explanation = spectrum[:-5][lime_array[:, 0].astype(np.int)]
+        weights_explanation = lime_array[:, 1]
+        ########################################################################
+        vmin = weights_explanation.min()
+        vmax = weights_explanation.max()
+        ########################################################################
+        norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
+        ########################################################################
+        scatter = ax.scatter(wave_explanation, flux_explanation, s=s,
+            c=weights_explanation, cmap='bwr', norm=norm,
+            vmin=vmin, vmax=vmax, alpha=alpha, zorder=2.01)
+
+        line, = ax.plot(wave, spectrum[:-5], c='black', linewidth=linewidth,
+            alpha=alpha)
+
+        ########################################################################
+        ax_cb = self._colorbar_explanation(fig, vmin, vmax)
+        ax.set_title(f'Just a title')
+
+        # plt.tight_layout()
+        ########################################################################
+        return fig, ax, ax_cb, line, scatter
+    ############################################################################
+    def _colorbar_explanation(self, fig, vmin, vmax):
+        # Make axes with dimensions as desired.
+        ax_cb = fig.add_axes([0.91, 0.05, 0.03, 0.9])
+
+        # Set the colormap and norm to correspond to the data for which
+        # the colorbar will be used.
+        cmap = mpl.cm.bwr # -> mpl.cm.ScalarMappable
+        # norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
+        # ColorbarBase derives from ScalarMappable and puts a colorbar
+        # in a specified axes, so it has everything needed for a
+        # standalone colorbar.  There are many more kwargs, but the
+        # following gives a basic continuous colorbar with ticks
+        # and labels.
+        cb = mpl.colorbar.ColorbarBase(ax_cb, cmap=cmap,
+            norm=norm, orientation='vertical')#, extend='both')
+
+        cb.set_label('Lime weights')
+
+        return cb
 ###############################################################################
 def load_data(file_name, file_path):
 
@@ -101,7 +159,7 @@ def load_data(file_name, file_path):
         print(f'There is no file: {file_name}')
         sys.exit()
 ###############################################################################
-class PlotData:
+class OldPlotData:
 
     def __init__(self, spec, sdss_name, vmin, vmax):
         self.spec = spec
@@ -128,7 +186,7 @@ class PlotData:
         cb = mpl.colorbar.ColorbarBase(ax_cb, cmap=self._cmap,
                                         norm=norm,
                                         orientation='vertical', extend='both')
-        cb.set_label('Normalized weights')
+        cb.set_label('Lime weights')
 
 
         return cb
