@@ -102,12 +102,17 @@ class Outlier:
             axis=1)[:, -1 * number_outlier_fluxes:]
 
         score = np.empty(highest_mse.shape)
-
         for n, idx in enumerate(highest_mse):
 
             score[n, :] = mse[n, idx]
+        o_score = score.sum(axis=1)
+        similarity =  o_score.max() - o_score
+        o_similarity = np.empty((o_score.size, 2))
+        o_similarity[:, 0] = o_score[:]
+        o_similarity[:, 1] = similarity[:]
 
-        return score.sum(axis=1)
+        print(o_similarity.shape, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhh')
+        return o_similarity
         # outlier_scores = []
         # for percentage in percentages:
         #

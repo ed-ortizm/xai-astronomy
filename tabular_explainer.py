@@ -6,9 +6,6 @@ import time
 
 import lime
 from lime import lime_tabular
-neu_lower
-
-when going un giveth opponent diagnose came molecular near that has not yet, like of
 
 import numpy as np
 
@@ -139,6 +136,7 @@ ae = LoadAE(ae_path, encoder_path, decoder_path)
 
 outlier = Outlier(metric=metric, model=ae)
 outlier_score = partial(outlier.score, percentage=percent)
+# careful, I changed the outlier score.. check if top label keeps the results
 ################################################################################
 explanation = explainer.explain_instance(
     data_row=spectrum_explain[:-5],

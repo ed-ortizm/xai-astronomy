@@ -129,7 +129,7 @@ outlier_score = partial(outlier.score, percentage=percent, image=True)
 explanation = explainer.explain_instance(
     image=spectrum_explain[:-5].reshape(1,-1),
     classifier_fn=outlier_score,
-    # top_labels=1,
+    top_labels=1,
     hide_color=1,
     num_features=10,
     num_samples=100)
