@@ -73,36 +73,6 @@ layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
 training_data_dir = f'{spectra_dir}/processed_spectra'
 generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
 ###############################################################################
-# Loading training data
-train_set_name = f'spectra_{number_spectra}_{normalization_type}'
-train_set_path = f'{training_data_dir}/{train_set_name}.npy'
-
-training_data = load_data(train_set_name, train_set_path)
-###############################################################################
-# Loading a reconstructed data
-tail_reconstructed = f'AE_{layers_str}_loss_{loss}'
-
-reconstructed_set_name = (
-    f'{train_set_name}_reconstructed_{tail_reconstructed}')
-
-if local:
-    reconstructed_set_name = f'{reconstructed_set_name}_local'
-
-reconstructed_set_path = f'{generated_data_dir}/{reconstructed_set_name}.npy'
-
-reconstructed_data = load_data(reconstructed_set_name, reconstructed_set_path)
-###############################################################################
-# loading outlier scores
-tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
-
-if local:
-    tail_outlier_name = f'{tail_outlier_name}_local'
-
-scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
-
-scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
-scores = load_data(scores_name, scores_name_path)
-###############################################################################
 # loading top spectra
 tail_top_name = (f'nTop_{number_top_spectra}_'
     f'{model}_{layers_str}_loss_{loss}_{number_spectra}')
@@ -128,37 +98,16 @@ feature_selection = 'highest_weights'
 sample_around_instance = False
 feature_names = [i for i in range(top_outlier_spectra[:, 1:-5].shape[1])]
 ################################################################################
-explainer = lime_tabular.LimeTabularExplainer(
-            training_data=training_data[:, :-5],
-            mode=mode,
-            training_labels=scores,
-            feature_names=feature_names,
-            kernel_width=kernel_width,
-            verbose=True,
-            feature_selection=feature_selection,
-            discretize_continuous=False,
-            discretizer='quartile',
-            sample_around_instance=True,
-            training_data_stats=None)
-################################################################################
 model_head = f'{models_dir}/{model}/{layers_str}/Dense'
+
 model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
     f'nType_{normalization_type}')
+
 if local:
     model_tail = f'{model_tail}_local'
 
-ae_path = f'{model_head}{model}_{model_tail}'
-encoder_path = f'{model_head}Encoder_{model_tail}'
-decoder_path = f'{model_head}Decoder_{model_tail}'
-
-ae = LoadAE(ae_path, encoder_path, decoder_path)
-
-percentages = [10., 20., 30., 40., 50., 75., 100.]
-
-outlier = Outlier(metric=metric, model=ae)
-outlier_score = partial(outlier.score, percentage=percent, image=False)
-################################################################################
 # spectrum_explain = training_data[id_explain]
+
 explanation_name_middle = f'{metric}_metric_{percent}_percent'
 explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
 
@@ -168,7 +117,7 @@ for spectrum_explain in top_outlier_spectra:
         data_row=spectrum_explain[1:-5],
         predict_fn=outlier_score,
 #        top_labels = 1,
-        num_features=number_features)
+        num_features=100)
 
     spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
     spectrum_name = "_".join(spectrum_name)
@@ -178,18 +127,19 @@ for spectrum_explain in top_outlier_spectra:
 
     if local:
         explanation_name = f'{explanation_name}_local'
-
-    with open(
-        f'{explanation_dir}/{explanation_name}.txt',
-        'w') as file:
-
-        for explanation_weight in explanation.as_list():
-
-            explanation_weight = (f'{explanation_weight[0]},'
-                f'{explanation_weight[1]}\n')
-
             file.write(explanation_weight)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
 ################################################################################
+#
+# ae_path = f'{model_head}{model}_{model_tail}'
+# encoder_path = f'{model_head}Encoder_{model_tail}'
+# decoder_path = f'{model_head}Decoder_{model_tail}'
+#
+# ae = LoadAE(ae_path, encoder_path, decoder_path)
+#
+# percentages = [10., 20., 30., 40., 50., 75., 100.]
+#
+# outlier = Outlier(metric=metric, model=ae)
+# outlier_score = partial(outlier.score, percentage=percent, image=False)
