@@ -29,7 +29,7 @@ class Outlier:
         #     print(f'Failed to instantiate class')
         #     sys.exit()
     ############################################################################
-    def score(self, O, percentage, image=False):
+    def score(self, O, percentage, image):
         """
         Computes the outlier score according to the metric used to instantiate
         the class.
@@ -49,9 +49,9 @@ class Outlier:
             print(f'Computing the outlier scores')
 
             R = self.model.predict(O)
-
-            score = self._mse(O=O[:, 0,:, 0], R=R[:, 0,:, 0],
-                percentage=percentage, image)
+            print(f'O: {O.shape}    R:{R.shape}')
+            score = self._mse(O=O, R=R,
+                percentage=percentage, image=image)
 
             return score
 
@@ -75,6 +75,9 @@ class Outlier:
             A one dimensional numpy array with the mean square error for objects
             present in O
         """
+
+        if image:
+            O, R = O[:, 0, :, 0], R[:, 0, :, 0]
 
         mse = np.square(R - O)
 
@@ -100,9 +103,7 @@ class Outlier:
 
             return o_similarity
 
-        else:
-
-            return o_score
+        return o_score
     ############################################################################
     def top_reconstructions(self, scores, n_top_spectra):
         """

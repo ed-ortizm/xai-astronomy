@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import sys
 from argparse import ArgumentParser
 from functools import partial
 import os
@@ -69,7 +70,7 @@ if not os.path.exists(explanation_dir):
     os.makedirs(explanation_dir)
 ################################################################################
 layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
-training_data_dir = f'{spectra_dir}/normalized_data'
+training_data_dir = f'{spectra_dir}/processed_spectra'
 generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
 ###############################################################################
 # Loading training data
@@ -113,19 +114,19 @@ top_outlier_name = f'{metric}_outlier_spectra_{percent_str}_{tail_top_name}'
 top_normal_name = f'{metric}_normal_spectra_{percent_str}_{tail_top_name}'
 
 top_outlier_name_path = f'{generated_data_dir}/{top_outlier_name}.npy'
-top_outlier_spectra = load_data(scores_name, scores_name_path)
+top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
 ################################################################################
 print(f"Creating explainers")
 # defining variables
 ################################################################################
 mode = 'regression'
-kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
+kernel_width = np.sqrt(top_outlier_spectra[:, 1:-5].shape[1])*0.75
 # feature_selection: selects the features that have the highest
 # product of absolute weight * original data point when
 # learning with all the features
 feature_selection = 'highest_weights'
 sample_around_instance = False
-feature_names = [i for i in range(spectrum_explain[:-5].size)]
+feature_names = [i for i in range(top_outlier_spectra[:, 1:-5].shape[1])]
 ################################################################################
 explainer = lime_tabular.LimeTabularExplainer(
             training_data=training_data[:, :-5],
@@ -163,17 +164,19 @@ explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
 
 for spectrum_explain in top_outlier_spectra:
 
+    print(f'{spectrum_explain[1:-5].shape}>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>')
+#    sys.exit()
     explanation = explainer.explain_instance(
         data_row=spectrum_explain[1:-5],
         predict_fn=outlier_score,
-        top_labels = 1,
+#        top_labels = 1,
         num_features=100)
 
     spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
     spectrum_name = "_".join(spectrum_name)
 
-    explanation_name = (f'{spectrum_name}_nFeatures_{number_features}_'
-        f'{explanation_name_midle}_{explanation_name_tail}')
+    explanation_name = (f'spectrum_{spectrum_name}_nFeatures_{number_features}_'
+        f'{explanation_name_middle}_{explanation_name_tail}')
 
     if local:
         explanation_name = f'{explanation_name}_local'
