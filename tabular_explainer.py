@@ -15,7 +15,6 @@ from library_lime import load_data, LoadAE
 from library_outlier import Outlier
 ################################################################################
 ti = time.time()
-################################################################################
 ###############################################################################
 parser = ArgumentParser()
 
@@ -34,7 +33,9 @@ parser.add_argument('--metric', type=str)
 parser.add_argument('--top_spectra', '-top', type=int)
 parser.add_argument('--percent', '-%', type=float)
 
-parser.add_argument('--id_explain', '-id_xpl', type=int)
+parser.add_argument('--number_features', type=int)
+
+# parser.add_argument('--id_explain', '-id_xpl', type=int)
 
 
 script_arguments = parser.parse_args()
@@ -56,9 +57,17 @@ loss = script_arguments.loss
 percent = script_arguments.percent
 percent_str = f'percentage_{int(percent*100)}'
 
-id_explain = script_arguments.id_explain
+# id_explain = script_arguments.id_explain
+number_features = script_arguments.number_features
 ################################################################################
 # Relevant directories
+################################################################################
+if local:
+    explanation_dir = f'{explanation_dir}_local'
+
+if not os.path.exists(explanation_dir):
+    os.makedirs(explanation_dir)
+################################################################################
 layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
 training_data_dir = f'{spectra_dir}/normalized_data'
 generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
@@ -92,14 +101,23 @@ scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
 
 scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
 scores = load_data(scores_name, scores_name_path)
+###############################################################################
+# loading top spectra
+tail_top_name = (f'nTop_{number_top_spectra}_'
+    f'{model}_{layers_str}_loss_{loss}_{number_spectra}')
+
+# if local:
+#     tail_outlier_name = f'{tail_outlier_name}_local'
+
+top_outlier_name = f'{metric}_outlier_spectra_{percent_str}_{tail_top_name}'
+top_normal_name = f'{metric}_normal_spectra_{percent_str}_{tail_top_name}'
+
+top_outlier_name_path = f'{generated_data_dir}/{top_outlier_name}.npy'
+top_outlier_spectra = load_data(scores_name, scores_name_path)
 ################################################################################
-print(f"Creating explainer")
+print(f"Creating explainers")
 # defining variables
 ################################################################################
-# add model to predict a spec to explain because of the sampling than by lime
-spectrum_explain = training_data[id_explain]
-reconstructed_spectrum_explain = reconstructed_data[id_explain]
-
 mode = 'regression'
 kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
 # feature_selection: selects the features that have the highest
@@ -134,32 +152,42 @@ decoder_path = f'{model_head}Decoder_{model_tail}'
 
 ae = LoadAE(ae_path, encoder_path, decoder_path)
 
+percentages = [10., 20., 30., 40., 50., 75., 100.]
+
 outlier = Outlier(metric=metric, model=ae)
-outlier_score = partial(outlier.score, percentage=percent)
-# careful, I changed the outlier score.. check if top label keeps the results
+outlier_score = partial(outlier.score, percentage=percent, image=False)
 ################################################################################
-explanation = explainer.explain_instance(
-    data_row=spectrum_explain[:-5],
-    predict_fn=outlier_score,
-    top_labels = 1,
-    num_features=100)
+# spectrum_explain = training_data[id_explain]
+explanation_name_middle = f'{metric}_metric_{percent}_percent'
+explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
 
-spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
-spectrum_name = "_".join(spectrum_name)
+for spectrum_explain in top_outlier_spectra:
 
-if not os.path.exists(explanation_dir):
-    os.makedirs(explanation_dir)
+    explanation = explainer.explain_instance(
+        data_row=spectrum_explain[1:-5],
+        predict_fn=outlier_score,
+        top_labels = 1,
+        num_features=100)
 
-with open(
-    f'{explanation_dir}/spectrum_{spectrum_name}_fluxId_weight_explanation.txt',
-    'w') as file:
+    spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
+    spectrum_name = "_".join(spectrum_name)
 
-    for explanation_weight in explanation.as_list():
+    explanation_name = (f'{spectrum_name}_nFeatures_{number_features}_'
+        f'{explanation_name_midle}_{explanation_name_tail}')
 
-        explanation_weight = (f'{explanation_weight[0]},'
-            f'{explanation_weight[1]}\n')
+    if local:
+        explanation_name = f'{explanation_name}_local'
 
-        file.write(explanation_weight)
+    with open(
+        f'{explanation_dir}/{explanation_name}.txt',
+        'w') as file:
+
+        for explanation_weight in explanation.as_list():
+
+            explanation_weight = (f'{explanation_weight[0]},'
+                f'{explanation_weight[1]}\n')
+
+            file.write(explanation_weight)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')

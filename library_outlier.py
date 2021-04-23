@@ -1,6 +1,4 @@
 import sys
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 ################################################################################
 class Outlier:
@@ -49,36 +47,19 @@ class Outlier:
         """
         if self.metric == 'mse':
             print(f'Computing the outlier scores')
-            print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-            #
-            # print(O[0,0,:5,:], '\n')
-            # print(O[:,0,:5,0], '\n')
+
             R = self.model.predict(O)
-            # print(O.shape, R.shape)
-            #
-            # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-            #
-            # print(R[0,0,:5,:], '\n')
-            # print(R[:,0,:5,0], '\n')
-            # print('&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&')
-            # print(O[:, 0,:, 0].shape, R[:, 0,:, 0].shape)
-            if image:
 
-                score = self._mse(O=O[:, 0,:, 0], R=R[:, 0,:, 0],
-                    percentage=percentage)
+            score = self._mse(O=O[:, 0,:, 0], R=R[:, 0,:, 0],
+                percentage=percentage, image)
 
-                print(score.reshape(-1,1).shape)
-                return score
-
-            else:
-
-                return self._mse(O=O, R=R, percentage=percentage)
+            return score
 
         else:
             print(f'The provided metric: {self.metric} is not implemented yet')
             sys.exit()
     ############################################################################
-    def _mse(self, O, R, percentage):
+    def _mse(self, O, R, percentage, image):
         """
         Computes the mean square error for the reconstruction of the input
         objects
@@ -102,37 +83,26 @@ class Outlier:
             axis=1)[:, -1 * number_outlier_fluxes:]
 
         score = np.empty(highest_mse.shape)
+
         for n, idx in enumerate(highest_mse):
 
             score[n, :] = mse[n, idx]
-        o_score = score.sum(axis=1)
-        similarity =  o_score.max() - o_score
-        o_similarity = np.empty((o_score.size, 2))
-        o_similarity[:, 0] = o_score[:]
-        o_similarity[:, 1] = similarity[:]
 
-        print(o_similarity.shape, 'hhhhhhhhhhhhhhhhhhhhhhhhhhhh')
-        return o_similarity
-        # outlier_scores = []
-        # for percentage in percentages:
-        #
-        #     mse = np.square(R - O)
-        #
-        #     number_outlier_fluxes = int(percentage*mse.shape[1])
-        #
-        #     highest_mse = np.argpartition(
-        #         mse, -1 * number_outlier_fluxes,
-        #         axis=1)[:, -1 * number_outlier_fluxes:]
-        #
-        #     score = np.empty(highest_mse.shape)
-        #
-        #     for n, idx in enumerate(highest_mse):
-        #
-        #         score[n, :] = mse[n, idx]
-        #
-        #     outlier_scores.append(score.sum(axis=1))
-        #
-        # return outlier_scores
+        o_score = score.sum(axis=1)
+
+        if image:
+
+            similarity =  o_score.max() - o_score
+
+            o_similarity = np.empty((o_score.size, 2))
+            o_similarity[:, 0] = o_score[:]
+            o_similarity[:, 1] = similarity[:]
+
+            return o_similarity
+
+        else:
+
+            return o_score
     ############################################################################
     def top_reconstructions(self, scores, n_top_spectra):
         """
