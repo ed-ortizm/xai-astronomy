@@ -36,6 +36,7 @@ parser.add_argument('--percent', '-%', type=float)
 
 parser.add_argument('--number_features', type=int)
 
+parser.add_argument('--number_snr', '-n_snr', type=int)
 # parser.add_argument('--id_explain', '-id_xpl', type=int)
 
 
@@ -56,10 +57,11 @@ number_top_spectra = script_arguments.top_spectra
 loss = script_arguments.loss
 
 percent = script_arguments.percent
-percent_str = f'percentage_{int(percent*100)}'
+percent_str = f'{int(percent*100)}_percent'
 
 # id_explain = script_arguments.id_explain
 number_features = script_arguments.number_features
+number_snr = script_arguments.number_snr
 ################################################################################
 # Relevant directories
 ################################################################################
@@ -74,16 +76,22 @@ training_data_dir = f'{spectra_dir}/processed_spectra'
 generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
 ###############################################################################
 # Loading training data
-train_set_name = f'spectra_{number_spectra}_{normalization_type}'
+train_set_name = f'spectra_{number_spectra}_{normalization_type}_nSnr_{number_snr}_SF_train'
 train_set_path = f'{training_data_dir}/{train_set_name}.npy'
 
 training_data = load_data(train_set_name, train_set_path)
 ###############################################################################
+# Loading training data
+test_set_name = f'spectra_{number_spectra}_{normalization_type}_nSnr_{number_snr}_noSF_test'
+test_set_path = f'{training_data_dir}/{test_set_name}.npy'
+
+test_data = load_data(test_set_name, test_set_path)
+###############################################################################
 # Loading a reconstructed data
 tail_reconstructed = f'AE_{layers_str}_loss_{loss}'
-
+# spectra_500000_median_nSnr_500000_SF_train_reconstructed_AE_200_50_6_50_200_loss_mse_nTrain_500000_nType_median.npy
 reconstructed_set_name = (
-    f'{train_set_name}_reconstructed_{tail_reconstructed}')
+    f'{train_set_name}_reconstructed_{tail_reconstructed}_nTrain_{number_snr}_nType_{normalization_type}')
 
 if local:
     reconstructed_set_name = f'{reconstructed_set_name}_local'
@@ -93,43 +101,45 @@ reconstructed_set_path = f'{generated_data_dir}/{reconstructed_set_name}.npy'
 reconstructed_data = load_data(reconstructed_set_name, reconstructed_set_path)
 ###############################################################################
 # loading outlier scores
-tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
+tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_nTrain_{number_snr}_nType_{normalization_type}'
 
 if local:
     tail_outlier_name = f'{tail_outlier_name}_local'
-
-scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
-
-scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
+# mse_score_10_percent_train_AE_200_50_6_50_200_loss_mse_nTrain_500000_nType_median.npy
+scores_name = f'{metric}_score_{percent_str}_train_{tail_outlier_name}'
+# mse_score_10_percent
+scores_name_path = f'{generated_data_dir}/{metric}_score_{percent_str}/{scores_name}.npy'
 scores = load_data(scores_name, scores_name_path)
 ###############################################################################
 # loading top spectra
-tail_top_name = (f'nTop_{number_top_spectra}_'
-    f'{model}_{layers_str}_loss_{loss}_{number_spectra}')
+tail_top_name = tail_outlier_name 
+
+#(f'nTop_{number_top_spectra}_'
+#    f'{model}_{layers_str}_loss_{loss}_{number_spectra}')
 
 # if local:
 #     tail_outlier_name = f'{tail_outlier_name}_local'
+# outlier_nTop_1000_mse_score_10_percent_test_AE_200_50_6_50_200_loss_mse_nTrain_500000_nType_median.npy
+top_outlier_name = f'outlier_nTop_{number_top_spectra}_{metric}_score_{percent_str}_test_{tail_top_name}'
+#top_normal_name = f'{metric}_normal_spectra_{percent_str}_{tail_top_name}'
 
-top_outlier_name = f'{metric}_outlier_spectra_{percent_str}_{tail_top_name}'
-top_normal_name = f'{metric}_normal_spectra_{percent_str}_{tail_top_name}'
-
-top_outlier_name_path = f'{generated_data_dir}/{top_outlier_name}.npy'
+top_outlier_name_path = f'{generated_data_dir}/{metric}_score_{percent_str}/{top_outlier_name}.npy'
 top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
 ################################################################################
 print(f"Creating explainers")
 # defining variables
 ################################################################################
 mode = 'regression'
-kernel_width = np.sqrt(top_outlier_spectra[:, 1:-5].shape[1])*0.75
+kernel_width = np.sqrt(top_outlier_spectra[:, 1:-8].shape[1])*0.75
 # feature_selection: selects the features that have the highest
 # product of absolute weight * original data point when
 # learning with all the features
 feature_selection = 'highest_weights'
 sample_around_instance = False
-feature_names = [i for i in range(top_outlier_spectra[:, 1:-5].shape[1])]
+feature_names = [i for i in range(top_outlier_spectra[:, 1:-8].shape[1])]
 ################################################################################
 explainer = lime_tabular.LimeTabularExplainer(
-            training_data=training_data[:, :-5],
+            training_data=training_data[:, :-8],
             mode=mode,
             training_labels=scores,
             feature_names=feature_names,
@@ -141,9 +151,10 @@ explainer = lime_tabular.LimeTabularExplainer(
             sample_around_instance=True,
             training_data_stats=None)
 ################################################################################
+# DenseDecoder_200_50_6_50_200_loss_mse_nTrain_20000_nType_median
 model_head = f'{models_dir}/{model}/{layers_str}/Dense'
-model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
-    f'nType_{normalization_type}')
+model_tail = f'{layers_str}_loss_{loss}_nTrain_{number_snr}_nType_{normalization_type}'
+#    f'nType_{normalization_type}')
 if local:
     model_tail = f'{model_tail}_local'
 
@@ -165,12 +176,12 @@ explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
 for spectrum_explain in top_outlier_spectra:
 
     explanation = explainer.explain_instance(
-        data_row=spectrum_explain[1:-5],
+        data_row=spectrum_explain[1:-8],
         predict_fn=outlier_score,
 #        top_labels = 1,
         num_features=number_features)
 
-    spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
+    spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-8:-5]]
     spectrum_name = "_".join(spectrum_name)
 
     explanation_name = (f'spectrum_{spectrum_name}_nFeatures_{number_features}_'
