@@ -93,17 +93,13 @@ class PlotExplanation:
     def plot_explanation(self, wave, spectrum, lime_array,
         s=3., linewidth=1., alpha=.7):
 
-        # a = np.sort(weights_explanation)
-        # print([f'{i:.2E}' for i in a[:2]])
-        # print([f'{i:.2E}' for i in a[-2:]])
-
         fig, ax = plt.subplots(figsize=(10, 5))
         plt.subplots_adjust(left=0.08, right=0.9)
         ########################################################################
-        # line, = ax.plot(wave, spectrum[:-5], linewidth=linewidth, alpha=alpha)
+        # line, = ax.plot(wave, spectrum[:-8], linewidth=linewidth, alpha=alpha)
         ########################################################################
         wave_explanation = wave[lime_array[:, 0].astype(np.int)]
-        flux_explanation = spectrum[:-5][lime_array[:, 0].astype(np.int)]
+        flux_explanation = spectrum[1:-8][lime_array[:, 0].astype(np.int)]
         weights_explanation = lime_array[:, 1]
         ########################################################################
         vmin = weights_explanation.min()
@@ -115,13 +111,29 @@ class PlotExplanation:
             c=weights_explanation, cmap='bwr', norm=norm,
             vmin=vmin, vmax=vmax, alpha=alpha, zorder=2.01)
 
-        line, = ax.plot(wave, spectrum[:-5], c='black', linewidth=linewidth,
+        line, = ax.plot(wave, spectrum[1:-8], c='black', linewidth=linewidth,
             alpha=alpha)
 
         ########################################################################
         ax_cb = self._colorbar_explanation(fig, vmin, vmax)
-        ax.set_title(f'Just a title')
+        ########################################################################
+        spectrum_name = [f'{int(idx)}' for idx in spectrum[-8:-4]]
+        spectrum_name = "-".join(spectrum_name)
+        ########################################################################
+        z = spectrum[-2]
+        ########################################################################
+        signal_noise_ratio = spectrum[-1]
+        ########################################################################
+        size='x-large'
+        ax.set_title(f'spec-{spectrum_name} [SDSS-DR16]', fontsize=size)
 
+        ax.set_xlabel('$\lambda$ $[\AA]$')
+        ax.set_ylabel('Median normalized')
+
+        ax.text(0.8, 0.9, f'z = {z:.4f}', transform=ax.transAxes, size=size)
+
+        ax.text(0.8, 0.8, f'SNR = {signal_noise_ratio:.4f}',
+            transform=ax.transAxes, size=size)
         # plt.tight_layout()
         ########################################################################
         return fig, ax, ax_cb, line, scatter
@@ -153,6 +165,9 @@ def load_data(file_name, file_path):
 
         print(f'Loading: {file_name}')
 
+        if file_path.split('.')[-1] == 'txt':
+
+            return np.genfromtxt(f'{file_path}', delimiter=',')
         return np.load(f'{file_path}')
 
     else:
@@ -197,8 +212,8 @@ class OldPlotData:
         s=3., linewidth=1., alpha=0.7):
 
         a = np.sort(weights_explanation)
-        print([f'{i:.2E}' for i in a[:2]])
-        print([f'{i:.2E}' for i in a[-2:]])
+        #print([f'{i:.2E}' for i in a[:2]])
+        #print([f'{i:.2E}' for i in a[-2:]])
 
         self._fig, ax = plt.subplots(figsize=(10, 5))
         plt.subplots_adjust(left=0.08, right=0.9)

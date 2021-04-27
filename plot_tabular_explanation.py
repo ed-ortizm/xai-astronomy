@@ -8,11 +8,13 @@ import time
 import lime
 from lime import lime_tabular
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 
 from constants_lime import normalization_schemes
 from constants_lime import explanation_dir, models_dir, spectra_dir, working_dir
-from library_lime import load_data, LoadAE
+from library_lime import load_data, PlotExplanation
 from library_outlier import Outlier
 ################################################################################
 ti = time.time()
@@ -36,9 +38,6 @@ parser.add_argument('--percent', '-%', type=float)
 
 parser.add_argument('--number_features', type=int)
 
-# parser.add_argument('--id_explain', '-id_xpl', type=int)
-
-
 script_arguments = parser.parse_args()
 ################################################################################
 number_spectra = script_arguments.number_spectra
@@ -58,7 +57,6 @@ loss = script_arguments.loss
 percent = script_arguments.percent
 percent_str = f'percentage_{int(percent*100)}'
 
-# id_explain = script_arguments.id_explain
 number_features = script_arguments.number_features
 ################################################################################
 # Relevant directories
@@ -106,28 +104,40 @@ model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
 if local:
     model_tail = f'{model_tail}_local'
 
-# spectrum_explain = training_data[id_explain]
+################################################################################
+plot_explanation = PlotExplanation()
+################################################################################
+wave_name = f'wave_master_{number_spectra}_processed'
+wave_path = f'{spectra_dir}/processed_spectra/{wave_name}.npy'
+wave = load_data(wave_name, wave_path)
+################################################################################
+explanation_name_middle = (f'nFeatures_{number_features}_{metric}_metric_'
+    f'{percent}_percent')
 
-explanation_name_middle = f'{metric}_metric_{percent}_percent'
 explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
-
+################################################################################
 for spectrum_explain in top_outlier_spectra:
 
-    explanation = explainer.explain_instance(
-        data_row=spectrum_explain[1:-5],
-        predict_fn=outlier_score,
-#        top_labels = 1,
-        num_features=100)
-
+    ############################################################################
     spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
     spectrum_name = "_".join(spectrum_name)
-
-    explanation_name = (f'spectrum_{spectrum_name}_nFeatures_{number_features}_'
+    ############################################################################
+    lime_array_name = (f'spectrum_{spectrum_name}_'
         f'{explanation_name_middle}_{explanation_name_tail}')
 
-    if local:
-        explanation_name = f'{explanation_name}_local'
-            file.write(explanation_weight)
+    lime_array_path = f'{explanation_dir}/{lime_array_name}.txt'
+    lime_array = load_data(lime_array_name, lime_array_path)
+    # ############################################################################
+    fig, ax, ax_cb, line, scatter = plot_explanation.plot_explanation(
+        wave, spectrum_explain, lime_array,
+        s=30., linewidth=0.5, alpha=1.)
+
+    if not os.path.exists(f'{explanation_dir}/nFeatures_{number_features}'):
+        os.makedirs(f'{explanation_dir}/nFeatures_{number_features}')
+
+    fig.savefig(
+        f'{explanation_dir}/nFeatures_{number_features}/{lime_array_name}.png')
+    plt.close()
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
