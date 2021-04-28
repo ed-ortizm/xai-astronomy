@@ -99,7 +99,7 @@ class PlotExplanation:
         # line, = ax.plot(wave, spectrum[:-8], linewidth=linewidth, alpha=alpha)
         ########################################################################
         wave_explanation = wave[lime_array[:, 0].astype(np.int)]
-        flux_explanation = spectrum[1:-8][lime_array[:, 0].astype(np.int)]
+        flux_explanation = spectrum[:-8][lime_array[:, 0].astype(np.int)]
         weights_explanation = lime_array[:, 1]
         ########################################################################
         vmin = weights_explanation.min()
@@ -111,7 +111,7 @@ class PlotExplanation:
             c=weights_explanation, cmap='bwr', norm=norm,
             vmin=vmin, vmax=vmax, alpha=alpha, zorder=2.01)
 
-        line, = ax.plot(wave, spectrum[1:-8], c='black', linewidth=linewidth,
+        line, = ax.plot(wave, spectrum[:-8], c='black', linewidth=linewidth,
             alpha=alpha)
 
         ########################################################################
