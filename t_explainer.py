@@ -144,7 +144,7 @@ outlier_score = partial(outlier.score, percentage=percent, image=False)
 ################################################################################
 # spectrum_explain = training_data[id_explain]
 explanation_name_middle = f'{metric}_metric_{percent}_percent'
-explanation_name_tail = f'{model}_{model_tail}_fluxId_weight_explanation'
+explanation_name_tail = f'{model}_{model_tail}_explanation'
 
 spectrum_explain = np.load(f'{id_explain}.npy')
 
@@ -156,6 +156,9 @@ explanation = explainer.explain_instance(
 
 spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-8:-5]]
 spectrum_name = "_".join(spectrum_name)
+
+if id_explain.split('-')[-1] == 'fake':
+    spectrum_name = f'{spectrum_name}_fake'
 
 explanation_name = (f'spectrum_{spectrum_name}_nFeatures_{number_features}_'
         f'{explanation_name_middle}_{explanation_name_tail}')

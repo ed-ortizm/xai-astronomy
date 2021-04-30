@@ -90,7 +90,7 @@ class LoadAE:
 ###############################################################################
 class PlotExplanation:
     ############################################################################
-    def plot_explanation(self, wave, spectrum, lime_array,
+    def plot_explanation(self, wave, spectrum, lime_array, vmin, vmax,
         s=3., linewidth=1., alpha=.7):
 
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -102,13 +102,15 @@ class PlotExplanation:
         flux_explanation = spectrum[:-8][lime_array[:, 0].astype(np.int)]
         weights_explanation = lime_array[:, 1]
         ########################################################################
-        vmin = weights_explanation.min()
-        vmax = weights_explanation.max()
+        #vmin = 0. #weights_explanation.min()
+        #vmax = 1 #0.05*weights_explanation.max()
         ########################################################################
-        norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        #norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
         ########################################################################
+        cmap = 'Reds' #'bwr'
         scatter = ax.scatter(wave_explanation, flux_explanation, s=s,
-            c=weights_explanation, cmap='bwr', norm=norm,
+            c=weights_explanation, cmap=cmap, norm=norm,
             vmin=vmin, vmax=vmax, alpha=alpha, zorder=2.01)
 
         line, = ax.plot(wave, spectrum[:-8], c='black', linewidth=linewidth,
@@ -117,7 +119,7 @@ class PlotExplanation:
         ########################################################################
         ax_cb = self._colorbar_explanation(fig, vmin, vmax)
         ########################################################################
-        spectrum_name = [f'{int(idx)}' for idx in spectrum[-8:-4]]
+        spectrum_name = [f'{int(idx)}' for idx in spectrum[-8:-5]]
         spectrum_name = "-".join(spectrum_name)
         ########################################################################
         z = spectrum[-2]
@@ -144,16 +146,17 @@ class PlotExplanation:
 
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
-        cmap = mpl.cm.bwr # -> mpl.cm.ScalarMappable
-        # norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
+        cmap = mpl.cm.Reds # -> mpl.cm.ScalarMappable
+        #cmap = mpl.cm.bwr # -> mpl.cm.ScalarMappable
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        # norm = mpl.colors.DivergingNorm(vmin=vmin, vcenter=0., vmax=vmax)
         # ColorbarBase derives from ScalarMappable and puts a colorbar
         # in a specified axes, so it has everything needed for a
         # standalone colorbar.  There are many more kwargs, but the
         # following gives a basic continuous colorbar with ticks
         # and labels.
         cb = mpl.colorbar.ColorbarBase(ax_cb, cmap=cmap,
-            norm=norm, orientation='vertical')#, extend='both')
+            norm=norm, orientation='vertical', extend='both')
 
         cb.set_label('Lime weights')
 

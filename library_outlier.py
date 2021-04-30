@@ -79,7 +79,7 @@ class Outlier:
         if image:
             O, R = O[:, 0, :, 0], R[:, 0, :, 0]
 
-        mse = np.square(R - O)
+        mse = np.abs(R - O)/np.abs(O+0.0001)
 
         number_outlier_fluxes = int(percentage*mse.shape[1])
         highest_mse = np.argpartition(mse, -1 * number_outlier_fluxes,
