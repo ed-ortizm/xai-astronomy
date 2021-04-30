@@ -36,7 +36,7 @@ parser.add_argument('--percent', '-%', type=int)
 
 parser.add_argument('--number_features', type=int)
 
-parser.add_argument('--number_spectra', '-n_snr', type=int)
+#parser.add_argument('--number_spectra', '-n_snr', type=int)
 
 parser.add_argument('--train_name', type=str)
 parser.add_argument('--explain_name', type=str)
@@ -129,12 +129,12 @@ for metric in metrics:
     # loading outlier scores of the training data
     # mse_score_10_percent_train_AE_200_50_6_50_200_loss_mse_nTrain_500000_nType_median.npy
     # AE_200_50_6_50_200_loss_mse_nTrain_500000_nType_median.npy
-    scores_name = (f'{set_to_explain_name}_{metric}_{percent_str}_'
+    scores_name = (f'{set_to_explain_name}_{metric}_score_{percent_str}_'
         f'{tail_outlier_name}')
     # scores_name = f'{metric}_score_{percent_str}_train_{tail_outlier_name}'
     # mse_score_10_percent
     scores_name_path = (f'{generated_data_dir}/'
-        f'{set_to_explain_name}_{metric}_{percent_str}/'
+        f'{set_to_explain_name}_{metric}_score_{percent_str}/'
         f'{scores_name}.npy')
     # scores_name_path = f'{generated_data_dir}/{metric}_score_{percent_str}/{scores_name}.npy'
     scores = load_data(scores_name, scores_name_path)
@@ -158,7 +158,7 @@ for metric in metrics:
     # defining variables
     ################################################################################
     mode = 'regression'
-    kernel_width = np.sqrt(train_data[:, :-8])*0.75
+    kernel_width = np.sqrt(train_data[:, :-8].shape[1])*0.75
     # feature_selection: selects the features that have the highest
     # product of absolute weight * original data point when
     # learning with all the features
@@ -184,7 +184,7 @@ for metric in metrics:
     #top_normal_name = f'{metric}_normal_spectra_{percent_str}_{tail_top_name}'
 
     top_outlier_name_path = (f'{generated_data_dir}/'
-        f'{set_to_explain_name}_{metric}_{percent_str}/{top_outlier_name}.npy'
+        f'{set_to_explain_name}_{metric}_score_{percent_str}/{top_outlier_name}.npy')
 
     top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
     # top_outlier_name_path = f'{generated_data_dir}/{metric}_score_{percent_str}/{top_outlier_name}.npy'
@@ -199,30 +199,30 @@ for metric in metrics:
 
     for spectrum_explain in top_outlier_spectra:
 
-    explanation = explainer.explain_instance(
-        data_row=spectrum_explain[1:-8],
-        predict_fn=outlier_score,
-        num_features=number_features)
+        explanation = explainer.explain_instance(
+            data_row=spectrum_explain[1:-8],
+            predict_fn=outlier_score,
+            num_features=number_features)
 
-    spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-8:-5]]
-    spectrum_name = "-".join(spectrum_name)
+        spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-8:-5]]
+        spectrum_name = "-".join(spectrum_name)
 
-    explanation_name = (f'spec-{spectrum_name}_nFeatures_{number_features}_'
-        f'{explanation_name_tail}')
+        explanation_name = (f'spec-{spectrum_name}_nFeatures_{number_features}_'
+            f'{explanation_name_tail}')
 
-    if local:
-        explanation_name = f'{explanation_name}_local'
+        if local:
+            explanation_name = f'{explanation_name}_local'
 
-    with open(
-        f'{explanation_dir}/{explanation_name}.txt',
-        'w') as file:
+        with open(
+            f'{explanation_dir}/{explanation_name}.txt',
+            'w') as file:
 
-        for explanation_weight in explanation.as_list():
+            for explanation_weight in explanation.as_list():
 
-            explanation_weight = (f'{explanation_weight[0]},'
-                f'{explanation_weight[1]}\n')
+                explanation_weight = (f'{explanation_weight[0]},'
+                    f'{explanation_weight[1]}\n')
 
-            file.write(explanation_weight)
+                file.write(explanation_weight)
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')

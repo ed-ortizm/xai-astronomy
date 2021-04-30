@@ -22,27 +22,27 @@ class Outlier:
         if self.metric == 'mse':
 
             R = self.model.predict(O)
-            return self._mse(O=O, R=R, percentage=percentage, image)
+            return self._mse(O=O, R=R, percentage=percentage, image=image)
 
         elif self.metric == 'mse_relative':
             R = self.model.predict(O)
-            return self._mse_relative(O=O, R=R, percentage=percentage, image)
+            return self._mse_relative(O=O, R=R, percentage=percentage, image=image)
 
         elif self.metric == 'mad':
             R = self.model.predict(O)
-            return self._mad(O=O, R=R, percentage=percentage, image)
+            return self._mad(O=O, R=R, percentage=percentage, image=image)
 
         elif self.metric == 'mad_relative':
             R = self.model.predict(O)
-            return self._mad_relative(O=O, R=R, percentage=percentage, image)
+            return self._mad_relative(O=O, R=R, percentage=percentage, image=image)
 
         elif self.metric == 'lp':
             R = self.model.predict(O)
-            return self._lp(O=O, R=R, percentage=percentage, image)
+            return self._lp(O=O, R=R, percentage=percentage, image=image)
 
         elif self.metric == 'lp_relative':
             R = self.model.predict(O)
-            return self._lp_relative(O=O, R=R, percentage=percentage, image)
+            return self._lp_relative(O=O, R=R, percentage=percentage, image=image)
 
         else:
             print(f'The provided metric: {self.metric} is not implemented yet')
