@@ -223,3 +223,28 @@ class Explanation:
         if not ipython:
             plt.close()
 ###############################################################################
+    # print(f"Creating explainers")
+    # # defining variables
+    # ################################################################################
+    # mode = parser.get('explainer', 'mode')
+    # kernel_width = np.sqrt(train_data[:, :-8].shape[1])*0.75
+    # # feature_selection: selects the features that have the highest
+    # # product of absolute weight * original data point when
+    # # learning with all the features
+    # feature_selection = parser.get('explainer', 'feature_selection')
+    # sample_around_instance = parser.get('explainer', 'sample_around')
+    # feature_names = [i for i in range(train_data[:, :-8].shape[1])]
+    ################################################################################
+    # Gotta develop my class through inheritance
+    # explainer = lime_tabular.LimeTabularExplainer(
+    #             training_data=train_data[:, :-8],
+    #             mode=mode,
+    #             training_labels=scores,
+    #             feature_names=feature_names,
+    #             kernel_width=kernel_width,
+    #             verbose=True,
+    #             feature_selection=feature_selection,
+    #             discretize_continuous=False,
+    #             discretizer='quartile',
+    #             sample_around_instance=True,
+    #             training_data_stats=None)
