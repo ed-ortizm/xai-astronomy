@@ -9,12 +9,13 @@ import time
 from astropy.io import fits
 ####################################################################
 import lime
-from lime import lime_tabular
+from lime import lime_image
+from lime.wrappers.scikit_image import SegmentationAlgorithm
 ####################################################################
 import numpy as np
 import scipy.constants as cst
 ################################################################################
-from library_outlier import Outlier
+from src.explainers.manga.manga import ToyModel
 ################################################################################
 ti = time.time()
 ################################################################################
@@ -66,17 +67,9 @@ wave_master = np.linspace(
 # print(stellar_velocity.shape, flux.shape)
 number_x, number_y, number_z = raw_flux.shape
 
-flux = np.empty(
-            (
-            number_x*number_y,
-            number_wave_master
-            )
-        )
+flux = np.empty( (number_x*number_y, number_wave_master) )
 
-raw_flux = raw_flux.reshape(
-    number_x*number_y,
-    number_z
-    )
+raw_flux = raw_flux.reshape(number_x*number_y, number_z)
 
 for idx, stellar_velocity in enumerate(stellar_velocity_field.reshape(-1)):
 
@@ -88,16 +81,50 @@ for idx, stellar_velocity in enumerate(stellar_velocity_field.reshape(-1)):
         right=np.nan
     )
 
-# flux *= 1. / np.nanmedian(flux, axis=0)
+    median = np.nanmedian(flux[idx, :])
+    if median != 0:
+        flux[idx, :] *= 1./median
+####################################################################
 flux = flux.reshape(number_x, number_y, number_wave_master)
-print(flux.shape, flux.min(), flux.max())
+np.save('cube.npy', flux)
+####################################################################
+model = ToyModel(wave_master, delta=10)
+explainer = lime_image.LimeImageExplainer()
+####################################################################
+image = flux.reshape((1,) + flux.shape)
+print(image.shape)
+# image = np.repeat(flux[:, :, :, np.newaxis], 3, axis=3)
+# image[..., 1:] = 0.
+segmentation_fn = SegmentationAlgorithm('slic')
+# , kernel_size=4,
+#                                                     max_dist=200, ratio=0.2,
+#                                                     random_seed=random_seed)
+explanation = explainer.explain_instance(
+    image,
+    classifier_fn=model.predict,
+    labels=None,#(1,),
+    hide_color=0,
+    top_labels=1,
+    # num_features=100_000,
+    num_samples=1000,
+    batch_size=10,
+    segmentation_fn=segmentation_fn,
+    distance_metric='cosine',
+    model_regressor=None,
+    random_seed=None)
 
+    #Select the same class explained on the figures above.
+import matplotlib.pyplot as plt
+ind =  explanation.top_labels[0]
 
+#Map each explanation weight to the corresponding superpixel
+dict_heatmap = dict(explanation.local_exp[ind])
+heatmap = np.vectorize(dict_heatmap.get)(explanation.segments)
 
-# all_flx[:, idx] = np.interp(m_wl, wl*cst.c / (cst.c + stellar_vel[idx]*1_000.),
-    # flx[:, idx], left=np.nan, right=np.nan)
-
-    # all_flx *= 1. / np.nanmedian(all_flx, axis=0)
+#Plot. The visualization makes more sense if a symmetrical colorbar is used.
+plt.imshow(heatmap[0], cmap = 'RdBu', vmin  = -heatmap.max(), vmax = heatmap.max())
+plt.colorbar()
+plt.show()
 ################################################################################
 tf = time.time()
 print(f'Running time: {tf-ti:.2f} s')
