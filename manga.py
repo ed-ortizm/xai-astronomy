@@ -15,7 +15,8 @@ from lime.wrappers.scikit_image import SegmentationAlgorithm
 import numpy as np
 import scipy.constants as cst
 ################################################################################
-from src.explainers.manga.manga import ToyModel
+from src.explainers.manga import manga
+from src.explainers.manga import input_format
 ################################################################################
 ti = time.time()
 ################################################################################
@@ -25,31 +26,22 @@ parser.read('manga.ini')
 ############################################################################
 # Relevant data
 plate_ifu = parser.get('data', 'plate_ifu')
-with fits.open(
-    'data/manga/manga-7443-12703-LOGCUBE-HYB10-GAU-MILESHC.fits.gz'
-    ) as cube:
+manga_data_directory = parser.get('directories', 'manga')
+(wave,
+raw_flux,
+stellar_velocity_field) = input_format.get_data(
+    plate_ifu=plate_ifu,
+    data_directory=manga_data_directory
+    )
+####################################################################
 
-    # Re-order FLUX, IVAR, and MASK arrays
-    # (wavelength, DEC, RA) to (RA, DEC, wavelength)
-
-    wave = cube['wave'].data
-    raw_flux = np.transpose(cube['FLUX'].data, axes=(2, 1, 0))
-    ivar = np.transpose(cube['IVAR'].data, axes=(2, 1, 0))
-    mask = np.transpose(cube['MASK'].data, axes=(2, 1, 0))
-    # get units
-    flux_header = cube['FLUX'].header
-
-with fits.open(
-    'data/manga/manga-7443-12703-MAPS-HYB10-GAU-MILESHC.fits.gz'
-    ) as map:
-
-    stellar_velocity_field = map['stellar_vel'].data
+data_directory = parser.get('directories', 'data')
 
 with fits.open('data/dapall-v2_4_3-2.2.1.fits') as dap_all:
 
-    ind = np.where(dap_all['DAPALL'].data['plateifu'] == plate_ifu)
-    z = dap_all['DAPALL'].data['nsa_z'][ind][0]
-################################################################################
+    idx = np.where(dap_all['DAPALL'].data['plateifu'] == plate_ifu)
+    z = dap_all['DAPALL'].data['nsa_z'][idx][0]
+# ################################################################################
 # rest-frame
 wave *= 1./(1. + z)
 ####################################################################
@@ -63,44 +55,22 @@ wave_master = np.linspace(
     number_wave_master
     )
 ####################################################################
-# Correcting for the stellar velocity redshift
-# print(stellar_velocity.shape, flux.shape)
-number_x, number_y, number_z = raw_flux.shape
-
-flux = np.empty( (number_x*number_y, number_wave_master) )
-
-raw_flux = raw_flux.reshape(number_x*number_y, number_z)
-
-for idx, stellar_velocity in enumerate(stellar_velocity_field.reshape(-1)):
-
-    flux[idx, :] = np.interp(
-        wave_master,
-        wave*cst.c/(cst.c + stellar_velocity*1_000),
-        raw_flux[idx, :],
-        left=np.nan,
-        right=np.nan
+flux = input_format.velocity_correction(
+    raw_flux=raw_flux,
+    wave=wave,
+    wave_master=wave_master,
+    velocity_field=stellar_velocity_field
     )
-
-    median = np.nanmedian(flux[idx, :])
-    if median != 0:
-        flux[idx, :] *= 1./median
-####################################################################
-flux = flux.reshape(number_x, number_y, number_wave_master)
 np.save('cube.npy', flux)
 ####################################################################
-model = ToyModel(wave_master, delta=10)
+model = manga.ToyModel(wave_master, delta=5)
 explainer = lime_image.LimeImageExplainer()
 ####################################################################
-image = flux.reshape((1,) + flux.shape)
-print(image.shape)
-# image = np.repeat(flux[:, :, :, np.newaxis], 3, axis=3)
-# image[..., 1:] = 0.
-segmentation_fn = SegmentationAlgorithm('slic')
-# , kernel_size=4,
-#                                                     max_dist=200, ratio=0.2,
-#                                                     random_seed=random_seed)
+# image = flux.reshape((1,) + flux.shape)
+segmentation_fn = SegmentationAlgorithm('slic', chanel_axis=2)
+####################################################################
 explanation = explainer.explain_instance(
-    image,
+    flux,
     classifier_fn=model.predict,
     labels=None,#(1,),
     hide_color=0,
@@ -112,17 +82,20 @@ explanation = explainer.explain_instance(
     distance_metric='cosine',
     model_regressor=None,
     random_seed=None)
-
-    #Select the same class explained on the figures above.
+#Select the same class explained on the figures above.
 import matplotlib.pyplot as plt
 ind =  explanation.top_labels[0]
-
 #Map each explanation weight to the corresponding superpixel
 dict_heatmap = dict(explanation.local_exp[ind])
 heatmap = np.vectorize(dict_heatmap.get)(explanation.segments)
-
 #Plot. The visualization makes more sense if a symmetrical colorbar is used.
-plt.imshow(heatmap[0], cmap = 'RdBu', vmin  = -heatmap.max(), vmax = heatmap.max())
+plt.imshow(
+    heatmap[0],
+    cmap='RdBu',
+    vmin=-heatmap.max(),
+    vmax=heatmap.max()
+    )
+
 plt.colorbar()
 plt.show()
 ################################################################################
