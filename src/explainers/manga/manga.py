@@ -11,14 +11,14 @@ class ToyModel:
         self.wave = wave
         self.line = line
         self.delta = delta
-        self.image = image
+        self.cube = cube
 
     def predict(self, image):
 
         if image.ndim == 3:
             image = image.reshape((1,) + image.shape)
 
-        if not cube:
+        if not self.cube:
             return np.sum(image, axis=(1, 2, 3))
 
 
