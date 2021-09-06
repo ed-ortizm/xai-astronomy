@@ -19,10 +19,16 @@ class ToyModel:
             image = image.reshape((1,) + image.shape)
 
         if not self.cube:
-            return np.sum(image, axis=(1, 2, 3))
+            prediction = np.sum(image, axis=(1, 2, 3)).reshape((-1, 1))
+            return prediction
 
 
         neighborhood = (self.line-self.delta) < self.wave
         neighborhood *= self.wave < (self.line + self.delta)
 
-        return np.sum(image[..., neighborhood], axis=(1, 2, 3))
+        prediction = np.sum(
+            image[..., neighborhood],
+            axis=(1, 2, 3)
+            ).reshape((-1, 1))
+
+        return prediction
