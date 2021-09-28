@@ -10,17 +10,15 @@ import lime
 from lime import lime_tabular
 ############################################################################
 import numpy as np
-################################################################################
-from library_outlier import Outlier
-################################################################################
+###############################################################################
+###############################################################################
 ti = time.time()
-################################################################################
+###############################################################################
 # configuration file
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read('spectra.ini')
+parser.read('tabular.ini')
 ############################################################################
-model = parser.get('models', 'model')
-
+model = parser.get('directories', 'model')
 number_top_anomalies = parser.get('parameters', 'top_anomalies')
 number_features = parser.get('parameters', 'features')
 ################################################################################
@@ -46,15 +44,15 @@ print(f"Creating explainers")
 ################################################################################
 # kernel_width = np.sqrt(train_data[:, :-8].shape[1])*0.75
 mode = parser.get('explainer', 'mode')
-selection = highest_weights
+selection = parser.get('explainer', 'selection')
 sample = False
-verbose = parser.getbool('explainer', 'verbose')
-discretize_continuous = parser.getbool('explainer', 'discretize')
+verbose = parser.getboolean('explainer', 'verbose')
+discretize_continuous = parser.getboolean('explainer', 'discretize')
 discretizer = parser.get('explainer', 'discretizer')
-sample_around = parser.getbool('explainer', 'sample_around')
+sample_around = parser.getboolean('explainer', 'sample_around')
 # stats = parser.getbool('explainer', 'stats')
-feature_selection = parser.get('explainer', 'feature_selection')
-sample_around_instance = parser.get('explainer', 'sample_around')
+# feature_selection = parser.getboolean('explainer', 'feature_selection')
+sample_around_instance = parser.getboolean('explainer', 'sample_around')
 # feature_names = [i for i in range(train_data[:, :-8].shape[1])]
 ###############################################################################
 # Gotta develop my class through inheritance
