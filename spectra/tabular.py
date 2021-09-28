@@ -13,14 +13,19 @@ import numpy as np
 ###############################################################################
 ###############################################################################
 ti = time.time()
-###############################################################################
 # configuration file
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read('tabular.ini')
+# external imports
+ae_repository = parser.get('import', 'ae')
+sys.path.insert(0, f"{ae_repository}")
+from variational.autoencoder import LoadAE
 ############################################################################
-model = parser.get('directories', 'model')
-number_top_anomalies = parser.get('parameters', 'top_anomalies')
-number_features = parser.get('parameters', 'features')
+model_location = parser.get('directories', 'model')
+# Load model to explain
+model = LoadAE('model', 'location')
+# number_top_anomalies = parser.get('parameters', 'top_anomalies')
+# number_features = parser.get('parameters', 'features')
 ################################################################################
 # number_spectra = script_arguments.number_spectra
 # normalization_type = script_arguments.normalization_type
@@ -30,8 +35,6 @@ number_features = parser.get('parameters', 'features')
 # train_name = script_arguments.train_name
 # set_to_explain_name = script_arguments.explain_name
 ################################################################################
-# Load model to explain
-# model = LoadAE(ae_path, encoder_path, decoder_path)
 ################################################################################
 # set_to_explain = load_data(set_to_explain_name, set_to_explain_path)
 ################################################################################
@@ -40,6 +43,7 @@ number_features = parser.get('parameters', 'features')
 # loading top spectra
 ################################################################################
 print(f"Creating explainers")
+# get explainer parameters via a function or dictionary or list
 # defining variables
 ################################################################################
 # kernel_width = np.sqrt(train_data[:, :-8].shape[1])*0.75
