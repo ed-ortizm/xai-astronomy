@@ -67,7 +67,7 @@ model = manga.ToyModel(wave_master, delta=5)
 explainer = lime_image.LimeImageExplainer()
 ####################################################################
 # image = flux.reshape((1,) + flux.shape)
-segmentation_fn = SegmentationAlgorithm('slic', chanel_axis=2)
+segmentation_fn = SegmentationAlgorithm('slic')
 ####################################################################
 explanation = explainer.explain_instance(
     flux,
