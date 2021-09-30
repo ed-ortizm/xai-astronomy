@@ -19,12 +19,11 @@ parser.read('tabular.ini')
 # external imports
 ae_repository = parser.get('import', 'ae')
 sys.path.insert(0, f"{ae_repository}")
-from variational.autoencoder import LoadAE
+from variational.autoencoder import VAE
 ############################################################################
-model = parser.get('explain', 'algorithm')
 model_location = parser.get('directories', 'model')
 # Load model to explain
-model = LoadAE(model=model, location=model_location)
+model = VAE.load(model_location)
 # number_top_anomalies = parser.get('parameters', 'top_anomalies')
 # number_features = parser.get('parameters', 'features')
 ################################################################################
