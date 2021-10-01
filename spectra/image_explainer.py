@@ -9,38 +9,44 @@ from lime import lime_image
 
 import numpy as np
 
-from constants_lime import working_dir, spectra_dir, normalization_schemes, models_dir
+from constants_lime import (
+    working_dir,
+    spectra_dir,
+    normalization_schemes,
+    models_dir,
+)
 from library_lime import LoadAE, load_data
 from library_outlier import Outlier
+
 ################################################################################
 ti = time.time()
 ################################################################################
 ###############################################################################
 parser = ArgumentParser()
 
-parser.add_argument('--server', '-s', type=str)
+parser.add_argument("--server", "-s", type=str)
 
-parser.add_argument('--number_spectra','-n_spec', type=int)
-parser.add_argument('--normalization_type', '-n_type', type=str)
+parser.add_argument("--number_spectra", "-n_spec", type=int)
+parser.add_argument("--normalization_type", "-n_type", type=str)
 
-parser.add_argument('--model', type=str)
-parser.add_argument('--encoder_layers', type=str)
-parser.add_argument('--latent_dimensions', '-lat_dims', type=int)
-parser.add_argument('--decoder_layers', type=str)
-parser.add_argument('--loss', type=str)
+parser.add_argument("--model", type=str)
+parser.add_argument("--encoder_layers", type=str)
+parser.add_argument("--latent_dimensions", "-lat_dims", type=int)
+parser.add_argument("--decoder_layers", type=str)
+parser.add_argument("--loss", type=str)
 
-parser.add_argument('--metric', type=str)
-parser.add_argument('--top_spectra', '-top', type=int)
-parser.add_argument('--percent', '-%', type=float)
+parser.add_argument("--metric", type=str)
+parser.add_argument("--top_spectra", "-top", type=int)
+parser.add_argument("--percent", "-%", type=float)
 
-parser.add_argument('--id_explain', '-id_xpl', type=int)
+parser.add_argument("--id_explain", "-id_xpl", type=int)
 
 
 script_arguments = parser.parse_args()
 ################################################################################
 number_spectra = script_arguments.number_spectra
 normalization_type = script_arguments.normalization_type
-local = script_arguments.server == 'local'
+local = script_arguments.server == "local"
 
 number_latent_dimensions = script_arguments.latent_dimensions
 layers_encoder = script_arguments.encoder_layers
@@ -53,43 +59,42 @@ number_top_spectra = script_arguments.top_spectra
 loss = script_arguments.loss
 
 percent = script_arguments.percent
-percent_str = f'percentage_{int(percent*100)}'
+percent_str = f"percentage_{int(percent*100)}"
 
 id_explain = script_arguments.id_explain
 ################################################################################
 # Relevant directories
-layers_str = f'{layers_encoder}_{number_latent_dimensions}_{layers_decoder}'
-training_data_dir = f'{spectra_dir}/normalized_data'
-generated_data_dir = f'{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}'
+layers_str = f"{layers_encoder}_{number_latent_dimensions}_{layers_decoder}"
+training_data_dir = f"{spectra_dir}/normalized_data"
+generated_data_dir = f"{spectra_dir}/AE_outlier/{layers_str}/{number_spectra}"
 ###############################################################################
 # Loading training data
-train_set_name = f'spectra_{number_spectra}_{normalization_type}'
-train_set_path = f'{training_data_dir}/{train_set_name}.npy'
+train_set_name = f"spectra_{number_spectra}_{normalization_type}"
+train_set_path = f"{training_data_dir}/{train_set_name}.npy"
 
 training_data = load_data(train_set_name, train_set_path)
 ###############################################################################
 # Loading a reconstructed data
-tail_reconstructed = f'AE_{layers_str}_loss_{loss}'
+tail_reconstructed = f"AE_{layers_str}_loss_{loss}"
 
-reconstructed_set_name = (
-    f'{train_set_name}_reconstructed_{tail_reconstructed}')
+reconstructed_set_name = f"{train_set_name}_reconstructed_{tail_reconstructed}"
 
 if local:
-    reconstructed_set_name = f'{reconstructed_set_name}_local'
+    reconstructed_set_name = f"{reconstructed_set_name}_local"
 
-reconstructed_set_path = f'{generated_data_dir}/{reconstructed_set_name}.npy'
+reconstructed_set_path = f"{generated_data_dir}/{reconstructed_set_name}.npy"
 
 reconstructed_data = load_data(reconstructed_set_name, reconstructed_set_path)
 ###############################################################################
 # loading outlier scores
-tail_outlier_name = f'{model}_{layers_str}_loss_{loss}_{number_spectra}'
+tail_outlier_name = f"{model}_{layers_str}_loss_{loss}_{number_spectra}"
 
 if local:
-    tail_outlier_name = f'{tail_outlier_name}_local'
+    tail_outlier_name = f"{tail_outlier_name}_local"
 
-scores_name = f'{metric}_o_score_{percent_str}_{tail_outlier_name}'
+scores_name = f"{metric}_o_score_{percent_str}_{tail_outlier_name}"
 
-scores_name_path = f'{generated_data_dir}/{scores_name}.npy'
+scores_name_path = f"{generated_data_dir}/{scores_name}.npy"
 scores = load_data(scores_name, scores_name_path)
 ################################################################################
 print(f"Creating explainer")
@@ -99,27 +104,30 @@ print(f"Creating explainer")
 spectrum_explain = training_data[id_explain]
 reconstructed_spectrum_explain = reconstructed_data[id_explain]
 
-kernel_width = np.sqrt(spectrum_explain[:-5].size)*0.75
+kernel_width = np.sqrt(spectrum_explain[:-5].size) * 0.75
 # feature_selection: selects the features that have the highest
 # product of absolute weight * original data point when
 # learning with all the features
-feature_selection = 'highest_weights'
+feature_selection = "highest_weights"
 
 ################################################################################
 explainer = lime_image.LimeImageExplainer(
-    kernel_width = kernel_width,
+    kernel_width=kernel_width,
     verbose=True,
-    feature_selection= feature_selection)
+    feature_selection=feature_selection,
+)
 ################################################################################
-model_head = f'{models_dir}/{model}/{layers_str}/Dense'
-model_tail = (f'{loss}_{layers_str}_nSpectra_{number_spectra}_'
-    f'nType_{normalization_type}')
+model_head = f"{models_dir}/{model}/{layers_str}/Dense"
+model_tail = (
+    f"{loss}_{layers_str}_nSpectra_{number_spectra}_"
+    f"nType_{normalization_type}"
+)
 if local:
-    model_tail = f'{model_tail}_local'
+    model_tail = f"{model_tail}_local"
 
-ae_path = f'{model_head}{model}_{model_tail}'
-encoder_path = f'{model_head}Encoder_{model_tail}'
-decoder_path = f'{model_head}Decoder_{model_tail}'
+ae_path = f"{model_head}{model}_{model_tail}"
+encoder_path = f"{model_head}Encoder_{model_tail}"
+decoder_path = f"{model_head}Decoder_{model_tail}"
 
 ae = LoadAE(ae_path, encoder_path, decoder_path)
 
@@ -127,12 +135,13 @@ outlier = Outlier(metric=metric, model=ae)
 outlier_score = partial(outlier.score, percentage=percent, image=True)
 ################################################################################
 explanation = explainer.explain_instance(
-    image=spectrum_explain[:-5].reshape(1,-1),
+    image=spectrum_explain[:-5].reshape(1, -1),
     classifier_fn=outlier_score,
     top_labels=1,
     hide_color=1,
     num_features=10,
-    num_samples=100)
+    num_samples=100,
+)
 # #
 # spectrum_name = [f'{int(idx)}' for idx in spectrum_explain[-5:-2]]
 # spectrum_name = "_".join(spectrum_name)
@@ -148,5 +157,5 @@ explanation = explainer.explain_instance(
 #         file.write(explanation_weight)
 ################################################################################
 tf = time.time()
-print(f'Running time: {tf-ti:.2f} s')
+print(f"Running time: {tf-ti:.2f} s")
 ################################################################################

@@ -3,34 +3,33 @@ import sys
 import lime
 from lime import lime_tabular
 import numpy as np
+
 ###############################################################################
 class SpectraTabularExplainer:
-    def __init__(self, data:"np.array", parameters:'dictionary',):
+    def __init__(self, data: "np.array", parameters: "dictionary"):
 
         self.training_data = data
         self.mode = parameters["mode"]
         self.kernel_width = data.shape[1] * float(parameters["kernel_width"])
 
-        if parameters["kernel"] == 'None':
+        if parameters["kernel"] == "None":
             self.kernel = None
         else:
             self.kernel = parameters["kernel"]
 
-        self.verbose= self._evaluate_string(parameters["verbose"])
+        self.verbose = self._evaluate_string(parameters["verbose"])
         self.feature_selection = parameters["feature_selection"]
 
         self.sample_around_instance = self._evaluate_string(
             parameters["sample_around_instance"]
         )
 
-        self.random_state = self._evaluate_string(
-            parameters["random_state"]
-        )
+        self.random_state = self._evaluate_string(parameters["random_state"])
 
         self.explainer = self._tabular_explainer()
 
-        x = sys.getsizeof(self.explainer)*1e-6
-        print(f'The size of the explainer is: {x:.2f} Mbs')
+        x = sys.getsizeof(self.explainer) * 1e-6
+        print(f"The size of the explainer is: {x:.2f} Mbs")
 
     def _evaluate_string(self, literal):
         return ast.literal_eval(literal)
@@ -50,29 +49,31 @@ class SpectraTabularExplainer:
             class_names=None,
             feature_selection=self.feature_selection,
             discretize_continuous=False,
-            discretizer='quartile',
+            discretizer="quartile",
             sample_around_instance=self.sample_around_instance,
             random_state=self.random_state,
             training_data_stats=None,
         )
         return explainer
+
     ###########################################################################
-    def explain_anomaly_score(self,
+    def explain_anomaly_score(
+        self,
         spectrum: "numpy array",
         regressor: "function",
-        number_features: "int"=0,
-        )--> "list":
+        number_features: "int" = 0,
+    ) -> "list":
 
         if number_features == 0:
             number_features = spectrum.shape[0]
 
         explanation = self.explainer.explain_instance(
-            spectrum,
-            regressor,
-            num_features=number_features
-            )
+            spectrum, regressor, num_features=number_features
+        )
 
         return explanation.as_list()
+
+
 ###############################################################################
 # class ExplanationData:
 #

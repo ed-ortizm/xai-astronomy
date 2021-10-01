@@ -5,11 +5,14 @@ from functools import partial
 import os
 import sys
 import time
+
 ################################################################################
 import lime
 from lime import lime_tabular
+
 ############################################################################
 import numpy as np
+
 ###############################################################################
 ###############################################################################
 ti = time.time()
@@ -24,6 +27,7 @@ sys.path.insert(0, f"{ae_repository}")
 
 from src.explainers.tabular import SpectraTabularExplainer
 from variational.autoencoder import VAE
+
 ############################################################################
 model_location = parser.get("directories", "model")
 model = VAE.load(model_location)
@@ -45,8 +49,8 @@ explainer = SpectraTabularExplainer(train_data, explainer_parameters)
 # set_to_explain = load_data(set_to_explain_name, set_to_explain_path)
 ################################################################################
 # top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
- # outlier = Outlier(metric=metric, model=model)
- # outlier_score = partial(outlier.score, percentage=percent, image=False)
+# outlier = Outlier(metric=metric, model=model)
+# outlier_score = partial(outlier.score, percentage=percent, image=False)
 # spectrum_explain = training_data[id_explain]
 
 # for spectrum_explain in top_outlier_spectra:
@@ -68,5 +72,5 @@ explainer = SpectraTabularExplainer(train_data, explainer_parameters)
 #              file.write(explanation_weight)
 ################################################################################
 tf = time.time()
-print(f'Running time: {tf-ti:.2f} s')
+print(f"Running time: {tf-ti:.2f} s")
 ################################################################################
