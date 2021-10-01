@@ -46,9 +46,9 @@ reconstruction = spectrum + np.random.normal(size=(spectrum.shape))
 mse = ReconstructionAnomalyScore().mse
 regressor = partial(mse, reconstruction=reconstruction, percentage=10)
 explainer.explain_anomaly_score(
-        spectrum,
-        regressor,
-        # number_features=,
+    spectrum,
+    regressor,
+    # number_features=,
 )
 ###############################################################################
 # number_top_anomalies = parser.get('parameters', 'top_anomalies')
