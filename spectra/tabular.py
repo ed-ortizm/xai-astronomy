@@ -15,15 +15,25 @@ import numpy as np
 ti = time.time()
 # configuration file
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-parser.read('tabular.ini')
+parser.read("tabular.ini")
 # external imports
-ae_repository = parser.get('import', 'ae')
+work_directory = parser.get("constants", "work")
+ae_repository = parser.get("import", "ae")
+sys.path.insert(0, f"{work_directory}")
 sys.path.insert(0, f"{ae_repository}")
+
+from src.explainers.tabular import SpectraTabularExplainer
 from variational.autoencoder import VAE
 ############################################################################
-model_location = parser.get('directories', 'model')
-# Load model to explain
+model_location = parser.get("directories", "model")
 model = VAE.load(model_location)
+print(f"Creating explainers")
+###############################################################################
+train_data = np.load(parser.get("files", "train_data"))
+anomaly_score = np.load(parser.get("files", "anomaly_score"))
+explainer_parameters = dict(parser.items("explainer"))
+explainer = SpectraTabularExplainer(train_data, explainer_parameters)
+################################################################################
 # number_top_anomalies = parser.get('parameters', 'top_anomalies')
 # number_features = parser.get('parameters', 'features')
 ################################################################################
@@ -42,42 +52,10 @@ model = VAE.load(model_location)
 ################################################################################
 # loading top spectra
 ################################################################################
-print(f"Creating explainers")
-# get explainer parameters via a function or dictionary or list
-# defining variables
-################################################################################
-# kernel_width = np.sqrt(train_data[:, :-8].shape[1])*0.75
-mode = parser.get('explainer', 'mode')
-selection = parser.get('explainer', 'selection')
-sample = False
-verbose = parser.getboolean('explainer', 'verbose')
-discretize_continuous = parser.getboolean('explainer', 'discretize')
-discretizer = parser.get('explainer', 'discretizer')
-sample_around = parser.getboolean('explainer', 'sample_around')
-# stats = parser.getbool('explainer', 'stats')
-# feature_selection = parser.getboolean('explainer', 'feature_selection')
-sample_around_instance = parser.getboolean('explainer', 'sample_around')
-# feature_names = [i for i in range(train_data[:, :-8].shape[1])]
-###############################################################################
-# Gotta develop my class through inheritance
-# explainer = lime_tabular.LimeTabularExplainer(
-#             training_data=train_data[:, :-8],
-#             mode=mode,
-#             training_labels=scores,
-#             feature_names=feature_names,
-#             kernel_width=kernel_width,
-#             verbose=True,
-#             feature_selection=feature_selection,
-#             discretize_continuous=False,
-#             discretizer='quartile',
-#             sample_around_instance=True,
-#             training_data_stats=None)
-################################################################################
+
 # top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
-################################################################################
  # outlier = Outlier(metric=metric, model=model)
  # outlier_score = partial(outlier.score, percentage=percent, image=False)
-################################################################################
 # spectrum_explain = training_data[id_explain]
 
 # for spectrum_explain in top_outlier_spectra:

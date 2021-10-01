@@ -1,43 +1,64 @@
+import ast
+import sys
+import lime
+from lime import lime_tabular
+import numpy as np
 ###############################################################################
-class TabularExplainer:
-    def __init__(self, kernel_width, feature_selection,
-        sample_around_instance, explainer_type, training_data,
-        training_labels, feature_names, training_data_stats=None,
-        discretize_continuous=False, discretizer='decile', verbose=True,
-        mode='regression'):
+class SpectraTabularExplainer:
+    def __init__(self, data:"np.array", parameters:'dictionary',):
+
+        self.training_data = data
+        self.mode = parameters["mode"]
+        self.kernel_width = data.shape[1] * float(parameters["kernel_width"])
+
+        if parameters["kernel"] == 'None':
+            self.kernel = None
+        else:
+            self.kernel = parameters["kernel"]
+
+        self.verbose= self._evaluate_string(parameters["verbose"])
+        self.feature_selection = parameters["feature_selection"]
+
+        self.sample_around_instance = self._evaluate_string(
+            parameters["sample_around_instance"]
+        )
+
+        self.random_state = self._evaluate_string(
+            parameters["random_state"]
+        )
+
+        self.explainer = self._tabular_explainer()
+
+        x = sys.getsizeof(self.explainer)*1e-6
+        print(f'The size of the explainer is: {x:.2f} Mbs')
+
+    def _evaluate_string(self, literal):
+        return ast.literal_eval(literal)
+
+    def _tabular_explainer(self):
+
+        explainer = lime.lime_tabular.LimeTabularExplainer(
+            training_data=self.training_data,
+            mode=self.mode,
+            training_labels=None,
+            feature_names=None,
+            categorical_features=None,
+            categorical_names=None,
+            kernel_width=self.kernel_width,
+            kernel=self.kernel,
+            verbose=self.verbose,
+            class_names=None,
+            feature_selection=self.feature_selection,
+            discretize_continuous=False,
+            discretizer='quartile',
+            sample_around_instance=self.sample_around_instance,
+            random_state=self.random_state,
+            training_data_stats=None,
+        )
+        return explainer
+
 #
-#         self.xpl_type = explainer_type
-#         self.tr_data = training_data
-#         self.tr_labels = training_labels
-#         self.ftr_names = feature_names
-#         self.k_width = kernel_width
-#         self.ftr_select = feature_selection
-#         self.tr_data_stats = training_data_stats
-#         self.sar_instance = sample_around_instance
-#         self.discretize = discretize_continuous
-#         self.discretizer = discretizer
-#         self.verbose = verbose
-#         self.mode = mode
-#
-#
-#         self.explainer = self._tabular_explainer()
-#         x = sys.getsizeof(self.explainer)*1e-6
-#         print(f'The size of the explainer is: {x:.2f} Mbs')
-#
-#     def _tabular_explainer(self):
-#
-#         explainer = lime.lime_tabular.LimeTabularExplainer(
-#             training_data=self.tr_data, training_labels=self.tr_labels,
-#             feature_names=self.ftr_names, kernel_width=self.k_width,
-#             feature_selection=self.ftr_select,
-#             training_data_stats=self.tr_data_stats,
-#             sample_around_instance=self.sar_instance,
-#             discretize_continuous=self.discretize, discretizer=self.discretizer,
-#             verbose = self.verbose, mode=self.mode)
-#
-#         return explainer
-#
-#     def explanation(self, x, regressor):
+    # def explanation(self, x, regressor):
 #
 #
 #         xpl = self.explainer.explain_instance(x, regressor,
