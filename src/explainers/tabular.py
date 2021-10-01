@@ -56,14 +56,23 @@ class SpectraTabularExplainer:
             training_data_stats=None,
         )
         return explainer
+    ###########################################################################
+    def explain_anomaly_score(self,
+        spectrum: "numpy array",
+        regressor: "function",
+        number_features: "int"=0,
+        )--> "list":
 
-#
-    # def explanation(self, x, regressor):
-#
-#
-#         xpl = self.explainer.explain_instance(x, regressor,
-#             num_features=x.shape[0])
-#         return xpl.as_list()
+        if number_features == 0:
+            number_features = spectrum.shape[0]
+
+        explanation = self.explainer.explain_instance(
+            spectrum,
+            regressor,
+            num_features=number_features
+            )
+
+        return explanation.as_list()
 ###############################################################################
 # class ExplanationData:
 #
