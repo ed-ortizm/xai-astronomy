@@ -22,22 +22,35 @@ parser.read("tabular.ini")
 # external imports
 work_directory = parser.get("constants", "work")
 ae_repository = parser.get("import", "ae")
+anomaly_repository = parser.get("import", "anomaly")
 sys.path.insert(0, f"{work_directory}")
 sys.path.insert(0, f"{ae_repository}")
+sys.path.insert(0, f"{anomaly_repository}")
 
 from src.explainers.tabular import SpectraTabularExplainer
 from variational.autoencoder import VAE
+from reconstruction import ReconstructionAnomalyScore
 
 ############################################################################
-model_location = parser.get("directories", "model")
-model = VAE.load(model_location)
+# model_location = parser.get("directories", "model")
+# model = VAE.load(model_location)
 print(f"Creating explainers")
 ###############################################################################
 train_data = np.load(parser.get("files", "train_data"))
-anomaly_score = np.load(parser.get("files", "anomaly_score"))
+# anomaly_score = np.load(parser.get("files", "anomaly_score"))
 explainer_parameters = dict(parser.items("explainer"))
 explainer = SpectraTabularExplainer(train_data, explainer_parameters)
-################################################################################
+###############################################################################
+spectrum = train_data[0]
+reconstruction = spectrum + np.random.normal(size=(spectrum.shape))
+mse = ReconstructionAnomalyScore().mse
+regressor = partial(mse, reconstruction=reconstruction, percentage=10)
+explainer.explain_anomaly_score(
+        spectrum,
+        regressor,
+        # number_features=,
+)
+###############################################################################
 # number_top_anomalies = parser.get('parameters', 'top_anomalies')
 # number_features = parser.get('parameters', 'features')
 ################################################################################
