@@ -38,21 +38,12 @@ explainer = SpectraTabularExplainer(train_data, explainer_parameters)
 # number_features = parser.get('parameters', 'features')
 ################################################################################
 # number_spectra = script_arguments.number_spectra
-# normalization_type = script_arguments.normalization_type
-# local = script_arguments.server == 'local'
-# metrics = script_arguments.metrics
 # percent = script_arguments.percent
 # train_name = script_arguments.train_name
 # set_to_explain_name = script_arguments.explain_name
 ################################################################################
-################################################################################
 # set_to_explain = load_data(set_to_explain_name, set_to_explain_path)
 ################################################################################
-# Loading a reconstructed data
-################################################################################
-# loading top spectra
-################################################################################
-
 # top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
  # outlier = Outlier(metric=metric, model=model)
  # outlier_score = partial(outlier.score, percentage=percent, image=False)
