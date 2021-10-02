@@ -14,11 +14,10 @@ from lime import lime_tabular
 import numpy as np
 
 ###############################################################################
-###############################################################################
 ti = time.time()
-# configuration file
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read("tabular.ini")
+###############################################################################
 # external imports
 work_directory = parser.get("constants", "work")
 ae_repository = parser.get("import", "ae")
@@ -30,42 +29,29 @@ sys.path.insert(0, f"{anomaly_repository}")
 from src.explainers.tabular import SpectraTabularExplainer
 from variational.autoencoder import VAE
 from reconstruction import ReconstructionAnomalyScore
-
-############################################################################
-# model_location = parser.get("directories", "model")
-# model = VAE.load(model_location)
-print(f"Creating explainers")
+###############################################################################
+print(f"Creating explainer")
+model_location = parser.get("directories", "model")
+model = VAE.load(model_location)
+mse = ReconstructionAnomalyScore(model).mse
+regressor = partial(mse, percentage=10)
 ###############################################################################
 train_data = np.load(parser.get("files", "train_data"))
-# anomaly_score = np.load(parser.get("files", "anomaly_score"))
 explainer_parameters = dict(parser.items("explainer"))
-explainer = SpectraTabularExplainer(train_data, explainer_parameters)
+
+
+explainer = SpectraTabularExplainer(train_data,
+                                    explainer_parameters,
+                                    regressor
+                                    )
 ###############################################################################
 spectrum = train_data[0]
 reconstruction = spectrum + np.random.normal(size=(spectrum.shape))
-mse = ReconstructionAnomalyScore().mse
-regressor = partial(mse, reconstruction=reconstruction, percentage=10)
 explainer.explain_anomaly_score(
         spectrum,
-        regressor,
         # number_features=,
 )
 ###############################################################################
-# number_top_anomalies = parser.get('parameters', 'top_anomalies')
-# number_features = parser.get('parameters', 'features')
-################################################################################
-# number_spectra = script_arguments.number_spectra
-# percent = script_arguments.percent
-# train_name = script_arguments.train_name
-# set_to_explain_name = script_arguments.explain_name
-################################################################################
-# set_to_explain = load_data(set_to_explain_name, set_to_explain_path)
-################################################################################
-# top_outlier_spectra = load_data(top_outlier_name, top_outlier_name_path)
-# outlier = Outlier(metric=metric, model=model)
-# outlier_score = partial(outlier.score, percentage=percent, image=False)
-# spectrum_explain = training_data[id_explain]
-
 # for spectrum_explain in top_outlier_spectra:
 
 #      explanation = explainer.explain_instance(
