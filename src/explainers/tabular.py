@@ -2,11 +2,17 @@ import ast
 import sys
 import lime
 from lime import lime_tabular
+import multiprocessing as mp
 import numpy as np
 
 ###############################################################################
 class SpectraTabularExplainer:
-    def __init__(self, data: "np.array", parameters: "dictionary"):
+
+    def __init__(self,
+        data: "np.array",
+        parameters: "dictionary",
+        anomaly_score_function: "regressor",
+        ):
 
         self.training_data = data
         self.mode = parameters["mode"]
@@ -17,23 +23,28 @@ class SpectraTabularExplainer:
         else:
             self.kernel = parameters["kernel"]
 
-        self.verbose = self._evaluate_string(parameters["verbose"])
+        self.verbose = ast.literal_eval(parameters["verbose"])
         self.feature_selection = parameters["feature_selection"]
 
-        self.sample_around_instance = self._evaluate_string(
+        self.sample_around_instance = ast.literal_eval(
             parameters["sample_around_instance"]
         )
 
-        self.random_state = self._evaluate_string(parameters["random_state"])
+        self.random_state = ast.literal_eval(parameters["random_state"])
+
+        self.regressor = anomaly_score_function
+
+        self.explainer = None
+
+        self._build_explainer()
+    ###########################################################################
+    def _build_explainer(self):
 
         self.explainer = self._tabular_explainer()
 
         x = sys.getsizeof(self.explainer) * 1e-6
         print(f"The size of the explainer is: {x:.2f} Mbs")
-
-    def _evaluate_string(self, literal):
-        return ast.literal_eval(literal)
-
+    ###########################################################################
     def _tabular_explainer(self):
 
         explainer = lime.lime_tabular.LimeTabularExplainer(
@@ -54,26 +65,35 @@ class SpectraTabularExplainer:
             random_state=self.random_state,
             training_data_stats=None,
         )
+
         return explainer
 
     ###########################################################################
-    def explain_anomaly_score(
-        self,
+    def explain_anomaly_score(self,
         spectrum: "numpy array",
-        regressor: "function",
         number_features: "int" = 0,
-    ) -> "list":
+        ) -> "list":
 
         if number_features == 0:
             number_features = spectrum.shape[0]
 
         explanation = self.explainer.explain_instance(
-            spectrum, regressor, num_features=number_features
-        )
+            spectrum,
+            self.regressor,
+            num_features=number_features
+            )
 
         return explanation.as_list()
+    ###########################################################################
+    def explain_set_anomaly_score(self,
+        spectra: "numpy array",
+        number_features: "int" = 0,
+        number_processes: "int" = 1,
+        ) -> "list":
 
-
+        # with mp.Pool(processes=number_processes) as pool:
+        #     explanations = pool.map(explain_sngle, spectrum_list)
+        pass
 ###############################################################################
 # class ExplanationData:
 #
