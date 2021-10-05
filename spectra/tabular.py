@@ -18,15 +18,11 @@ ti = time.time()
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read("tabular.ini")
 ###############################################################################
-# external imports
 # work_directory = parser.get("constants", "work")
-# ae_repository = parser.get("import", "ae")
-anomaly_repository = parser.get("import", "anomaly")
 # sys.path.insert(0, f"{work_directory}")
-# sys.path.insert(0, f"{ae_repository}")
+anomaly_repository = parser.get("import", "anomaly")
 sys.path.insert(0, f"{anomaly_repository}")
 
-# from src.explainers.tabular import SpectraTabularExplainer
 from astroxai.explainers.tabular import SpectraTabularExplainer
 from autoencoders.variational.autoencoder import VAE
 from reconstruction import ReconstructionAnomalyScore
