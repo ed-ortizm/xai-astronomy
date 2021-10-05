@@ -1,31 +1,26 @@
 #! /usr/bin/env python3
-################################################################################
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
 import os
 import sys
 import time
 
-################################################################################
+###############################################################################
 import lime
 from lime import lime_tabular
 
-############################################################################
+###############################################################################
 import numpy as np
 
+###############################################################################
+from astroxai.explainers.tabular import SpectraTabularExplainer
+from autoencoders.variational.autoencoder import VAE
+from anomaly.reconstruction import ReconstructionAnomalyScore
 ###############################################################################
 ti = time.time()
 parser = ConfigParser(interpolation=ExtendedInterpolation())
 parser.read("tabular.ini")
 ###############################################################################
-# work_directory = parser.get("constants", "work")
-# sys.path.insert(0, f"{work_directory}")
-anomaly_repository = parser.get("import", "anomaly")
-sys.path.insert(0, f"{anomaly_repository}")
-
-from astroxai.explainers.tabular import SpectraTabularExplainer
-from autoencoders.variational.autoencoder import VAE
-from reconstruction import ReconstructionAnomalyScore
 ###############################################################################
 print(f"Creating explainer")
 model_location = parser.get("directories", "model")
