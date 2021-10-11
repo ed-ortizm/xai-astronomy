@@ -7,12 +7,12 @@ import numpy as np
 
 ###############################################################################
 class SpectraTabularExplainer:
-
-    def __init__(self,
+    def __init__(
+        self,
         data: "np.array",
         parameters: "dictionary",
         anomaly_score_function: "regressor",
-        ):
+    ):
 
         self.training_data = data
         self.mode = parameters["mode"]
@@ -37,6 +37,7 @@ class SpectraTabularExplainer:
         self.explainer = None
 
         self._build_explainer()
+
     ###########################################################################
     def _build_explainer(self):
 
@@ -44,6 +45,7 @@ class SpectraTabularExplainer:
 
         x = sys.getsizeof(self.explainer) * 1e-6
         print(f"The size of the explainer is: {x:.2f} Mbs")
+
     ###########################################################################
     def _tabular_explainer(self):
 
@@ -69,31 +71,32 @@ class SpectraTabularExplainer:
         return explainer
 
     ###########################################################################
-    def explain_anomaly_score(self,
-        spectrum: "numpy array",
-        number_features: "int" = 0,
-        ) -> "list":
+    def explain_anomaly_score(
+        self, spectrum: "numpy array", number_features: "int" = 0
+    ) -> "list":
 
         if number_features == 0:
             number_features = spectrum.shape[0]
 
         explanation = self.explainer.explain_instance(
-            spectrum,
-            self.regressor,
-            num_features=number_features
-            )
+            spectrum, self.regressor, num_features=number_features
+        )
 
         return explanation.as_list()
+
     ###########################################################################
-    def explain_set_anomaly_score(self,
+    def explain_set_anomaly_score(
+        self,
         spectra: "numpy array",
         number_features: "int" = 0,
         number_processes: "int" = 1,
-        ) -> "list":
+    ) -> "list":
 
         # with mp.Pool(processes=number_processes) as pool:
         #     explanations = pool.map(explain_sngle, spectrum_list)
         pass
+
+
 ###############################################################################
 # class ExplanationData:
 #
