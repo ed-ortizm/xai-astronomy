@@ -7,6 +7,8 @@ import numpy as np
 
 ###############################################################################
 class SpectraTabularExplainer:
+    """ Explanation"""
+
     def __init__(
         self,
         data: "np.array",
@@ -14,29 +16,66 @@ class SpectraTabularExplainer:
         anomaly_score_function: "regressor",
     ):
 
+        """
+        PARAMETERS
+
+            data:
+            parameter:
+            anomaly_score function:
+        """
+
         self.training_data = data
-        self.mode = parameters["mode"]
-        self.kernel_width = data.shape[1] * float(parameters["kernel_width"])
 
-        if parameters["kernel"] == "None":
-            self.kernel = None
-        else:
-            self.kernel = parameters["kernel"]
-
-        self.verbose = ast.literal_eval(parameters["verbose"])
-        self.feature_selection = parameters["feature_selection"]
-
-        self.sample_around_instance = ast.literal_eval(
-            parameters["sample_around_instance"]
-        )
-
-        self.random_state = ast.literal_eval(parameters["random_state"])
+        [
+            self.mode,
+            self.kernel_width,
+            self.kernel,
+            self.verbose,
+            self.feature_selection,
+            self.sample_around_instance,
+            self.random_state,
+        ] = self._set_attributes_from_dictionary(parameters)
 
         self.regressor = anomaly_score_function
 
         self.explainer = None
-
         self._build_explainer()
+
+    ###########################################################################
+    def _set_attributes_from_dictionary(
+        self, parameters: "dictionary"
+    ) -> "list":
+        """
+        Sets attibutes of explainer from dictionary passed to constructor
+
+        """
+
+        mode = parameters["mode"]
+        kernel_width = self.training_data.shape[1] * float(parameters["kernel_width"])
+
+        if parameters["kernel"] == "None":
+            kernel = None
+        else:
+            kernel = parameters["kernel"]
+
+        verbose = ast.literal_eval(parameters["verbose"])
+        feature_selection = parameters["feature_selection"]
+
+        sample_around_instance = ast.literal_eval(
+            parameters["sample_around_instance"]
+        )
+
+        random_state = ast.literal_eval(parameters["random_state"])
+
+        return [
+            mode,
+            kernel_width,
+            kernel,
+            verbose,
+            feature_selection,
+            sample_around_instance,
+            random_state,
+        ]
 
     ###########################################################################
     def _build_explainer(self):
