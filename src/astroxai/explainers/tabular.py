@@ -1,8 +1,12 @@
 import ast
+import ctypes
+from itertools import product
+import multiprocessing as mp
+from multiprocessing.sharedctypes import RawArray
 import sys
+###########################################################
 import lime
 from lime import lime_tabular
-import multiprocessing as mp
 import numpy as np
 
 ###############################################################################
@@ -83,7 +87,7 @@ class SpectraTabularExplainer:
         self.explainer = self._tabular_explainer()
 
         x = sys.getsizeof(self.explainer) * 1e-6
-        print(f"The size of the explainer is: {x:.2f} Mbs")
+        print(f"The size of the explainer is: {x:.2f} MBs")
 
     ###########################################################################
     def _tabular_explainer(self):
@@ -110,8 +114,9 @@ class SpectraTabularExplainer:
         return explainer
 
     ###########################################################################
-    def explain_anomaly_score(
-        self, spectrum: "numpy array", number_features: "int" = 0
+    def explain_anomaly(self,
+        spectrum: "numpy array",
+        number_features: "int" = 0,
     ) -> "list":
 
         if number_features == 0:
@@ -124,18 +129,67 @@ class SpectraTabularExplainer:
         return explanation.as_list()
 
     ###########################################################################
-    def explain_set_anomaly_score(
+    def explain_anomalies(
         self,
-        spectra: "numpy array",
-        number_features: "int" = 0,
+        anomalies: "numpy array",
+        number_features: "list" = [0],
         number_processes: "int" = 1,
     ) -> "list":
 
-        # with mp.Pool(processes=number_processes) as pool:
-        #     explanations = pool.map(explain_sngle, spectrum_list)
-        pass
+        #######################################################################
+        def to_numpy_array(shared_array, array_shape):
+            numpy_array = np.ctypeslib.as_array(shared_array)
+            return numpy_array.reshape(array_shape)
 
+        #######################################################################
+        def init_worker(shared_array, array_shape):
 
+            global spectra
+
+            spectra = to_numpy_array(shared_array, array_shape)
+
+        #######################################################################
+        spectra_shape = anomalies.shape
+
+        shared_spectra = RawArray(
+                            ctypes.c_float,
+                            anomalies.flatten()
+                        )
+        spectra_indexes = range(spectra_shape[0])
+
+        starmap_parameters = product(spectra_indexes, number_features)
+
+        with mp.Pool(
+            processes=number_processes,
+            initializer=init_worker,
+            initargs=(shared_spectra, spectra_shape),
+        ) as pool:
+
+            results = pool.starmap(
+                                    self._explain_anomaly,
+                                    starmap_parameters
+                                )
+
+        return results
+
+    ###########################################################################
+    def _explain_anomaly(self,
+        spectrum_index: "int",
+        number_features: "int" = 0,
+    ) -> "list":
+
+        # spectra is the shared array from init_worker
+        spectrum = spectra[spectrum_index]
+
+        if number_features == 0:
+            number_features = spectrum.shape[0]
+
+        explanation = self.explainer.explain_instance(
+            spectrum, self.regressor, num_features=number_features
+        )
+
+        return explanation.as_list()
+    ###########################################################################
 ###############################################################################
 # class ExplanationData:
 #
