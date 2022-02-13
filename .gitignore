@@ -12,6 +12,8 @@
 *.pdf
 *.html
 # Heavy data
+*.fits
+*.gz
 *.csv
 !*AE.csv
 # Astronomical data
