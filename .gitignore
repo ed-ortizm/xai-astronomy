@@ -17,6 +17,7 @@
 *.csv
 !*AE.csv
 # Astronomical data
+data/*
 *.fit
 *.fits
 # weird stuff
