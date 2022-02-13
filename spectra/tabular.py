@@ -16,6 +16,7 @@ import numpy as np
 from astroxai.explainers.tabular import SpectraTabularExplainer
 from autoencoders.variational.autoencoder import VAE
 from anomaly.reconstruction import ReconstructionAnomalyScore
+
 ###############################################################################
 ti = time.time()
 parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -36,20 +37,13 @@ explainer = SpectraTabularExplainer(
     train_data, explainer_parameters, regressor
 )
 ###############################################################################
-print("\n" * 3)
 spectrum = train_data[0]
 reconstruction = spectrum + np.random.normal(size=(spectrum.shape))
-explainer.explain_anomaly(
+explainer.explain_anomaly_score(
     spectrum,
     # number_features=,
 )
-###########################################################################
-# explainer.explain_anomalies(
-#         anomalies=train_data[:10],
-#         number_features=[0],
-#         number_processes = 2
-# )
-###########################################################################
+###############################################################################
 # for spectrum_explain in top_outlier_spectra:
 
 #      explanation = explainer.explain_instance(
