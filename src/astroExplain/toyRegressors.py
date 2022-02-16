@@ -11,19 +11,32 @@ class SpectraPlus:
 
     def predict(self, spectra: np.array) -> np.array:
 
+        spectra = self.spectrum_to_image(spectra)
         spectra = self._update_dimension(spectra)
+
+        assert spectra.ndim == 4
 
         # spectra-1 since spectra is normalized by the median
         # this way, values below the continua are detrimental
         # to the prediction
-        prediction = np.sum(spectra - 1, axis=1, keepdims=True)
+        prediction = np.sum(spectra - 1, axis=(1, 2, 3))
         # print(prediction.shape)
 
-        return prediction
+        return prediction.reshape((-1,1))
 
+    ###########################################################################
+    def spectrum_to_image(self, spectrum):
+
+        if spectrum.ndim == 1:
+
+            gray_spectrum = spectrum[np.newaxis, ...]
+            return gray2rgb(gray_spectrum)
+
+        return spectrum
+    ###########################################################################
     def _update_dimension(self, spectra: np.array) -> np.array:
 
-        if spectra.ndim == 1:
+        if spectra.ndim == 3:
             return spectra[np.newaxis, ...]
 
         return spectra

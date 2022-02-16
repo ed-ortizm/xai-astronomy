@@ -9,7 +9,7 @@ class SpectraSegmentation:
         pass
     ###########################################################################
     def uniform(self, spectra: np.array,
-        # number_segments: int=10
+        number_segments: int=100
     ) -> np.array:
         """
         Divide spectra in bins of equal size
@@ -21,7 +21,7 @@ class SpectraSegmentation:
         OUTPUTS
             segments: array with integers representing each segment
         """
-        number_segments = 10
+        # number_segments = 100
 
         spectra = self._update_dimension(spectra)
         size = spectra.shape[1]

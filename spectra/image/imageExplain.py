@@ -55,7 +55,7 @@ explanation = explainer.explain_instance(
 
 print(f"Finish explanation... Saving...", end="\n")
 
-save_name = f"{name_galaxy}Explanation{segmentation.capitalize()}"
+save_name = f"{name_galaxy}ExplanationUniform"
 
 with open(f"{output_directory}/{save_name}.pkl", "wb") as file:
 
