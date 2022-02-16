@@ -1,4 +1,32 @@
 import numpy as np
+from skimage.color import gray2rgb # convert spectra to 3 chanels
+###############################################################################
+class SpectraPlus:
+    """
+    Class to add all flexes values in an spectra
+    """
+
+    def __init__(self):
+        pass
+
+    def predict(self, spectra: np.array) -> np.array:
+
+        spectra = self._update_dimension(spectra)
+
+        # spectra-1 since spectra is normalized by the median
+        # this way, values below the continua are detrimental
+        # to the prediction
+        prediction = np.sum(spectra - 1, axis=1, keepdims=True)
+        # print(prediction.shape)
+
+        return prediction
+
+    def _update_dimension(self, spectra: np.array) -> np.array:
+
+        if spectra.ndim == 1:
+            return spectra[np.newaxis, ...]
+
+        return spectra
 ###############################################################################
 class GalaxyPlus:
     """
