@@ -1,4 +1,5 @@
 from configparser import ConfigParser, ExtendedInterpolation
+from functools import partial
 import time
 import pickle
 import os
@@ -36,8 +37,9 @@ addSpectra = SpectraPlus()
 # Set explainer instance
 explainer = lime_image.LimeImageExplainer(random_state=0)
 
+number_segments = parser.getint("lime", "number_segments")
 segmentation_fn = SpectraSegmentation().uniform
-
+segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
 # get explanation
 
 explanation = explainer.explain_instance(

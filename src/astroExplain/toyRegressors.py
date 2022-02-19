@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.color import gray2rgb # convert spectra to 3 chanels
+from skimage.color import gray2rgb # convert spectra to 3 channels
 ###############################################################################
 class SpectraPlus:
     """
@@ -52,12 +52,19 @@ class GalaxyPlus:
     def predict(self, image: np.array) -> np.array:
 
         image = self._update_dimension(image)
+        mean_per_channel = self.get_mean_per_channel(image)
 
         # predict and normalize
-        prediction = np.sum(image, axis=(1, 2, 3))  # / image[0, :].size
-        # print(prediction.shape)
+        prediction = np.sum(image-mean_per_channel, axis=(1, 2, 3))
 
         return prediction.reshape((-1, 1))
+    ###########################################################################
+    def get_mean_per_channel(self, image: np.array) -> np.array:
+
+        mean_per_channel = np.mean(image, axis=(1,2), keepdims=True)
+
+        return mean_per_channel
+    ###########################################################################
 
     def _update_dimension(self, image: np.array) -> np.array:
 
