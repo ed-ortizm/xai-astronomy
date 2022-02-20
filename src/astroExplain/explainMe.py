@@ -6,24 +6,15 @@ from skimage.segmentation import mark_boundaries
 from lime.lime_image import ImageExplanation
 
 ###############################################################################
-class TestMeWhy:
+class TellMeWhySpec:
     def __init__(self,
-        dtype: str,
         explanation: ImageExplanation,
-        wave: np.array=None
+        wave: np.array
     ):
 
-        assert dtype in ["image", "spectra"]
-        self.dtype = dtype
-
-        if dtype == "spectra":
-            self.galaxy = explanation.image[0, :, 0]
-            self.segments = explanation.segments[0, :, 0]
-            self.wave = wave
-
-        else:
-            self.galaxy = explanation.image
-            self.segments = explanation.segments
+        self.galaxy = explanation.image[0, :, 0]
+        self.segments = explanation.segments[0, :, 0]
+        self.wave = wave
 
         self.explanation = explanation
 
@@ -55,25 +46,17 @@ class TestMeWhy:
 
         return visual_explanation
     ###########################################################################
-    def heatmap(self,
+    def show_explanation_heatmap(self,
         show_map: bool=False,
         save_map: bool=False,
-        symmetric_map: bool=None,
+        symmetric_map: bool=True,
         save_to: str=".", galaxy_name: str="name", save_format: str=".png"
     ) -> None:
 
 
         heatmap = self.get_heatmap()
 
-        if self.dtype == "image":
-            min_max = np.abs(heatmap).max()
-
-            plt.imshow(heatmap, cmap="RdBu", vmin=-min_max, vmax=min_max)
-
-            plt.colorbar()
-
-        else:
-            self._plot_heatmap_spectrum(heatmap, symmetric_map)
+        self._plot_heatmap_spectrum(heatmap, symmetric_map)
 
         if show_map is True:
             plt.show()
@@ -117,12 +100,9 @@ class TestMeWhy:
         fig.colorbar(line, ax=ax)
 
         ax.set_xlim(self.wave.min()-10, self.wave.max()+10)
-        ax.set_ylim(self.galaxy.min()-2, self.galaxy.max()+2)
+        ax.set_ylim(self.galaxy.min()-1, self.galaxy.max()+2)
 
         plt.show()
-
-
-
     ###########################################################################
     def get_heatmap(self) -> np.array:
 
@@ -149,8 +129,7 @@ class TestMeWhy:
             plt.imshow(segmented_image)
     ###########################################################################
 ###############################################################################
-###############################################################################
-class TellMeWhy:
+class TellMeWhyImage:
     def __init__(self, explanation: ImageExplanation):
 
         self.explanation = explanation
