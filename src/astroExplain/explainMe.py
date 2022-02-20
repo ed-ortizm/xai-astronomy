@@ -1,23 +1,31 @@
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap
 import numpy as np
 from skimage.segmentation import mark_boundaries
 from lime.lime_image import ImageExplanation
+
+###############################################################################
 class TestMeWhy:
-    def __init__(self, explanation: ImageExplanation, dtype: str):
+    def __init__(self,
+        dtype: str,
+        explanation: ImageExplanation,
+        wave: np.array=None
+    ):
 
         assert dtype in ["image", "spectra"]
-
-        self.explanation = explanation
+        self.dtype = dtype
 
         if dtype == "spectra":
             self.galaxy = explanation.image[0, :, 0]
             self.segments = explanation.segments[0, :, 0]
+            self.wave = wave
 
         else:
             self.galaxy = explanation.image
             self.segments = explanation.segments
 
-        self.dtype = dtype
+        self.explanation = explanation
 
     ###########################################################################
     def show_me(
@@ -50,22 +58,22 @@ class TestMeWhy:
     def heatmap(self,
         show_map: bool=False,
         save_map: bool=False,
+        symmetric_map: bool=None,
         save_to: str=".", galaxy_name: str="name", save_format: str=".png"
     ) -> None:
 
 
         heatmap = self.get_heatmap()
-        #The visualization makes more sense if a symmetrical colorbar is used.
-        min_max = np.abs(heatmap).max()
 
-        if self.dtype == "image"
+        if self.dtype == "image":
+            min_max = np.abs(heatmap).max()
 
             plt.imshow(heatmap, cmap="RdBu", vmin=-min_max, vmax=min_max)
 
             plt.colorbar()
 
         else:
-            self._heatmap_spectrum()
+            self._plot_heatmap_spectrum(heatmap, symmetric_map)
 
         if show_map is True:
             plt.show()
@@ -74,8 +82,47 @@ class TestMeWhy:
 
             plt.savefig(f"{save_to}/{galaxy_name}HeatMapExp.{save_format}")
     ###########################################################################
-    def _heatmap_spectrum(self):
-        pass
+    def _plot_heatmap_spectrum(self, heatmap: np.array, symmetric_map: bool):
+
+        # Create a set of line segments so that we can color them individually
+        # This creates the points as a N x 1 x 2 array
+        # so that we can stack points together easily to get the segments.
+        # The segments array for line collection
+        # needs to be (numlines) x (points per line) x 2 (for x and y)
+
+        points = np.array([self.wave, self.galaxy]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+        fig, ax = plt.subplots()
+
+        if symmetric_map is True:
+
+            value = np.abs(heatmap).max()
+            vmin = -value
+            vmax = value
+            print(vmin, vmax)
+
+        else:
+            vmin = heatmap.min()
+            vmax = heatmap.max()
+            print(vmin, vmax)
+
+        norm = plt.Normalize(vmin, vmax)
+
+        lc = LineCollection(segments, cmap='RdBu', norm=norm)
+        lc.set_array(heatmap)
+        lc.set_linewidth(1.5)
+
+        line = ax.add_collection(lc)
+        fig.colorbar(line, ax=ax)
+
+        ax.set_xlim(self.wave.min()-10, self.wave.max()+10)
+        ax.set_ylim(self.galaxy.min()-2, self.galaxy.max()+2)
+
+        plt.show()
+
+
+
     ###########################################################################
     def get_heatmap(self) -> np.array:
 
@@ -88,6 +135,9 @@ class TestMeWhy:
         dict_heatmap = dict(self.explanation.local_exp[ind])
 
         heatmap = np.vectorize(dict_heatmap.get)(self.segments)
+
+        # Get average since line coloring requires the heatmap size to shrink
+        heatmap = 0.5*(heatmap[:-1] + heatmap[1:])
 
         return heatmap
     ###########################################################################
