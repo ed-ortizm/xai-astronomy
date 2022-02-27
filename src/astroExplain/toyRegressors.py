@@ -11,7 +11,12 @@ class SpectraPlus:
 
     def predict(self, spectra: np.array) -> np.array:
 
+        # in case I pass a spectra with one dimension
+        # this line converts 1D array to (1, n_wave, 3)
+        # an image where each channel has the spectrun
         spectra = self.spectrum_to_image(spectra)
+        # this is in case I pass a single spec
+        # new axis added correponds to bach index
         spectra = self._update_dimension(spectra)
 
         assert spectra.ndim == 4
