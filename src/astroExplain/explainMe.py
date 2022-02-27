@@ -21,36 +21,53 @@ class TellMeWhySpec:
     ###########################################################################
     def show_me(
         self,
-        positive_only: bool=True,
-        negative_only: bool=False,
+        # positive_only: bool=True,
+        # negative_only: bool=False,
         number_of_features: int=5,
-        hide_rest: bool=False,
+        # hide_rest: bool=False,
         minimum_weight: float=-np.inf,
         show_explanation: bool=False,
     ) -> np.array:
 
-        image, mask = self.explanation.get_image_and_mask(
+        __, positive_mask = self.explanation.get_image_and_mask(
             label=self.explanation.top_labels[0],
-            positive_only=positive_only,
-            negative_only=negative_only,
+            positive_only=True,
+            negative_only=False,
             num_features=number_of_features,
-            hide_rest=hide_rest,
+            hide_rest=True,
+            min_weight = minimum_weight
+        )
+        positive_segments = np.where(
+            positive_mask[0, :, 0]==0, np.nan, self.galaxy
+        )
+        __, negative_mask = self.explanation.get_image_and_mask(
+            label=self.explanation.top_labels[0],
+            positive_only=False,
+            negative_only=True,
+            num_features=number_of_features,
+            hide_rest=True,
             min_weight = minimum_weight
         )
 
-        visual_explanation = mark_boundaries(image, mask)
+        negative_segments = np.where(
+            negative_mask[0, :, 0]==0, np.nan, self.galaxy
+        )
 
-        if show_explanation is True:
+        return self.galaxy, positive_segments, negative_segments
+        # np.where(mask[..., 0]==0, np.nan, mask[..., 0])
+        # visual_explanation = mark_boundaries(image, mask)
 
-            plt.imshow(visual_explanation)
+        # if show_explanation is True:
 
-        return visual_explanation
+            # plt.imshow(visual_explanation)
+
+        # return visual_explanation
     ###########################################################################
     def show_explanation_heatmap(self,
         show_map: bool=False,
         save_map: bool=False,
         symmetric_map: bool=True,
-        save_to: str=".", galaxy_name: str="name", save_format: str=".png"
+        save_to: str=".", galaxy_name: str="name", save_format: str="png"
     ) -> None:
 
 
@@ -76,7 +93,7 @@ class TellMeWhySpec:
         points = np.array([self.wave, self.galaxy]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize(10, 5))
 
         if symmetric_map is True:
 
@@ -88,7 +105,6 @@ class TellMeWhySpec:
         else:
             vmin = heatmap.min()
             vmax = heatmap.max()
-            print(vmin, vmax)
 
         norm = plt.Normalize(vmin, vmax)
 
