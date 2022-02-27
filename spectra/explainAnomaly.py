@@ -70,8 +70,9 @@ reconstruct_function = model.reconstruct
 
 score_config = parser.items("score")
 score_config = configuration.section_to_dictionary(score_config, [",", "\n"])
-print(score_config)
-#######################################################
+###############################################################################
+# Load anomaly score function
+print(f"Load anomaly score function", end="\n")
 anomaly = ReconstructionAnomalyScore(
     reconstruct_function,
     wave,
@@ -81,37 +82,45 @@ anomaly = ReconstructionAnomalyScore(
     relative=score_config["relative"],
     epsilon=1e-3,
 )
+anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
 ###############################################################################
-# save_to = parser.get("directory", "output")
-# check.check_directory(save_to, exit=False)
-# # Set explainer instance
-# explainer = lime_image.LimeImageExplainer(random_state=0)
-#
-# number_segments = parser.getint("lime", "number_segments")
-# segmentation_fn = SpectraSegmentation().uniform
-# segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
-# # get explanation
-#
-# explanation = explainer.explain_instance(
-#     image=galaxy[np.newaxis, ...], # image.dim == 2
-#     classifier_fn=addSpectra.predict,
-#     labels=None,
-#     hide_color=1, # the spectrum is median normalized
-#     top_labels=1,
-#     # num_features=1000, # default= 100000
-#     num_samples=1_000,
-#     batch_size=10,
-#     segmentation_fn=segmentation_fn
-#     # distance_metric="cosine",
-# )
-#
-# print(f"Finish explanation... Saving...", end="\n")
-#
-# save_name = f"{name_galaxy}ExplanationUniform"
-#
-# with open(f"{output_directory}/{save_name}.pkl", "wb") as file:
-#
-#     pickle.dump(explanation, file)
-# ###############################################################################
-# finish_time = time.time()
-# print(f"Run time: {finish_time-start_time:.2f}")
+# Set explainer instance
+print(f"Set explainer and Get explanations", end="\n")
+explainer = lime_image.LimeImageExplainer(random_state=0)
+
+number_segments = parser.getint("lime", "number_segments")
+segmentation_fn = SpectraSegmentation().uniform
+segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
+
+# Get explanations
+head_length = anomalies.shape[0]
+for idx, galaxy in enumerate(anomalies):
+
+    print(f"Explain galaxy {idx}", end="\r")
+
+    explanation = explainer.explain_instance(
+        image=galaxy[np.newaxis, ...],
+        classifier_fn=anomaly_score_function,
+        labels=None,
+        hide_color=1, # he spectrum is median normalized
+        top_labels=1,
+        # num_features=1000, # default= 100000
+        num_samples=1_000,
+        batch_size=10,
+        segmentation_fn=segmentation_fn
+        # distance_metric="cosine",
+    )
+
+    save_explanation_to = parser.get("directory", "explanation")
+    check.check_directory(save_explanation_to, exit=False)
+
+    save_name = f"{idx:05d}_explanationUniform"
+
+    with open(f"{save_explanation_to}/{save_name}.pkl", "wb") as file:
+
+        pickle.dump(explanation, file)
+    
+
+###############################################################################
+finish_time = time.time()
+print(f"Run time: {finish_time-start_time:.2f}")
