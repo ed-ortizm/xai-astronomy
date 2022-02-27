@@ -24,6 +24,7 @@ from lime import lime_image
 import numpy as np
 import tensorflow as tf
 
+from anomaly.reconstruction import ReconstructionAnomalyScore
 from astroExplain.segmentation import SpectraSegmentation
 from astroExplain.toyRegressors import SpectraPlus
 from autoencoders.ae import AutoEncoder
@@ -66,13 +67,23 @@ print(f"Load reconstruction function", end="\n")
 model_directory = parser.get("directory", "model")
 model = AutoEncoder(reload=True, reload_from=model_directory)
 reconstruct_function = model.reconstruct
-#
-# score_config = parser.items("score")
-# score_config = configuration.section_to_dictionary(score_config, [",", "\n"])
-#
+
+score_config = parser.items("score")
+score_config = configuration.section_to_dictionary(score_config, [",", "\n"])
+print(score_config)
+#######################################################
+anomaly = ReconstructionAnomalyScore(
+    reconstruct_function,
+    wave,
+    lines=score_config["lines"],
+    velocity_filter=score_config["velocity"],
+    percentage=score_config["percentage"],
+    relative=score_config["relative"],
+    epsilon=1e-3,
+)
+###############################################################################
 # save_to = parser.get("directory", "output")
 # check.check_directory(save_to, exit=False)
-# ###############################################################################
 # # Set explainer instance
 # explainer = lime_image.LimeImageExplainer(random_state=0)
 #
