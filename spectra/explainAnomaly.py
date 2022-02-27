@@ -22,6 +22,7 @@ import pickle
 
 from lime import lime_image
 import numpy as np
+import tensorflow as tf
 
 from astroExplain.segmentation import SpectraSegmentation
 from astroExplain.toyRegressors import SpectraPlus
@@ -37,6 +38,17 @@ parser.read("explainAnomaly.ini")
 check = FileDirectory()
 # Handle configuration file
 configuration = ConfigurationFile()
+###############################################################################
+# set the number of cores to use with the reconstruction function
+cores_per_worker = parser.getint("tensorflow-session", "cores")
+jobs = cores_per_worker
+config = tf.compat.v1.ConfigProto(
+    intra_op_parallelism_threads=jobs,
+    inter_op_parallelism_threads=jobs,
+    allow_soft_placement=True,
+    device_count={"CPU": jobs},
+)
+session = tf.compat.v1.Session(config=config)
 ###############################################################################
 # Load data
 print("Load anomalies" , end="\n")
