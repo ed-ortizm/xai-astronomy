@@ -21,47 +21,70 @@ class TellMeWhySpec:
     ###########################################################################
     def show_me(
         self,
-        # positive_only: bool=True,
-        # negative_only: bool=False,
+        show_all: bool = False,
+        show_positive_only: bool=False,
+        show_negative_only: bool = False,
         number_of_features: int=5,
-        # hide_rest: bool=False,
         minimum_weight: float=-np.inf,
-        show_explanation: bool=False,
     ) -> np.array:
 
-        __, positive_mask = self.explanation.get_image_and_mask(
-            label=self.explanation.top_labels[0],
+        #######################################################################
+        positive_mask, positive_segments = self.get_mask_and_segments(
             positive_only=True,
-            negative_only=False,
             num_features=number_of_features,
-            hide_rest=True,
-            min_weight = minimum_weight
+            min_weight=minimum_weight,
         )
-        positive_segments = np.where(
-            positive_mask[0, :, 0]==0, np.nan, self.galaxy
-        )
-        __, negative_mask = self.explanation.get_image_and_mask(
-            label=self.explanation.top_labels[0],
+
+        #######################################################################
+        negative_mask, negative_segments = self.get_mask_and_segments(
             positive_only=False,
             negative_only=True,
             num_features=number_of_features,
-            hide_rest=True,
-            min_weight = minimum_weight
+            min_weight=minimum_weight,
         )
+        #######################################################################
+        if show_all is True:
 
-        negative_segments = np.where(
-            negative_mask[0, :, 0]==0, np.nan, self.galaxy
-        )
+            plt.plot(self.wave, self.galaxy, color="black")
+            plt.plot(self.wave, positive_segments, color="red",linewidth =3)
+            plt.plot(self.wave, negative_segments, color="blue",linewidth =3)
+
+        elif show_positive_only is True:
+
+            plt.plot(self.wave, self.galaxy, color="black")
+            plt.plot(self.wave, positive_segments, color="red",linewidth =3)
+
+        elif show_negative_only:
+
+            plt.plot(self.wave, self.galaxy, color="black")
+            plt.plot(self.wave, negative_segments, color="blue",linewidth =3)
+        #######################################################################
+
 
         return self.galaxy, positive_segments, negative_segments
-        # np.where(mask[..., 0]==0, np.nan, mask[..., 0])
-        # visual_explanation = mark_boundaries(image, mask)
+    ###########################################################################
+    def get_mask_and_segments(self,
+        positive_only: bool=True,
+        negative_only: bool=False,
+        num_features: int=1,
+        hide_rest: bool=True,
+        min_weight: float =0,
+    ):
 
-        # if show_explanation is True:
+        __, spectrum_mask = self.explanation.get_image_and_mask(
+            label=self.explanation.top_labels[0],
+            positive_only=positive_only,
+            negative_only=negative_only,
+            num_features=num_features,
+            hide_rest=hide_rest,
+            min_weight = min_weight
+        )
 
-            # plt.imshow(visual_explanation)
+        explanation_segments = np.where(
+            spectrum_mask[0, :, 0]==0, np.nan, self.galaxy
+        )
 
-        # return visual_explanation
+        return spectrum_mask, explanation_segments
     ###########################################################################
     def show_explanation_heatmap(self,
         show_map: bool=False,
