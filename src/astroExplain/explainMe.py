@@ -43,6 +43,14 @@ class TellMeWhySpec:
             min_weight=minimum_weight,
         )
         #######################################################################
+        # tata, tete = self.get_mask_and_segments(
+        #     positive_only=False,
+        #     negative_only=False,
+        #     num_features=number_of_features,
+        #     min_weight=minimum_weight,
+        # )
+        # return self.galaxy, tete
+        #######################################################################
         if show_all is True:
 
             plt.plot(self.wave, self.galaxy, color="black")
@@ -166,7 +174,6 @@ class TellMeWhySpec:
 
         if show_segmentation is True:
             plt.imshow(segmented_image)
-    ###########################################################################
 ###############################################################################
 class TellMeWhyImage:
     def __init__(self, explanation: ImageExplanation):
