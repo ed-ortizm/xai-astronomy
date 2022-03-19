@@ -23,8 +23,9 @@ class SpectraSegmentation:
             segments: array with integers representing each segment
         """
 
-        # if spectra.ndim == 1 --> (1, 1, flux, 3)
-        # if spectra.ndim == 2 --> (spectra.shape[0], 1, flux, 3)
+        # if spectra.ndim == 1 --> (1, flux, 3)
+        # if spectra.ndim == 2 --> (1, flux, 3)
+        # if spectra.ndim == 3 --> spectra
         spectra = self.spectra_to_RGB(spectra)
         size = spectra[0, :, 0].size
 
