@@ -26,7 +26,6 @@ import tensorflow as tf
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from astroExplain.segmentation import SpectraSegmentation
-from astroExplain.toyRegressors import SpectraPlus
 from autoencoders.ae import AutoEncoder
 from sdss.superclasses import ConfigurationFile, FileDirectory
 
@@ -115,11 +114,11 @@ for idx, galaxy in enumerate(anomalies):
         image=galaxy,
         classifier_fn=anomaly_score_function,
         labels=None,
-        hide_color=1, # he spectrum is median normalized
+        hide_color=parser.getint("lime", "hide_color"),
         top_labels=1,
         # num_features=1000, # default= 100000
-        num_samples=1_000,
-        batch_size=10,
+        num_samples=parser.getint("lime", "number_samples"),
+        batch_size=parser.getint("lime", "batch_size"),
         segmentation_fn=segmentation_fn
         # distance_metric="cosine",
     )
