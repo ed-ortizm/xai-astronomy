@@ -78,7 +78,7 @@ class TellMeWhySpec:
         #######################################################################
         _, positive_segments = self.get_mask_and_segments(
             positive_only=True,
-            num_features=number_of_features,
+            number_of_features=number_of_features,
             drop_fraction=drop_fraction,
         )
 
@@ -86,7 +86,7 @@ class TellMeWhySpec:
         _, negative_segments = self.get_mask_and_segments(
             positive_only=False,
             negative_only=True,
-            num_features=number_of_features,
+            number_of_features=number_of_features,
             drop_fraction=drop_fraction,
         )
         #######################################################################
@@ -98,7 +98,7 @@ class TellMeWhySpec:
             plt.plot(self.wave, self.galaxy, label="spectrum", color="black")
 
             plt.plot(
-                self.wave, positive_segments, label="possitive", color="blue"
+                self.wave, positive_segments, label="positive", color="blue"
             )
 
             plt.plot(
@@ -110,7 +110,7 @@ class TellMeWhySpec:
             plt.plot(self.wave, self.galaxy, label="spectrum", color="black")
 
             plt.plot(
-                self.wave, positive_segments, label="possitive", color="blue"
+                self.wave, positive_segments, label="positive", color="blue"
             )
 
         elif show_negative_only:
@@ -129,38 +129,86 @@ class TellMeWhySpec:
         self,
         positive_only: bool = True,
         negative_only: bool = False,
-        num_features: int = 1,
+        number_of_features: int = 5,
         drop_fraction: float = 0.2,
-    ):
+    ) -> (np.array, np.array):
+        #######################################################################
+        """
+            Get mask and segments according to either a positive or
+            negative contribution to the anomaly score.
+            Segments obtained with this method will be have NaN values
+            where there is no contribution and the actual flux where
+            there is a contribution, this to the anomaly score
 
+        INPUT
+            positive_only: if True, retrieves segments associated to
+                positive weights of the explanation
+            negative_only: if positive_only is False and this isTrue,
+                retrieves segments associated to negative weights of
+                the explanation
+            number_of_features: example: 6, then it will get the six
+                segments with the largest inpat to the anomaly score.
+                If None, it will consider all the segments, ignoring
+                the segments set by drop_fraction
+            drop_fraction: indicates the width of the band to ignore
+                segments with explanation weights inside of this band.
+                For instance, if it is 0.1, then weights with absolute
+                values smaller to 0.1*np.abs(weights).max() would be
+                ignore
+        OUTPUT
+            (spectrum_mask, explanation_segments)
+            spectrum_mask: mask highlighting segments that contribute
+                to the anomaly score
+            explanation_segments: array with flux values at contributing
+                segments, and NaNs otherwise
+        """
+        #######################################################################
+        # check if user inputs right combination of bool values
+        bad_input = (positive_only is True) and (negative_only)
+
+        if bad_input is True:
+
+            raise ValueError(
+                f"positive_only and negative_only cannot be true"
+                f"at the same time."
+            )
+        #######################################################################
         __, spectrum_mask = self.explanation.get_image_and_mask(
             label=self.explanation.top_labels[0],
             positive_only=positive_only,
             negative_only=negative_only,
-            num_features=num_features,
+            num_features=number_of_features,
+            # consider all weights by default
             min_weight=-np.inf,
         )
-
+        #######################################################################
         # drop irrelevant explanations
-
+        # segmments in column 0, weights in column 1
         segments_and_weights = np.array(
             self.explanation.local_exp[self.explanation.top_labels[0]]
         )
 
+        # sort weight from segment 0 to the last one
         sort_segments_idx = np.argsort(segments_and_weights[:, 0])
         weights = segments_and_weights[sort_segments_idx, 1]
 
+        # get drop bounds with drop fraction
+        # the weights are the same as the values used for heatmap
         heatmap = self.get_heatmap()
         drop = np.abs(heatmap).max() * drop_fraction
 
+        # put NaNs inside the band to ignore
         explanation_segments = np.where(
             np.abs(heatmap) < drop, np.nan, self.galaxy
         )
-        #######################################################################
+
+        # ignore values that do not contribute to the score
+        # by adding, I keep track of NaNs in last line of conde
         explanation_segments += np.where(
             spectrum_mask[0, :] == 0, np.nan, self.galaxy
         )
 
+        # *0.5 because of last addition
         return spectrum_mask, explanation_segments * 0.5
 
     ###########################################################################
