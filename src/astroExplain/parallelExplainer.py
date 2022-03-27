@@ -13,7 +13,7 @@ from astroExplain.segmentation import SpectraSegmentation
 from sdss.superclasses import FileDirectory
 
 ###############################################################################
-def to_numpy_array(array: RawArray, array_shape: tuple=None) -> np.array:
+def to_numpy_array(array: RawArray, array_shape: tuple = None) -> np.array:
     """Create a numpy array backed by a shared memory Array."""
 
     array = np.ctypeslib.as_array(array)
@@ -22,6 +22,7 @@ def to_numpy_array(array: RawArray, array_shape: tuple=None) -> np.array:
         return array.reshape(array_shape)
 
     return array
+
 
 ###############################################################################
 def init_shared_data(
@@ -63,8 +64,8 @@ def init_shared_data(
     global session
 
     counter = share_counter
-    wave =  to_numpy_array(share_wave)
-    specobjid =  to_numpy_array(share_specobjid)
+    wave = to_numpy_array(share_wave)
+    specobjid = to_numpy_array(share_specobjid)
 
     anomalies = to_numpy_array(share_anomalies, data_shape)
 
@@ -76,9 +77,10 @@ def init_shared_data(
 
     cores_per_worker = share_cores_per_worker
 
+
 ###############################################################################
 def explain_anomalies(number_anomaly: int) -> None:
-# def explain_anomalies() -> None:
+    # def explain_anomalies() -> None:
     """
     PARAMETERS
     """
@@ -126,8 +128,7 @@ def explain_anomalies(number_anomaly: int) -> None:
 
     segmentation_fn = SpectraSegmentation().uniform
     segmentation_fn = partial(
-        segmentation_fn,
-        number_segments=lime_configuration["number_segments"]
+        segmentation_fn, number_segments=lime_configuration["number_segments"]
     )
 
     ###########################################################################

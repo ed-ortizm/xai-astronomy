@@ -1,4 +1,5 @@
 import os
+
 # Set environment variables to disable multithreading as users will probably
 # want to set the number of cores to the max of their computer.
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -27,6 +28,7 @@ import tensorflow as tf
 from astroExplain import parallelExplainer
 from autoencoders.ae import AutoEncoder
 from sdss.superclasses import FileDirectory, ConfigurationFile
+
 ###############################################################################
 if __name__ == "__main__":
 
@@ -53,7 +55,7 @@ if __name__ == "__main__":
 
     specobjid = anomalies[:, 0].astype(int)
     share_specobjid = RawArray(
-        np.ctypeslib.as_ctypes_type(specobjid.dtype),specobjid.reshape(-1)
+        np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
     )
     del specobjid
 
@@ -65,7 +67,6 @@ if __name__ == "__main__":
     anomalies = fluxes[anomalies_indexes]
 
     del fluxes
-
 
     if anomalies.ndim == 1:
         anomalies = anomalies[np.newaxis, ...]
@@ -80,9 +81,7 @@ if __name__ == "__main__":
     ###########################################################################
     wave_name = parser.get("file", "grid")
     wave = np.load(f"{data_directory}/{wave_name}")
-    share_wave = RawArray(
-        np.ctypeslib.as_ctypes_type(wave.dtype), wave
-    )
+    share_wave = RawArray(np.ctypeslib.as_ctypes_type(wave.dtype), wave)
 
     del wave
 
@@ -105,7 +104,9 @@ if __name__ == "__main__":
     check.check_directory(model_directory, exit=True)
 
     save_explanation_to = parser.get("directory", "explanations")
-    save_explanation_to = f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
+    save_explanation_to = (
+        f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
+    )
     check.check_directory(save_explanation_to, exit=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
@@ -129,8 +130,8 @@ if __name__ == "__main__":
     ) as pool:
 
         pool.map(
-        parallelExplainer.explain_anomalies, np.arange(anomalies_shape[0])
-    )
+            parallelExplainer.explain_anomalies, np.arange(anomalies_shape[0])
+        )
 
     ###########################################################################
     with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
