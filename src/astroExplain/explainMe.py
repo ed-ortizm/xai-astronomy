@@ -134,33 +134,33 @@ class TellMeWhySpec:
     ) -> (np.array, np.array):
         #######################################################################
         """
-            Get mask and segments according to either a positive or
-            negative contribution to the anomaly score.
-            Segments obtained with this method will be have NaN values
-            where there is no contribution and the actual flux where
-            there is a contribution, this to the anomaly score
+        Get mask and segments according to either a positive or
+        negative contribution to the anomaly score.
+        Segments obtained with this method will be have NaN values
+        where there is no contribution and the actual flux where
+        there is a contribution, this to the anomaly score
 
         INPUT
-            positive_only: if True, retrieves segments associated to
-                positive weights of the explanation
-            negative_only: if positive_only is False and this isTrue,
-                retrieves segments associated to negative weights of
-                the explanation
-            number_of_features: example: 6, then it will get the six
-                segments with the largest inpat to the anomaly score.
-                If None, it will consider all the segments, ignoring
-                the segments set by drop_fraction
-            drop_fraction: indicates the width of the band to ignore
-                segments with explanation weights inside of this band.
-                For instance, if it is 0.1, then weights with absolute
-                values smaller to 0.1*np.abs(weights).max() would be
-                ignore
+        positive_only: if True, retrieves segments associated to
+            positive weights of the explanation
+        negative_only: if positive_only is False and this isTrue,
+            retrieves segments associated to negative weights of
+            the explanation
+        number_of_features: example: 6, then it will get the six
+            segments with the largest inpat to the anomaly score.
+            If None, it will consider all the segments, ignoring
+            the segments set by drop_fraction
+        drop_fraction: indicates the width of the band to ignore
+            segments with explanation weights inside of this band.
+            For instance, if it is 0.1, then weights with absolute
+            values smaller to 0.1*np.abs(weights).max() would be
+            ignore
         OUTPUT
-            (spectrum_mask, explanation_segments)
-            spectrum_mask: mask highlighting segments that contribute
-                to the anomaly score
-            explanation_segments: array with flux values at contributing
-                segments, and NaNs otherwise
+        (spectrum_mask, explanation_segments)
+        spectrum_mask: mask highlighting segments that contribute
+            to the anomaly score
+        explanation_segments: array with flux values at contributing
+            segments, and NaNs otherwise
         """
         #######################################################################
         # check if user inputs right combination of bool values
@@ -212,49 +212,77 @@ class TellMeWhySpec:
         return spectrum_mask, explanation_segments * 0.5
 
     ###########################################################################
-    def show_explanation_heatmap(
+    def get_explanation_heatmap(
         self,
-        show_map: bool = False,
         save_map: bool = False,
         symmetric_map: bool = True,
         save_to: str = ".",
         galaxy_name: str = "name",
         save_format: str = "png",
-    ) -> None:
+    ) -> (plt.Figure, plt.Axes):
+        """
+        This method allows to see a color coded spectrum, similar to
+        a heatmap, where the color code are the explanation weights
+
+        INPUT
+        save_map: If True, the image would be save to hard drive
+        symmetric_map: it True, the colorbar will be symmetric
+            according to the largest explanation weight in
+            absolute value
+        save_to: path to store the image
+        galaxy_name: identification of the spectrum
+        save_format: format to store the image
+
+        OUTPUT
+        (fig, ax): of the heatmap
+        """
+        #######################################################################
 
         heatmap = self.get_heatmap()
-        # Get average since line coloring requires the heatmap
-        # size to shrink
-        heatmap = 0.5 * (heatmap[:-1] + heatmap[1:])
 
-        self._plot_heatmap_spectrum(heatmap, symmetric_map)
-
-        if show_map is True:
-            plt.show()
+        fig, ax = self._plot_heatmap_spectrum(heatmap, symmetric_map)
 
         if save_map is True:
 
-            plt.savefig(f"{save_to}/{galaxy_name}HeatMapExp.{save_format}")
+            fig.savefig(f"{save_to}/{galaxy_name}HeatMapExp.{save_format}")
+
+        return fig, ax
 
     ###########################################################################
-    def _plot_heatmap_spectrum(self, heatmap: np.array, symmetric_map: bool):
+    def _plot_heatmap_spectrum(
+        self, heatmap: np.array, symmetric_map: bool
+    ) -> (plt.Figure, plt.Axes):
 
-        # Create a set of line segments so that we can color them individually
-        # This creates the points as a N x 1 x 2 array
-        # so that we can stack points together easily to get the segments.
-        # The segments array for line collection
-        # needs to be (numlines) x (points per line) x 2 (for x and y)
+        """
+        Create a set of line segments so that we can color them
+        individually. This creates the points as a N x 1 x 2 array
+        so that we can stack points together easily to get the
+        segments. The segments array for line collection
+        needs to be (numlines) x (points per line) x 2 (for x and y)
+
+        INPUT
+        heatmap: array with the explanation weights pixel by pixel
+        symmetric_map: if True, colorbar will be symmetric
+
+        OUTPUT
+        (fig, ax): of the heatmap
+        """
+
+        # Get average since line coloring requires the heatmap
+        # size to shrink
+        heatmap = 0.5 * (heatmap[:-1] + heatmap[1:])
 
         points = np.array([self.wave, self.galaxy]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
         fig, ax = plt.subplots(figsize=(10, 5))
 
+        # normalize heatmap
+        heatmap *= 1 / np.abs(heatmap).max()
+
         if symmetric_map is True:
 
-            value = np.abs(heatmap).max()
-            vmin = -value
-            vmax = value
+            vmin, vmax = -1, 1
 
         else:
             vmin = heatmap.min()
@@ -272,10 +300,15 @@ class TellMeWhySpec:
         ax.set_xlim(self.wave.min() - 10, self.wave.max() + 10)
         ax.set_ylim(self.galaxy.min() - 1, self.galaxy.max() + 2)
 
-        plt.show()
+        # plt.show()
+        return fig, ax
 
     ###########################################################################
     def get_heatmap(self) -> np.array:
+
+        """
+        Returns array of explanation weights pixel by pixel
+        """
 
         print("Get heat map of explanation", end="\n")
 
