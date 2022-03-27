@@ -17,6 +17,7 @@ class TellMeWhySpec:
         self.wave = wave
 
         self.explanation = explanation
+        slef
 
     ###########################################################################
     def show_me(
@@ -24,48 +25,52 @@ class TellMeWhySpec:
         show_all: bool = False,
         show_positive_only: bool=False,
         show_negative_only: bool = False,
-        number_of_features: int=5,
+        number_of_features: int=None,
         minimum_weight: float=-np.inf,
+        drop_fraction: float=0.2,
+        save: bool=False,
+        save_to: str=".", galaxy_name: str="name", save_format: str="png"
     ) -> np.array:
 
+        if number_of_features == None:
+            # set to the total number of segments
+            number_of_features = np.unique(self.segments).size
+
         #######################################################################
-        positive_mask, positive_segments = self.get_mask_and_segments(
+        _, positive_segments = self.get_mask_and_segments(
             positive_only=True,
             num_features=number_of_features,
             min_weight=minimum_weight,
+            drop_fraction=drop_fraction,
         )
 
         #######################################################################
-        negative_mask, negative_segments = self.get_mask_and_segments(
+        _, negative_segments = self.get_mask_and_segments(
             positive_only=False,
             negative_only=True,
             num_features=number_of_features,
             min_weight=minimum_weight,
+            drop_fraction=drop_fraction,
         )
         #######################################################################
-        # tata, tete = self.get_mask_and_segments(
-        #     positive_only=False,
-        #     negative_only=False,
-        #     num_features=number_of_features,
-        #     min_weight=minimum_weight,
-        # )
-        # return self.galaxy, tete
-        #######################################################################
+        # to update a plot when in interactive mode with ipython
+        plt.clf()
         if show_all is True:
 
             plt.plot(self.wave, self.galaxy, color="black")
-            plt.plot(self.wave, positive_segments, color="red",linewidth =3)
-            plt.plot(self.wave, negative_segments, color="blue",linewidth =3)
+            plt.plot(self.wave, positive_segments, color="red",linewidth =2)
+            plt.plot(self.wave, negative_segments, color="blue",linewidth =2)
 
         elif show_positive_only is True:
 
             plt.plot(self.wave, self.galaxy, color="black")
-            plt.plot(self.wave, positive_segments, color="red",linewidth =3)
+            plt.plot(self.wave, positive_segments, color="red",linewidth =2)
 
         elif show_negative_only:
 
             plt.plot(self.wave, self.galaxy, color="black")
-            plt.plot(self.wave, negative_segments, color="blue",linewidth =3)
+            plt.plot(self.wave, negative_segments, color="blue",linewidth =2)
+
         #######################################################################
 
 
@@ -77,6 +82,7 @@ class TellMeWhySpec:
         num_features: int=1,
         hide_rest: bool=True,
         min_weight: float =0,
+        drop_fraction: float=0.2,
     ):
 
         __, spectrum_mask = self.explanation.get_image_and_mask(
@@ -88,12 +94,27 @@ class TellMeWhySpec:
             min_weight = min_weight
         )
 
+        # drop irrelevant explanations
+
+        segments_and_weights = np.array(
+            self.explanation.local_exp[self.explanation.top_labels[0]]
+        )
+
+        sort_segments_idx = np.argsort(segments_and_weights[:, 0])
+        weights = segments_and_weights[sort_segments_idx, 1]
+
+        heatmap = self.get_heatmap()
+        drop = np.abs(heatmap).max() * drop_fraction
+
         explanation_segments = np.where(
-            # spectrum_mask[0, :, 0]==0, np.nan, self.galaxy
+        np.abs(heatmap) < drop, np.nan, self.galaxy
+        )
+        #######################################################################
+        explanation_segments += np.where(
             spectrum_mask[0, :]==0, np.nan, self.galaxy
         )
 
-        return spectrum_mask, explanation_segments
+        return spectrum_mask, explanation_segments * .5
     ###########################################################################
     def show_explanation_heatmap(self,
         show_map: bool=False,
@@ -104,6 +125,8 @@ class TellMeWhySpec:
 
 
         heatmap = self.get_heatmap()
+        # Get average since line coloring requires the heatmap size to shrink
+        heatmap = 0.5*(heatmap[:-1] + heatmap[1:])
 
         self._plot_heatmap_spectrum(heatmap, symmetric_map)
 
@@ -163,17 +186,7 @@ class TellMeWhySpec:
 
         heatmap = np.vectorize(dict_heatmap.get)(self.segments)
 
-        # Get average since line coloring requires the heatmap size to shrink
-        heatmap = 0.5*(heatmap[:-1] + heatmap[1:])
-
         return heatmap
-    ###########################################################################
-    def segmentation(self, show_segmentation: bool=True):
-
-        segmented_image = mark_boundaries(self.galaxy, self.segments)
-
-        if show_segmentation is True:
-            plt.imshow(segmented_image)
 ###############################################################################
 class TellMeWhyImage:
     def __init__(self, explanation: ImageExplanation):
