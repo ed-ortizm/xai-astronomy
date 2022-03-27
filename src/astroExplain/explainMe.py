@@ -13,7 +13,7 @@ class TellMeWhySpec:
     ):
 
         self.galaxy = explanation.image[0, :, 0]
-        self.segments = explanation.segments[0, :, 0]
+        self.segments = explanation.segments[0, :]
         self.wave = wave
 
         self.explanation = explanation
@@ -89,7 +89,8 @@ class TellMeWhySpec:
         )
 
         explanation_segments = np.where(
-            spectrum_mask[0, :, 0]==0, np.nan, self.galaxy
+            # spectrum_mask[0, :, 0]==0, np.nan, self.galaxy
+            spectrum_mask[0, :]==0, np.nan, self.galaxy
         )
 
         return spectrum_mask, explanation_segments
@@ -124,14 +125,13 @@ class TellMeWhySpec:
         points = np.array([self.wave, self.galaxy]).T.reshape(-1, 1, 2)
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
-        fig, ax = plt.subplots(figsize(10, 5))
+        fig, ax = plt.subplots(figsize=(10, 5))
 
         if symmetric_map is True:
 
             value = np.abs(heatmap).max()
             vmin = -value
             vmax = value
-            print(vmin, vmax)
 
         else:
             vmin = heatmap.min()
