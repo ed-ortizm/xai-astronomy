@@ -47,9 +47,25 @@ if __name__ == "__main__":
     # Load data
     print("Load anomalies")
 
-    data_directory = parser.get("directory", "input")
+    scores_directory = parser.get("directory", "scores")
     anomalies_name = parser.get("file", "anomalies")
-    anomalies = np.load(f"{data_directory}/{anomalies_name}")
+    anomalies = np.load(f"{scores_directory}/{anomalies_name}")
+
+    specobjid = anomalies[:, 0].astype(int)
+    share_specobjid = RawArray(
+        np.ctypeslib.as_ctypes_type(specobjid.dtype),specobjid.reshape(-1)
+    )
+    del specobjid
+
+    # load spectra
+
+    data_directory = parser.get("directory", "data")
+    fluxes = np.load(f"{data_directory}/fluxes.npy", mmap_mode="r")
+    anomalies_indexes = anomalies[:, 1].astype(int)
+    anomalies = fluxes[anomalies_indexes]
+
+    del fluxes
+
 
     if anomalies.ndim == 1:
         anomalies = anomalies[np.newaxis, ...]
@@ -83,11 +99,12 @@ if __name__ == "__main__":
         lime_configuration, [",", "\n"]
     )
     ###########################################################################
+    model_directory = parser.get("directory", "model")
     model_name = parser.get("file", "model")
-    model_directory = f"{data_directory}/{model_name}"
+    model_directory = f"{model_directory}/{model_name}"
     check.check_directory(model_directory, exit=True)
 
-    save_explanation_to = parser.get("directory", "explanation")
+    save_explanation_to = parser.get("directory", "explanations")
     save_explanation_to = f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
     check.check_directory(save_explanation_to, exit=False)
     ###########################################################################
@@ -100,6 +117,7 @@ if __name__ == "__main__":
         initargs=(
             counter,
             share_wave,
+            share_specobjid,
             share_anomalies,
             anomalies_shape,
             score_configuration,
@@ -120,21 +138,3 @@ if __name__ == "__main__":
     finish_time = time.time()
     print(f"\nRun time: {finish_time - start_time:.2f}")
 ###############################################################################
-# from configparser import ConfigParser, ExtendedInterpolation
-# from functools import partial
-# import time
-# import pickle
-#
-# from lime import lime_image
-# import numpy as np
-# import tensorflow as tf
-#
-# from anomaly.reconstruction import ReconstructionAnomalyScore
-# from astroExplain.segmentation import SpectraSegmentation
-# from astroExplain.toyRegressors import SpectraPlus
-# from autoencoders.ae import AutoEncoder
-# from sdss.superclasses import ConfigurationFile, FileDirectory
-#
-# ###############################################################################
-# finish_time = time.time()
-# print(f"Run time: {finish_time-start_time:.2f}")

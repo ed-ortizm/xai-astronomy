@@ -27,6 +27,7 @@ def to_numpy_array(array: RawArray, array_shape: tuple=None) -> np.array:
 def init_shared_data(
     share_counter: mp.Value,
     share_wave: RawArray,
+    share_specobjid: RawArray,
     share_anomalies: RawArray,
     data_shape: tuple,
     share_score_configuration: dict,
@@ -49,6 +50,7 @@ def init_shared_data(
     """
     global counter
     global wave
+    global specobjid
     global anomalies
 
     global score_configuration
@@ -62,6 +64,7 @@ def init_shared_data(
 
     counter = share_counter
     wave =  to_numpy_array(share_wave)
+    specobjid =  to_numpy_array(share_specobjid)
 
     anomalies = to_numpy_array(share_anomalies, data_shape)
 
@@ -135,6 +138,8 @@ def explain_anomalies(number_anomaly: int) -> None:
         # convert spectrum to gray image
         galaxy = galaxy[np.newaxis, :]
 
+        specobjid_galaxy = specobjid[counter.value]
+
         print(f"[{counter.value}] Explain", end="\r")
         counter_value = counter.value
 
@@ -154,7 +159,7 @@ def explain_anomalies(number_anomaly: int) -> None:
         # distance_metric="cosine",
     )
     ###########################################################################
-    save_name = f"{counter_value:05d}_explanationUniform"
+    save_name = f"{specobjid_galaxy}"
 
     with open(f"{save_explanation_to}/{save_name}.pkl", "wb") as file:
 
