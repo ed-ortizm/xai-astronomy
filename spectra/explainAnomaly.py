@@ -52,7 +52,7 @@ config = tf.compat.v1.ConfigProto(
 session = tf.compat.v1.Session(config=config)
 ###############################################################################
 # Load data
-print("Load anomalies" , end="\n")
+print("Load anomalies", end="\n")
 
 input_directory = parser.get("directory", "input")
 
@@ -60,9 +60,9 @@ anomalies_name = parser.get("file", "anomalies")
 anomalies = np.load(f"{input_directory}/{anomalies_name}")
 
 if anomalies.ndim == 2:
-    #convert spectra to batch of gray images
+    # convert spectra to batch of gray images
     anomalies = anomalies[:, np.newaxis, :]
-elif anomalies.ndim ==1:
+elif anomalies.ndim == 1:
     # convert single spectrum to gray image
     anomalies = anomalies[np.newaxis, np.newaxis, :]
 

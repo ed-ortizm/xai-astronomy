@@ -43,10 +43,10 @@ segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
 # get explanation
 
 explanation = explainer.explain_instance(
-    image=galaxy[np.newaxis, ...], # image.dim == 2
+    image=galaxy[np.newaxis, ...],  # image.dim == 2
     classifier_fn=addSpectra.predict,
     labels=None,
-    hide_color=1, # the spectrum is median normalized
+    hide_color=1,  # the spectrum is median normalized
     top_labels=1,
     # num_features=1000, # default= 100000
     num_samples=1_000,

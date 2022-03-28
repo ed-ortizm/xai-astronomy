@@ -1,5 +1,6 @@
 import numpy as np
-from skimage.color import gray2rgb # convert spectra to 3 channels
+from skimage.color import gray2rgb  # convert spectra to 3 channels
+
 ###############################################################################
 class SpectraPlus:
     """
@@ -27,7 +28,7 @@ class SpectraPlus:
         prediction = np.sum(spectra - 1, axis=(1, 2, 3))
         # print(prediction.shape)
 
-        return prediction.reshape((-1,1))
+        return prediction.reshape((-1, 1))
 
     ###########################################################################
     def spectrum_to_image(self, spectrum):
@@ -38,6 +39,7 @@ class SpectraPlus:
             return gray2rgb(gray_spectrum)
 
         return spectrum
+
     ###########################################################################
     def _update_dimension(self, spectra: np.array) -> np.array:
 
@@ -45,6 +47,8 @@ class SpectraPlus:
             return spectra[np.newaxis, ...]
 
         return spectra
+
+
 ###############################################################################
 class GalaxyPlus:
     """
@@ -60,15 +64,17 @@ class GalaxyPlus:
         mean_per_channel = self.get_mean_per_channel(image)
 
         # predict and normalize
-        prediction = np.sum(image-mean_per_channel, axis=(1, 2, 3))
+        prediction = np.sum(image - mean_per_channel, axis=(1, 2, 3))
 
         return prediction.reshape((-1, 1))
+
     ###########################################################################
     def get_mean_per_channel(self, image: np.array) -> np.array:
 
-        mean_per_channel = np.mean(image, axis=(1,2), keepdims=True)
+        mean_per_channel = np.mean(image, axis=(1, 2), keepdims=True)
 
         return mean_per_channel
+
     ###########################################################################
 
     def _update_dimension(self, image: np.array) -> np.array:
@@ -77,15 +83,11 @@ class GalaxyPlus:
             return image[np.newaxis, ...]
 
         return image
+
+
 ###############################################################################
 class CubePlus:
-
-    def __init__(self,
-        wave,
-        line=6_562.8,
-        delta=10,
-        cube=True
-        ):
+    def __init__(self, wave, line=6_562.8, delta=10, cube=True):
 
         self.wave = wave
         self.line = line
@@ -101,13 +103,11 @@ class CubePlus:
             prediction = np.sum(image, axis=(1, 2, 3)).reshape((-1, 1))
             return prediction
 
-
-        neighborhood = (self.line-self.delta) < self.wave
+        neighborhood = (self.line - self.delta) < self.wave
         neighborhood *= self.wave < (self.line + self.delta)
 
-        prediction = np.sum(
-            image[..., neighborhood],
-            axis=(1, 2, 3)
-            ).reshape((-1, 1))
+        prediction = np.sum(image[..., neighborhood], axis=(1, 2, 3)).reshape(
+            (-1, 1)
+        )
 
         return prediction
