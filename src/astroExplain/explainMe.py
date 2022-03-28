@@ -28,6 +28,66 @@ class TellMeWhySpec:
         self.explanation = explanation
 
     ###########################################################################
+    def get_full_explanation(
+        self,
+        drop_fraction: float = 0.1,
+        figure_size: tuple=(10, 5),
+        save: bool = False,
+        save_to: str = ".",
+        galaxy_name: str = "name",
+        save_format: str = "png",
+    ) -> (plt.Figure, plt.Axes):
+        """
+        This method allows to see the spectrum and the normalized
+        explanation weights pixel by pixel in two subplots
+
+        INPUT
+        drop_fraction: indicates the width of the band to ignore
+            segments with explanation weights inside of this band.
+            For instance, if it is 0.1, then weights with absolute
+            values smaller to 0.1*np.abs(weights).max() would be
+            ignore
+        figure_size: tuple with the size of the figure
+        save: If True, the image would be save to hard drive
+        save_to: path to store the image
+        galaxy_name: identification of the spectrum
+        save_format: format to store the image
+
+        OUTPUT
+        (fig, ax): of the explanation
+        """
+        #######################################################################
+
+        heatmap = self.get_heatmap()
+        # smooth noise
+        heatmap -= np.median(heatmap)
+        # normalize heatmap
+        heatmap *= 1/np.abs(heatmap).max()
+        # smooth noise with drop_fraction
+        heatmap = np.where(np.abs(heatmap) < drop_fraction, 0, heatmap)
+
+
+        fig, axs = plt.subplots(
+            nrows=2, ncols=1,
+            sharex=True,
+            figsize=figure_size
+        )
+
+        axs[0].plot(self.wave, self.galaxy, color="black")
+
+        axs[1].plot(self.wave, heatmap, color="black")
+
+        axs[1].plot(self.wave, np.zeros(heatmap.shape),
+            color="blue", linestyle='dashed'
+        )
+        # axs[1].set_ylim([-1,1])
+
+        if save is True:
+
+            fig.savefig(f"{save_to}/{galaxy_name}_explanation.{save_format}")
+
+        return fig, axs
+    ###########################################################################
     def show_me(
         self,
         show_all: bool = False,
@@ -244,7 +304,7 @@ class TellMeWhySpec:
 
         if save_map is True:
 
-            fig.savefig(f"{save_to}/{galaxy_name}HeatMapExp.{save_format}")
+            fig.savefig(f"{save_to}/{galaxy_name}_heatmap.{save_format}")
 
         return fig, ax
 
@@ -388,7 +448,7 @@ class TellMeWhyImage:
 
         if save_map is True:
 
-            plt.savefig(f"{save_to}/{galaxy_name}HeatMapExp.{save_format}")
+            plt.savefig(f"{save_to}/{galaxy_name}_heatmap.{save_format}")
 
     ###########################################################################
     def segmentation(self, show_segmentation: bool = True):
