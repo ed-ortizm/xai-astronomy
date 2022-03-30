@@ -43,7 +43,8 @@ name_super_pixels = file_name.split(".")[0]
 save_to = f"{file_location}/{name_super_pixels}"
 FileDirectory().check_directory(save_to, exit=False)
 
-imsave(f"{save_to}/{name_super_pixels}", super_pixels)
+imsave(f"{save_to}/{name_super_pixels}.png", galaxy)
+imsave(f"{save_to}/{name_super_pixels}_SLIC.png", super_pixels)
 ###############################################################################
 print(f"Save configuration file", end="\n")
 shutil.copyfile(
