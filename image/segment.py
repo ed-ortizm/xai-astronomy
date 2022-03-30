@@ -1,5 +1,6 @@
 from configparser import ConfigParser, ExtendedInterpolation
 import pickle
+import shutil
 import time
 
 from matplotlib.image import imsave
@@ -36,12 +37,19 @@ galaxy_segments = slic(
 )
 super_pixels = mark_boundaries(galaxy, galaxy_segments)
 
-name_super_pixels = file_name.split(".")[0]
-name_super_pixels = f"{name_super_pixels}_SLIC.png"
-
-imsave(f"{file_location}/{name_super_pixels}", super_pixels)
 ###############################################################################
-# print(f"Save configuration file", end="\n")
+name_super_pixels = file_name.split(".")[0]
+
+save_to = f"{file_location}/{name_super_pixels}"
+FileDirectory().check_directory(save_to, exit=False)
+
+imsave(f"{save_to}/{name_super_pixels}", super_pixels)
+###############################################################################
+print(f"Save configuration file", end="\n")
+shutil.copyfile(
+    f"./{configuration_file_name}",
+    f"{save_to}/{configuration_file_name}"
+)
 ###############################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time-start_time:.2f}")
