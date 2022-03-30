@@ -60,18 +60,19 @@ class GalaxyPlus:
 
     def predict(self, image: np.array) -> np.array:
 
-        image = self._update_dimension(image)
-        mean_per_channel = self.get_mean_per_channel(image)
+        # image = self._update_dimension(image)
+        median_per_channel = self.get_median_per_channel(image)
 
         # predict and normalize
-        prediction = np.sum(image - mean_per_channel, axis=(1, 2, 3))
+        prediction = np.sum(image - median_per_channel)
+        # prediction = np.sum(image - median_per_channel, axis=(1, 2, 3))
 
         return prediction.reshape((-1, 1))
 
     ###########################################################################
-    def get_mean_per_channel(self, image: np.array) -> np.array:
+    def get_median_per_channel(self, image: np.array) -> np.array:
 
-        mean_per_channel = np.mean(image, axis=(1, 2), keepdims=True)
+        mean_per_channel = np.median(image, axis=(0, 1), keepdims=True)
 
         return mean_per_channel
 

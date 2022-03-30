@@ -69,11 +69,3 @@ class SpectraSegmentation:
             return spectra
 
     ###########################################################################
-    def _update_dimension(self, array: np.array) -> np.array:
-
-        if array.ndim == 1:
-            return array[np.newaxis, ...]
-
-        return array
-
-    ###########################################################################
