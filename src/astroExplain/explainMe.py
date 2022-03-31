@@ -413,13 +413,9 @@ class TellMeWhyImage:
                 mean_per_segment_per_channel = np.mean(
                     self.galaxy[mask_segments], axis=(0, 1)
                 )
-                # mean_per_segment_per_channel = (
-                #     np.mean(self.galaxy[mask_segments][:, 0]),
-                #     np.mean(self.galaxy[mask_segments][:, 1]),
-                #     np.mean(self.galaxy[mask_segments][:, 2])
-                # )
 
                 fudged_galaxy[mask_segments] = mean_per_segment_per_channel
+
         else:
             fudged_galaxy[:] = hide_color
 
