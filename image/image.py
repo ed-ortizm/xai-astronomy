@@ -32,7 +32,8 @@ galaxy *= 1/galaxy.max()
 ###############################################################################
 print(f"Set explainer configuration", end="\n")
 # Load model
-addGalaxy = GalaxyPlus()
+base_line = parser.get("model", "base_line")
+addGalaxy = GalaxyPlus(base_line=base_line)
 
 slic_configuration = config.section_to_dictionary(parser.items("slic"), [])
 
