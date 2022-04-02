@@ -493,7 +493,7 @@ class TellMeWhyImage:
         number_of_features: int = 5,
         hide_rest: bool = False,
     ) -> np.array:
-    
+
         """
             Explore super pixels with the largest possitive
             and negative impact to the prediction
@@ -545,14 +545,14 @@ class TellMeWhyImage:
         return visual_explanation
 
     ###########################################################################
-    def heatmap(
-        self,
-        show_map: bool = False,
-        save_map: bool = False,
-        save_to: str = ".",
-        galaxy_name: str = "name",
-        save_format: str = ".png",
-    ) -> None:
+    def get_heatmap(self) -> np.array:
+        """
+            Get heatmap of explanation for galaxy
+
+            OUTPUT
+            heatmap: 2 D array where pixel take the values of the
+                explanation weights
+        """
 
         print("Get heat map of explanation", end="\n")
 
@@ -563,27 +563,19 @@ class TellMeWhyImage:
         dict_heatmap = dict(self.explanation.local_exp[ind])
         heatmap = np.vectorize(dict_heatmap.get)(self.segments)
 
-        # The visualization makes more sense if a symmetrical colorbar is used.
-        plt.imshow(
-            heatmap, cmap="RdBu", vmin=-heatmap.max(), vmax=heatmap.max()
-        )
-
-        plt.colorbar()
-
-        if show_map is True:
-            plt.show()
-
-        if save_map is True:
-
-            plt.savefig(f"{save_to}/{galaxy_name}_heatmap.{save_format}")
-
+        return heatmap
     ###########################################################################
-    def segmentation(self, show_segmentation: bool = True):
+    def get_segmented_image(self) -> np.array:
+        """
+            Get image with super pixels highlited. It is the image, but
+            in the interpretable representations of the superpixel.
+
+            OUTPUT
+            segmented_image: array highlighting super pixels
+        """
 
         segmented_image = mark_boundaries(self.galaxy, self.segments)
 
-        if show_segmentation is True:
-            plt.imshow(segmented_image)
-
+        return segmented_image
 
 ###############################################################################
