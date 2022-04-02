@@ -39,6 +39,13 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     config_file_name = "parallelExplain.ini"
     parser.read(f"{config_file_name}")
+
+    ###########################################################################
+    # Fetch lines and epsilon from configuration file used to get scores
+    anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
+    anomalies_configuration = parser.get("file", "configuration_anomalies")
+    anomalies_parser.read(f"{anomalies_configuration}")
+    ###########################################################################
     # Check files and directory
     check = FileDirectory()
     # Handle configuration file
@@ -88,10 +95,52 @@ if __name__ == "__main__":
     ###########################################################################
     print(f"Load score and lime configurations", end="\n")
 
-    score_configuration = parser.items("score")
-    score_configuration = configuration.section_to_dictionary(
-        score_configuration, [",", "\n"]
-    )
+    score_configuration = {}
+
+    lines = anomalies_parser.get("score", "lines")
+    lines = configuration.entry_tolist(lines, str, "\n")
+    score_configuration["lines"] = lines
+
+    epsilon = anomalies_parser.getfloat("score", "epsilon")
+    score_configuration["epsilon"] = epsilon
+
+    ##########################################################################
+    temp = anomalies_name.split(".")[0].split("_")
+
+    if len(temp) ==2 :
+        # lp_rel100.npy
+
+        metric = temp[0]
+        velocity = 0
+
+        if "no" in temp[1]:
+            relative = False
+            percentage = float(temp[1].strip("noRel"))
+
+        else:
+            relative = True
+            percentage = float(temp[1].strip("rel"))
+
+    else:
+        # lp_filter_50Kms_rel100.npy
+
+        metric = temp[0]
+        velocity = float(temp[2].strip("Kms"))
+
+        if "no" in temp[3]:
+            relative = False
+            percentage = float(temp[3].strip("noRel"))
+
+        else:
+            relative = True
+            percentage = float(temp[3].strip("rel"))
+
+
+    score_configuration["metric"] = metric
+    score_configuration["velocity"] = velocity
+    score_configuration["relative"] = relative
+    score_configuration["percentage"] = percentage
+    ###########################################################################
 
     lime_configuration = parser.items("lime")
     lime_configuration = configuration.section_to_dictionary(
