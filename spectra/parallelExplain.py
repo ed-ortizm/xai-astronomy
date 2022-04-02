@@ -39,12 +39,6 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     config_file_name = "parallelExplain.ini"
     parser.read(f"{config_file_name}")
-
-    ###########################################################################
-    # Fetch lines and epsilon from configuration file used to get scores
-    anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
-    anomalies_configuration = parser.get("file", "configuration_anomalies")
-    anomalies_parser.read(f"{anomalies_configuration}")
     ###########################################################################
     # Check files and directory
     check = FileDirectory()
@@ -66,7 +60,7 @@ if __name__ == "__main__":
     )
     del specobjid
 
-    # load spectra
+    load spectra
 
     data_directory = parser.get("directory", "data")
     fluxes = np.load(f"{data_directory}/fluxes.npy", mmap_mode="r")
@@ -94,11 +88,17 @@ if __name__ == "__main__":
 
     ###########################################################################
     print(f"Load score and lime configurations", end="\n")
+    # Fetch lines and epsilon from configuration file used to get scores
+    anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
+    anomalies_configuration = parser.get("file", "configuration_anomalies")
+    print(anomalies_configuration)
+    anomalies_parser.read(f"{scores_directory}/{anomalies_configuration}")
 
+    ###########################################################################
     score_configuration = {}
 
     lines = anomalies_parser.get("score", "lines")
-    lines = configuration.entry_tolist(lines, str, "\n")
+    lines = configuration.entry_to_list(lines, str, "\n")
     score_configuration["lines"] = lines
 
     epsilon = anomalies_parser.getfloat("score", "epsilon")
@@ -140,6 +140,8 @@ if __name__ == "__main__":
     score_configuration["velocity"] = velocity
     score_configuration["relative"] = relative
     score_configuration["percentage"] = percentage
+
+    print(score_configuration)
     ###########################################################################
 
     lime_configuration = parser.items("lime")
@@ -185,6 +187,6 @@ if __name__ == "__main__":
     ###########################################################################
     with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
         parser.write(config_file)
+    ###########################################################################
     finish_time = time.time()
     print(f"\nRun time: {finish_time - start_time:.2f}")
-###############################################################################
