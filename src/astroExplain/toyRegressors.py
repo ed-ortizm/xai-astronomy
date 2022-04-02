@@ -86,7 +86,7 @@ class GalaxyPlus:
         image = self._update_dimension(image)
 
         base_line_per_channel = self.get_base_line_per_channel(image)
-        
+
         image = image - base_line_per_channel
 
         prediction = np.sum(image, axis=(1, 2, 3))
@@ -120,31 +120,3 @@ class GalaxyPlus:
             return image[np.newaxis, ...]
 
         return image
-
-
-###############################################################################
-class CubePlus:
-    def __init__(self, wave, line=6_562.8, delta=10, cube=True):
-
-        self.wave = wave
-        self.line = line
-        self.delta = delta
-        self.cube = cube
-
-    def predict(self, image):
-
-        if image.ndim == 3:
-            image = image.reshape((1,) + image.shape)
-
-        if not self.cube:
-            prediction = np.sum(image, axis=(1, 2, 3)).reshape((-1, 1))
-            return prediction
-
-        neighborhood = (self.line - self.delta) < self.wave
-        neighborhood *= self.wave < (self.line + self.delta)
-
-        prediction = np.sum(image[..., neighborhood], axis=(1, 2, 3)).reshape(
-            (-1, 1)
-        )
-
-        return prediction
