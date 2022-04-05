@@ -1,9 +1,8 @@
-
 import numpy as np
 from skimage.color import gray2rgb  # convert spectra to 3 channels
 
 ###############################################################################
-class SpectraPlus:
+class SpecPlus:
     """
     Class to add all flexes values in an spectra
     """
