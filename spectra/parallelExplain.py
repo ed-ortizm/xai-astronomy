@@ -46,13 +46,21 @@ if __name__ == "__main__":
     configuration = ConfigurationFile()
     ###########################################################################
     counter = mp.Value("i", 0)
+    ###########################################################################
+    # strings to get right paths to data
+    data_directory = parser.get("directory", "data")
+    data_bin = parser.get("common", "bin")
 
     # Load data
     print("Load anomalies")
 
-    scores_directory = parser.get("directory", "scores")
-    anomalies_name = parser.get("file", "anomalies")
-    anomalies = np.load(f"{scores_directory}/{anomalies_name}")
+    anomalies_file = parser.get("file", "anomalies")
+    anomalies_name = anomalies_file.split(".")[0]
+
+    score_directory = f"{data_directory}/{data_bin}/{anomalies_name}"
+    check.check_directory(score_directory, exit=True)
+
+    anomalies = np.load(f"{score_directory}/{anomalies_file}")
 
     specobjid = anomalies[:, 0].astype(int)
     share_specobjid = RawArray(
@@ -60,9 +68,8 @@ if __name__ == "__main__":
     )
     del specobjid
 
-    load spectra
+    # load spectra
 
-    data_directory = parser.get("directory", "data")
     fluxes = np.load(f"{data_directory}/fluxes.npy", mmap_mode="r")
     anomalies_indexes = anomalies[:, 1].astype(int)
     anomalies = fluxes[anomalies_indexes]
@@ -91,8 +98,7 @@ if __name__ == "__main__":
     # Fetch lines and epsilon from configuration file used to get scores
     anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
     anomalies_configuration = parser.get("file", "configuration_anomalies")
-    print(anomalies_configuration)
-    anomalies_parser.read(f"{scores_directory}/{anomalies_configuration}")
+    anomalies_parser.read(f"{score_directory}/{anomalies_configuration}")
 
     ###########################################################################
     score_configuration = {}
@@ -141,7 +147,6 @@ if __name__ == "__main__":
     score_configuration["relative"] = relative
     score_configuration["percentage"] = percentage
 
-    print(score_configuration)
     ###########################################################################
 
     lime_configuration = parser.items("lime")
@@ -149,15 +154,12 @@ if __name__ == "__main__":
         lime_configuration, [",", "\n"]
     )
     ###########################################################################
-    model_directory = parser.get("directory", "model")
+    model_directory = f"{data_directory}/{data_bin}/models"
     model_name = parser.get("file", "model")
     model_directory = f"{model_directory}/{model_name}"
     check.check_directory(model_directory, exit=True)
 
-    save_explanation_to = parser.get("directory", "explanations")
-    save_explanation_to = (
-        f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
-    )
+    save_explanation_to = f"{score_directory}/explanations"
     check.check_directory(save_explanation_to, exit=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
@@ -185,7 +187,7 @@ if __name__ == "__main__":
         )
 
     ###########################################################################
-    with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
+    with open(f"{score_directory}/{config_file_name}", "w") as config_file:
         parser.write(config_file)
     ###########################################################################
     finish_time = time.time()
