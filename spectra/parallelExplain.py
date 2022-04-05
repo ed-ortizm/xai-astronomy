@@ -39,19 +39,28 @@ if __name__ == "__main__":
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     config_file_name = "parallelExplain.ini"
     parser.read(f"{config_file_name}")
+    ###########################################################################
     # Check files and directory
     check = FileDirectory()
     # Handle configuration file
     configuration = ConfigurationFile()
     ###########################################################################
     counter = mp.Value("i", 0)
+    ###########################################################################
+    # strings to get right paths to data
+    data_directory = parser.get("directory", "data")
+    data_bin = parser.get("common", "bin")
 
     # Load data
     print("Load anomalies")
 
-    scores_directory = parser.get("directory", "scores")
-    anomalies_name = parser.get("file", "anomalies")
-    anomalies = np.load(f"{scores_directory}/{anomalies_name}")
+    anomalies_file = parser.get("file", "anomalies")
+    anomalies_name = anomalies_file.split(".")[0]
+
+    score_directory = f"{data_directory}/{data_bin}/{anomalies_name}"
+    check.check_directory(score_directory, exit=True)
+
+    anomalies = np.load(f"{score_directory}/{anomalies_file}")
 
     specobjid = anomalies[:, 0].astype(int)
     share_specobjid = RawArray(
@@ -61,7 +70,6 @@ if __name__ == "__main__":
 
     # load spectra
 
-    data_directory = parser.get("directory", "data")
     fluxes = np.load(f"{data_directory}/fluxes.npy", mmap_mode="r")
     anomalies_indexes = anomalies[:, 1].astype(int)
     anomalies = fluxes[anomalies_indexes]
@@ -87,26 +95,71 @@ if __name__ == "__main__":
 
     ###########################################################################
     print(f"Load score and lime configurations", end="\n")
+    # Fetch lines and epsilon from configuration file used to get scores
+    anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
+    anomalies_configuration = parser.get("file", "configuration_anomalies")
+    anomalies_parser.read(f"{score_directory}/{anomalies_configuration}")
 
-    score_configuration = parser.items("score")
-    score_configuration = configuration.section_to_dictionary(
-        score_configuration, [",", "\n"]
-    )
+    ###########################################################################
+    score_configuration = {}
+
+    lines = anomalies_parser.get("score", "lines")
+    lines = configuration.entry_to_list(lines, str, "\n")
+    score_configuration["lines"] = lines
+
+    epsilon = anomalies_parser.getfloat("score", "epsilon")
+    score_configuration["epsilon"] = epsilon
+
+    ##########################################################################
+    temp = anomalies_name.split(".")[0].split("_")
+
+    if len(temp) ==2 :
+        # lp_rel100.npy
+
+        metric = temp[0]
+        velocity = 0
+
+        if "no" in temp[1]:
+            relative = False
+            percentage = float(temp[1].strip("noRel"))
+
+        else:
+            relative = True
+            percentage = float(temp[1].strip("rel"))
+
+    else:
+        # lp_filter_50Kms_rel100.npy
+
+        metric = temp[0]
+        velocity = float(temp[2].strip("Kms"))
+
+        if "no" in temp[3]:
+            relative = False
+            percentage = float(temp[3].strip("noRel"))
+
+        else:
+            relative = True
+            percentage = float(temp[3].strip("rel"))
+
+
+    score_configuration["metric"] = metric
+    score_configuration["velocity"] = velocity
+    score_configuration["relative"] = relative
+    score_configuration["percentage"] = percentage
+
+    ###########################################################################
 
     lime_configuration = parser.items("lime")
     lime_configuration = configuration.section_to_dictionary(
         lime_configuration, [",", "\n"]
     )
     ###########################################################################
-    model_directory = parser.get("directory", "model")
+    model_directory = f"{data_directory}/{data_bin}/models"
     model_name = parser.get("file", "model")
     model_directory = f"{model_directory}/{model_name}"
     check.check_directory(model_directory, exit=True)
 
-    save_explanation_to = parser.get("directory", "explanations")
-    save_explanation_to = (
-        f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
-    )
+    save_explanation_to = f"{score_directory}/explanations"
     check.check_directory(save_explanation_to, exit=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
@@ -134,8 +187,8 @@ if __name__ == "__main__":
         )
 
     ###########################################################################
-    with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
+    with open(f"{score_directory}/{config_file_name}", "w") as config_file:
         parser.write(config_file)
+    ###########################################################################
     finish_time = time.time()
     print(f"\nRun time: {finish_time - start_time:.2f}")
-###############################################################################
