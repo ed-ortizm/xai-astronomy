@@ -115,10 +115,16 @@ class ImageNeighbors:
 
         centroid_segments = []
 
-        for segment_id in np.unique(self.segments):
+        for idx, segment_id in enumerate(np.unique(self.segments)):
 
             width = np.sum(self.segments == segment_id)
-            centroid_segments.append(width/2)
+
+            if idx == 0:
+                centroid_segments.append(width/2)
+
+            else:
+                centroid_segments.append(width/2 + centroid_segments[idx-1])
+
 
         centroid_segments = np.array(centroid_segments, dtype=int)
 
