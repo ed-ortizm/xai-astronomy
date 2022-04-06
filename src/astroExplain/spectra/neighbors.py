@@ -12,7 +12,7 @@ class ImageNeighbors:
     def __init__(
         self,
         image: np.array,
-        wave:np.array,
+        wave: np.array,
         segmentation_function,
         random_seed: int = None,
     ):
@@ -101,23 +101,41 @@ class ImageNeighbors:
         return np.array(neighbors)
 
     ###########################################################################
-    def fudge_adding_gaussian(self):
+    def fudge_adding_gaussian(self,
+        amplitude:float=0.5,
+        scale:float=1
+    ):
+
+        image_fudged = self.image.copy()
 
         number_gaussians = self.number_segments
-        print(number_gaussians)
+        number_pixels = self.image[...,0].size
 
-        # get centroids per segment and map to wave
+        x = np.arange(number_pixels)
         centroids = self.get_centroids_of_segments()
-        print(centroids)
 
+        # gaussians = np.empty(shape=(number_gaussians, number_pixels))
+        gaussians = np.zeros(shape=(1, number_pixels))
+        print(gaussians.shape)
+
+        # for idx, gaussian_on_segment in enumerate(gaussians):
+
+       #      loc = centroids[idx]
+        #     gaussians[idx, :] = norm.pdf(x, loc, scale)
+
+        for n in range(number_gaussians):
+            loc = centroids[n]
+            gaussians[0, :] += amplitude*norm.pdf(x, loc, scale)
+
+        return image_fudged + gaussians.reshape(1, -1, 1)
     ###########################################################################
-    def get_centroids_of_segments(self)-> np.array :
+    def get_centroids_of_segments(self) -> np.array:
 
         """
-            Get the index of the centroids for each segment
+        Get the index of the centroids for each segment
 
-            OUTPUT
-            centroids: centroids. indexes along the segments array 
+        OUTPUT
+        centroids: centroids. indexes along the segments array
         """
 
         centroids = []
@@ -127,11 +145,10 @@ class ImageNeighbors:
             width = np.sum(self.segments == segment_id)
 
             if idx == 0:
-                centroids.append(width/2)
+                centroids.append(width / 2)
 
             else:
-                centroids.append(width/2 + centroids[idx-1])
-
+                centroids.append(width + centroids[idx - 1])
 
         centroids = np.array(centroids, dtype=int)
 
@@ -168,6 +185,10 @@ class ImageNeighbors:
 
             image_fudged = self.fudge_with_gaussian_noise(loc, scale)
 
+        elif hide_color == "gaussian":
+
+            image_fudged = self.fudge_adding_gaussian()
+
         else:
             # Fudge image with hide_color value on all pixels
             image_fudged = np.ones(self.image.shape) * hide_color
@@ -177,11 +198,11 @@ class ImageNeighbors:
     ###########################################################################
     def fudge_with_mean(self) -> np.array:
         """
-            Fudge image with mean value per channel per segmment
+        Fudge image with mean value per channel per segmment
 
-            OUTPUT
-            image_fudged: original image + gaussian noise according
-                to loc and scale parameters
+        OUTPUT
+        image_fudged: original image + gaussian noise according
+            to loc and scale parameters
         """
         image_fudged = self.image.copy()
 
@@ -200,17 +221,17 @@ class ImageNeighbors:
     ###########################################################################
     def fudge_with_gaussian_noise(self, loc=0, scale=0.2) -> np.array:
         """
-            Fudge image with gaussian noise per channel per segmment
+        Fudge image with gaussian noise per channel per segmment
 
-            INPUT
-            loc: mean of the normal distribution in case hide color
-                is set to "normal"
-            scale: standard deviation of the normal distribution in
-                case hide color is set to "normal"
+        INPUT
+        loc: mean of the normal distribution in case hide color
+            is set to "normal"
+        scale: standard deviation of the normal distribution in
+            case hide color is set to "normal"
 
-            OUTPUT
-            image_fudged: original image + gaussian noise according
-                to loc and scale parameters
+        OUTPUT
+        image_fudged: original image + gaussian noise according
+            to loc and scale parameters
         """
 
         image_fudged = self.image.copy()
