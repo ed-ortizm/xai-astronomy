@@ -1,6 +1,8 @@
 import copy
+
 from skimage.color import gray2rgb
 import numpy as np
+from scipy.stats import norm
 
 ###############################################################################
 class ImageNeighbors:
@@ -10,6 +12,7 @@ class ImageNeighbors:
     def __init__(
         self,
         image: np.array,
+        wave:np.array,
         segmentation_function,
         random_seed: int = None,
     ):
@@ -17,6 +20,7 @@ class ImageNeighbors:
         """
         INPUT
         image: gray or RGB representation of a spectrum
+        wave: wavelenght grid of the spectrum
         segmentation_function: segmentation funtion that has as
             input the image. Other parameters must be set via
             partial previously.
@@ -32,6 +36,8 @@ class ImageNeighbors:
             image = gray2rgb(image)
 
         self.image = image
+        self.wave = wave
+
         self.segments = segmentation_function(image)
         self.number_segments = np.unique(self.segments).shape[0]
 
@@ -95,6 +101,30 @@ class ImageNeighbors:
         return np.array(neighbors)
 
     ###########################################################################
+    def fudge_adding_gaussian(self):
+
+        number_gaussians = self.number_segments
+        print(number_gaussians)
+
+        # get centroids per segment and map to wave
+        centroids = self.get_centroids_of_segments()
+        print(centroids)
+
+    ###########################################################################
+    def get_centroids_of_segments(self):
+
+        centroid_segments = []
+
+        for segment_id in np.unique(self.segments):
+
+            width = np.sum(self.segments == segment_id)
+            centroid_segments.append(width/2)
+
+        centroid_segments = np.array(centroid_segments, dtype=int)
+
+        return centroid_segments
+
+    ###########################################################################
     def fudge_galaxy(
         self, hide_color: float = 0.0, loc=0, scale=0.2
     ) -> np.array:
@@ -123,7 +153,7 @@ class ImageNeighbors:
 
         elif hide_color == "normal":
 
-            image_fudged = self.fudge_from_normal(loc, scale)
+            image_fudged = self.fudge_with_gaussian_noise(loc, scale)
 
         else:
             # Fudge image with hide_color value on all pixels
@@ -142,9 +172,9 @@ class ImageNeighbors:
         """
         image_fudged = self.image.copy()
 
-        for segment in np.unique(self.segments):
+        for segment_id in np.unique(self.segments):
 
-            mask_segments = self.segments == segment
+            mask_segments = self.segments == segment_id
 
             mean_per_segment_per_channel = np.mean(
                 self.image[mask_segments], axis=(0, 1)
@@ -155,7 +185,7 @@ class ImageNeighbors:
         return image_fudged
 
     ###########################################################################
-    def fudge_from_normal(self, loc=0, scale=0.2) -> np.array:
+    def fudge_with_gaussian_noise(self, loc=0, scale=0.2) -> np.array:
         """
             Fudge image with gaussian noise per channel per segmment
 
