@@ -1,18 +1,19 @@
 import numpy as np
 from skimage.color import gray2rgb  # convert spectra to 3 channels
+
 ###############################################################################
 class GalaxyPlus:
 
     """
-        Compute brightness of the image using as a baseline either
-        the median or the mean value per channel.
+    Compute brightness of the image using as a baseline either
+    the median or the mean value per channel.
     """
 
     def __init__(self, base_line: str = "median"):
 
         """
-            base_line: either median or mean.
-                Compute brightness of image-[median or mean]
+        base_line: either median or mean.
+            Compute brightness of image-[median or mean]
         """
 
         assert (base_line == "median") or (base_line == "mean")
@@ -22,15 +23,15 @@ class GalaxyPlus:
     ###########################################################################
     def predict(self, image: np.array) -> np.array:
         """
-            Compute normalized brightness of galaxy over base_line
-            per channel
+        Compute normalized brightness of galaxy over base_line
+        per channel
 
-            INPUT
-                image: 3D image or batch of 3D images
+        INPUT
+            image: 3D image or batch of 3D images
 
-            OUTPUT
-                predition: 2D array with brightness of images in the batch
-                    shape --> (batch_size, 1)
+        OUTPUT
+            predition: 2D array with brightness of images in the batch
+                shape --> (batch_size, 1)
         """
 
         # (height, size, channels) -> (batch_size, height, size, channels)
@@ -47,22 +48,22 @@ class GalaxyPlus:
     ###########################################################################
     def get_base_line_per_channel(self, image: np.array) -> np.array:
         """
-            Compute baseline per channel, either mean or median
+        Compute baseline per channel, either mean or median
 
-            INPUT
-                image: 3D image or batch of 3D images
+        INPUT
+            image: 3D image or batch of 3D images
 
-            OUTPUT
-                array with median or mean per channel,
-                    keeping the dimensions of image
+        OUTPUT
+            array with median or mean per channel,
+                keeping the dimensions of image
         """
 
         # axis=(1, 2) -> the weidth and height of the image
         if self.base_line == "median":
-            return  np.median(image, axis=(1, 2), keepdims=True)
+            return np.median(image, axis=(1, 2), keepdims=True)
 
         elif self.base_line == "mean":
-            return  np.mean(image, axis=(1, 2), keepdims=True)
+            return np.mean(image, axis=(1, 2), keepdims=True)
 
     ###########################################################################
     def _update_dimension(self, image: np.array) -> np.array:

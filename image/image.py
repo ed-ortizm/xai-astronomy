@@ -28,7 +28,7 @@ print(f"Load image: {file_name}.{file_format}", end="\n")
 
 galaxy = Image.open(f"{file_location}/{file_name}.{file_format}")
 galaxy = np.array(galaxy, dtype=float)
-galaxy *= 1/galaxy.max()
+galaxy *= 1 / galaxy.max()
 ###############################################################################
 print(f"Set explainer configuration", end="\n")
 # Load model
@@ -41,7 +41,7 @@ segmentation_fn = partial(
     slic,
     n_segments=slic_configuration["segments"],
     compactness=slic_configuration["compactness"],
-    sigma=slic_configuration["sigma"]
+    sigma=slic_configuration["sigma"],
 )
 
 ###############################################################################
@@ -65,7 +65,7 @@ explanation = explainer.explain_instance(
     top_labels=1,
     num_samples=lime_configuration["number_samples"],
     batch_size=lime_configuration["batch_size"],
-    segmentation_fn=segmentation_fn
+    segmentation_fn=segmentation_fn,
 )
 
 ###############################################################################
@@ -81,10 +81,7 @@ with open(f"{save_to}/{explanation_name}.pkl", "wb") as file:
     pickle.dump(explanation, file)
 ###############################################################################
 print(f"Save configuration file", end="\n")
-shutil.copyfile(
-    f"./{configuration_file}",
-    f"{save_to}/{configuration_file}"
-)
+shutil.copyfile(f"./{configuration_file}", f"{save_to}/{configuration_file}")
 ###############################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time-start_time:.2f}")

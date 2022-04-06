@@ -9,6 +9,7 @@ from PIL import Image
 from skimage.segmentation import slic, mark_boundaries
 
 from sdss.superclasses import ConfigurationFile, FileDirectory
+
 ###############################################################################
 start_time = time.time()
 parser = ConfigParser(interpolation=ExtendedInterpolation())
@@ -23,7 +24,7 @@ print(f"Load image: {file_name}", end="\n")
 
 galaxy = Image.open(f"{file_location}/{file_name}")
 galaxy = np.array(galaxy, dtype=float)
-galaxy *= 1/galaxy.max()
+galaxy *= 1 / galaxy.max()
 ###############################################################################
 print(f"Load configuration of SLIC segmetation algorithms", end="\n")
 
@@ -33,7 +34,7 @@ galaxy_segments = slic(
     galaxy,
     n_segments=slic_configuration["segments"],
     compactness=slic_configuration["compactness"],
-    sigma=slic_configuration["sigma"]
+    sigma=slic_configuration["sigma"],
 )
 super_pixels = mark_boundaries(galaxy, galaxy_segments)
 
@@ -48,8 +49,7 @@ imsave(f"{save_to}/{name_super_pixels}_super_pixels.png", super_pixels)
 ###############################################################################
 print(f"Save configuration file", end="\n")
 shutil.copyfile(
-    f"./{configuration_file_name}",
-    f"{save_to}/{configuration_file_name}"
+    f"./{configuration_file_name}", f"{save_to}/{configuration_file_name}"
 )
 ###############################################################################
 finish_time = time.time()
