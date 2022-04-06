@@ -111,24 +111,31 @@ class ImageNeighbors:
         print(centroids)
 
     ###########################################################################
-    def get_centroids_of_segments(self):
+    def get_centroids_of_segments(self)-> np.array :
 
-        centroid_segments = []
+        """
+            Get the index of the centroids for each segment
+
+            OUTPUT
+            centroids: centroids. indexes along the segments array 
+        """
+
+        centroids = []
 
         for idx, segment_id in enumerate(np.unique(self.segments)):
 
             width = np.sum(self.segments == segment_id)
 
             if idx == 0:
-                centroid_segments.append(width/2)
+                centroids.append(width/2)
 
             else:
-                centroid_segments.append(width/2 + centroid_segments[idx-1])
+                centroids.append(width/2 + centroids[idx-1])
 
 
-        centroid_segments = np.array(centroid_segments, dtype=int)
+        centroids = np.array(centroids, dtype=int)
 
-        return centroid_segments
+        return centroids
 
     ###########################################################################
     def fudge_galaxy(
