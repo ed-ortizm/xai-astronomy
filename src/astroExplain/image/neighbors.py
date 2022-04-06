@@ -86,12 +86,12 @@ class Neighbors:
                 on_off_super_pixels == 0
             )[0]
 
-            mask = np.zeros(self.segments.shape).astype(bool)
+            mask_off_superpixels = np.zeros(self.segments.shape).astype(bool)
 
             for off in off_super_pixels:
-                mask[self.segments == off] = True
+                mask_off_superpixels[self.segments == off] = True
 
-            temp[mask] = fudged_galaxy[mask]
+            temp[mask_off_superpixels] = fudged_galaxy[mask_off_superpixels]
 
             neighbors.append(temp)
 

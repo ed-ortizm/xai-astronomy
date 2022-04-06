@@ -1,3 +1,7 @@
+import copy
+from skimage.color import gray2rgb
+import numpy as np
+###############################################################################
 class ImageNeighbors:
 
     "Generate neighboring spectra as LimeSpectraImageExplainer would"
@@ -5,17 +9,20 @@ class ImageNeighbors:
     def __init__(self,
         image: np.array,
         segmentation_function,
+        random_seed: int=None,
     ):
 
         """
             INPUT
-            image:
+            image: gray or RGB representation of a spectrum
             segmentation_function:
 
         """
 
+        right_image_dimension = (image.ndim == 2) or (image.ndim == 3)
+        assert right_image_dimension
         self.image = image
-
+        # add code to make sure it is at least a gray image
         self.segments = segmentation_function(image)
 
         if random_seed != None:
@@ -64,12 +71,12 @@ class ImageNeighbors:
                 on_off_super_pixels == 0
             )[0]
 
-            mask = np.zeros(self.segments.shape).astype(bool)
+            mask_off_superpixels = np.zeros(self.segments.shape).astype(bool)
 
             for off in off_super_pixels:
-                mask[self.segments == off] = True
+                mask_off_superpixels[self.segments == off] = True
 
-            temp[mask] = fudged_galaxy[mask]
+            temp[mask_off_superpixels] = fudged_galaxy[mask_off_superpixels]
 
             neighbors.append(temp)
 
@@ -94,12 +101,12 @@ class ImageNeighbors:
 
             fudged_galaxy = self.fudge_with_mean()
 
-        elif hide_color == "normal"
+        elif hide_color == "normal":
 
-            fudged_galaxy = self.fudge_from_normal(scale, loc)
+            fudged_galaxy = self.fudge_from_normal(loc, scale)
 
         else:
-            fudged_galaxy[:] = hide_color
+            fudged_galaxy = np.ones(shape=self.image.shape)
 
         return fudged_galaxy
     ###########################################################################
