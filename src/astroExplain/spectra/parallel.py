@@ -9,7 +9,7 @@ from lime import lime_image
 import numpy as np
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
-from astroExplain.segmentation import SpectraSegmentation
+from astroExplain.spectra.segment import SpectraSegmentation
 from sdss.superclasses import FileDirectory
 
 ###############################################################################

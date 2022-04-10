@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from astroExplain import parallelExplainer
+import astroExplain.spectra.parallel as parallelExplainer
 from autoencoders.ae import AutoEncoder
 from sdss.superclasses import FileDirectory, ConfigurationFile
 
@@ -57,7 +57,17 @@ if __name__ == "__main__":
     anomalies_file = parser.get("file", "anomalies")
     anomalies_name = anomalies_file.split(".")[0]
 
-    score_directory = f"{data_directory}/{data_bin}/{anomalies_name}"
+    # if testing
+    is_test = parser.getboolean("configuration", "test")
+
+    if is_test is True:
+
+        score_directory = f"{data_directory}/{data_bin}/test"
+
+    else:
+
+        score_directory = f"{data_directory}/{data_bin}/{anomalies_name}"
+
     check.check_directory(score_directory, exit=True)
 
     anomalies = np.load(f"{score_directory}/{anomalies_file}")

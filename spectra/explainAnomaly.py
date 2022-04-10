@@ -17,15 +17,15 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 ###############################################################################
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
-import time
 import pickle
+import time
 
 from lime import lime_image
 import numpy as np
 import tensorflow as tf
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
-from astroExplain.segmentation import SpectraSegmentation
+from astroExplain.spectra.segment import SpectraSegmentation
 from autoencoders.ae import AutoEncoder
 from sdss.superclasses import ConfigurationFile, FileDirectory
 
