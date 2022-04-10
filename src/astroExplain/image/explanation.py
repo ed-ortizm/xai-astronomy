@@ -29,14 +29,14 @@ class TellMeWhyImage:
         element of the array is the original image
 
         INPUT
-            number_samples: number of neighbors to sample
-            hide_color: value to fill segments that
-                "won't be cosidered" by the predictor. If None,
-                it will fill each segment  with the mean value
-                per channel
+        number_samples: number of neighbors to sample
+        hide_color: value to fill segments that
+            "won't be cosidered" by the predictor. If None,
+            it will fill each segment  with the mean value
+            per channel
         OUTPUT
-            neighbors: array with sampled neighbors. The first
-                element of the array is the original image
+        neighbors: array with sampled neighbors. The first
+            element of the array is the original image
         """
 
         fudged_galaxy = self.fudge_galaxy(hide_color)

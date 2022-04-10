@@ -101,15 +101,12 @@ class ImageNeighbors:
         return np.array(neighbors)
 
     ###########################################################################
-    def fudge_adding_gaussian(self,
-        amplitude:float=0.5,
-        scale:float=1
-    ):
+    def fudge_adding_gaussian(self, amplitude: float = 0.5, scale: float = 1):
 
         image_fudged = self.image.copy()
 
         number_gaussians = self.number_segments
-        number_pixels = self.image[...,0].size
+        number_pixels = self.image[..., 0].size
 
         x = np.arange(number_pixels)
         centroids = self.get_centroids_of_segments()
@@ -120,14 +117,15 @@ class ImageNeighbors:
 
         # for idx, gaussian_on_segment in enumerate(gaussians):
 
-       #      loc = centroids[idx]
+        #      loc = centroids[idx]
         #     gaussians[idx, :] = norm.pdf(x, loc, scale)
 
         for n in range(number_gaussians):
             loc = centroids[n]
-            gaussians[0, :] += amplitude*norm.pdf(x, loc, scale)
+            gaussians[0, :] += amplitude * norm.pdf(x, loc, scale)
 
         return image_fudged + gaussians.reshape(1, -1, 1)
+
     ###########################################################################
     def get_centroids_of_segments(self) -> np.array:
 

@@ -1,4 +1,5 @@
 import numpy as np
+
 # convert spectra to 3 channels
 from skimage.color import gray2rgb
 
@@ -13,8 +14,9 @@ class GalaxyPlus:
     def __init__(self, base_line: str = "median"):
 
         """
+        INPUT
         base_line: either median or mean.
-            Compute brightness of image-[median or mean]
+            brightness = image-[median or mean]
         """
 
         assert (base_line == "median") or (base_line == "mean")
@@ -28,11 +30,11 @@ class GalaxyPlus:
         per channel
 
         INPUT
-            image: 3D image or batch of 3D images
+        image: 3D image or batch of 3D images
 
         OUTPUT
-            predition: 2D array with brightness of images in the batch
-                shape --> (batch_size, 1)
+        predition: 2D array with brightness of images in the batch
+            shape --> (batch_size, 1)
         """
 
         # (height, size, channels) -> (batch_size, height, size, channels)
@@ -52,11 +54,11 @@ class GalaxyPlus:
         Compute baseline per channel, either mean or median
 
         INPUT
-            image: 3D image or batch of 3D images
+        image: 3D image or batch of 3D images
 
         OUTPUT
-            array with median or mean per channel,
-                keeping the dimensions of image
+        array with median or mean per channel,
+            keeping the dimensions of image
         """
 
         # axis=(1, 2) -> the weidth and height of the image
