@@ -1,11 +1,11 @@
 from configparser import ConfigParser, ExtendedInterpolation
 import pickle
+from PIL import Image
 import shutil
 import time
 
 from matplotlib.image import imsave
 import numpy as np
-from PIL import Image
 from skimage.segmentation import slic, mark_boundaries
 
 from sdss.superclasses import ConfigurationFile, FileDirectory
