@@ -1,4 +1,4 @@
-# process base parallelism to to explain anomalies
+# process base parallelism to to explain anomalies [spectra]
 from functools import partial
 import itertools
 import multiprocessing as mp
