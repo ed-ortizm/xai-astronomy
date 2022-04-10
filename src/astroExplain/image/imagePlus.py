@@ -1,5 +1,6 @@
 import numpy as np
-from skimage.color import gray2rgb  # convert spectra to 3 channels
+# convert spectra to 3 channels
+from skimage.color import gray2rgb
 
 ###############################################################################
 class GalaxyPlus:

@@ -1,9 +1,5 @@
 import copy
 
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap
-
 import numpy as np
 from skimage.segmentation import mark_boundaries
 from lime.lime_image import ImageExplanation
