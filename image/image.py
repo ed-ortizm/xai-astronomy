@@ -1,8 +1,8 @@
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
+import os
 import pickle
 from PIL import Image
-import os
 import shutil
 import time
 
@@ -10,7 +10,7 @@ from lime import lime_image
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
 
-from astroExplain.toyRegressors import GalaxyPlus
+from astroExplain.image.imagePlus import GalaxyPlus
 from sdss.superclasses import FileDirectory, ConfigurationFile
 
 ###############################################################################
