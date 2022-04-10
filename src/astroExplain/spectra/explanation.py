@@ -1,3 +1,7 @@
+import numpy as np
+from lime.lime_image import ImageExplanation
+import matplotlib.pyplot as plt
+
 ###############################################################################
 class TellMeWhySpec:
     ###########################################################################

@@ -123,7 +123,7 @@ if __name__ == "__main__":
     ##########################################################################
     temp = anomalies_name.split(".")[0].split("_")
 
-    if len(temp) ==2 :
+    if len(temp) == 2:
         # lp_rel100.npy
 
         metric = temp[0]
@@ -150,7 +150,6 @@ if __name__ == "__main__":
         else:
             relative = True
             percentage = float(temp[3].strip("rel"))
-
 
     score_configuration["metric"] = metric
     score_configuration["velocity"] = velocity
