@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setup(
     name="astroExplain",
-    version="0.0.1",
+    version="0.1.0",
     author="Edgar Ortiz",
     author_email="ed.ortizm@gmail.com",
     packages=find_packages(where="src", include=["[a-z]*"], exclude=[]),
