@@ -62,7 +62,7 @@ class ImageNeighbors:
                 "won't be cosidered" by the predictor.
                 If "mean", it will fill each segment  with the mean
                 value per channel. If "normal", it will pertub pixels
-                in each off superpixelsfrom a Normal distribution
+                in each off superpixel from a Normal distribution
             loc: mean of the normal distribution in case hide color
                 is set to "normal"
             scale: standard deviation of the normal distribution in
