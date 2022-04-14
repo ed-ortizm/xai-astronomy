@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+from lime.lime_image import ImageExplanation
 ###############################################################################
 class TellMeWhy:
     ###########################################################################
@@ -121,6 +125,7 @@ class TellMeWhy:
         )
 
         return spectrum_mask, explanation_segments
+
     ###########################################################################
     def negative_mask_and_segments(
         self,
@@ -165,6 +170,7 @@ class TellMeWhy:
         )
 
         return spectrum_mask, explanation_segments
+
     ###########################################################################
     def plot_heatmap_spectrum(
         self, heatmap: np.array, symmetric_map: bool
