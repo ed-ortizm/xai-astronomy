@@ -231,6 +231,7 @@ class LimeSpectraExplainer:
             preds = classifier_fn(np.array(imgs))
             labels.extend(preds)
         return data, np.array(labels)
+
     ###########################################################################
     def fudge_spectrum(
         self, hide_color: float = 0.0, loc=0, scale=0.2
@@ -271,9 +272,9 @@ class LimeSpectraExplainer:
             image_fudged = np.ones(self.image.shape) * hide_color
 
         return image_fudged
+
     ###########################################################################
     def fudge_adding_gaussian(self, amplitude: float = 0.5, scale: float = 1):
-
 
         image_fudged = self.image.copy()
 
@@ -286,7 +287,7 @@ class LimeSpectraExplainer:
         # gaussians = np.empty(shape=(number_gaussians, number_pixels))
         gaussians = np.zeros(shape=(1, number_pixels))
         #######################################################################
-        amplitude *= np.random.choice([-1,1], size= number_pixels)
+        amplitude *= np.random.choice([-1, 1], size=number_pixels)
 
         for n in range(number_gaussians):
             loc = centroids[n]
