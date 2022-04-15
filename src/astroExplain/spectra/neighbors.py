@@ -115,10 +115,7 @@ class ImageNeighbors:
         gaussians = np.zeros(shape=(1, number_pixels))
         print(gaussians.shape)
 
-        # for idx, gaussian_on_segment in enumerate(gaussians):
-
-        #      loc = centroids[idx]
-        #     gaussians[idx, :] = norm.pdf(x, loc, scale)
+        amplitude *= np.random.choice([-1, 1], size=(1, number_pixels))
 
         for n in range(number_gaussians):
             loc = centroids[n]

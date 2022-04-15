@@ -2,11 +2,11 @@ import copy
 from functools import partial
 
 import numpy as np
+from scipy.stats import norm
 import sklearn
 from sklearn.utils import check_random_state
 from skimage.color import gray2rgb
 from tqdm.auto import tqdm
-
 from lime import lime_base
 from lime.lime_image import ImageExplanation
 
@@ -274,6 +274,7 @@ class LimeSpectraExplainer:
     ###########################################################################
     def fudge_adding_gaussian(self, amplitude: float = 0.5, scale: float = 1):
 
+
         image_fudged = self.image.copy()
 
         number_gaussians = self.number_segments
@@ -284,12 +285,8 @@ class LimeSpectraExplainer:
 
         # gaussians = np.empty(shape=(number_gaussians, number_pixels))
         gaussians = np.zeros(shape=(1, number_pixels))
-        print(gaussians.shape)
-
-        # for idx, gaussian_on_segment in enumerate(gaussians):
-
-        #      loc = centroids[idx]
-        #     gaussians[idx, :] = norm.pdf(x, loc, scale)
+        #######################################################################
+        amplitude *= np.random.choice([-1,1], size=(1, number_pixels))
 
         for n in range(number_gaussians):
             loc = centroids[n]
