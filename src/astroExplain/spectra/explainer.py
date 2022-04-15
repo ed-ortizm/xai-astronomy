@@ -286,7 +286,7 @@ class LimeSpectraExplainer:
         # gaussians = np.empty(shape=(number_gaussians, number_pixels))
         gaussians = np.zeros(shape=(1, number_pixels))
         #######################################################################
-        amplitude *= np.random.choice([-1,1], size=(1, number_pixels))
+        amplitude *= np.random.choice([-1,1], size= number_pixels)
 
         for n in range(number_gaussians):
             loc = centroids[n]
