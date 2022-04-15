@@ -7,7 +7,7 @@ from sklearn.utils import check_random_state
 from skimage.color import gray2rgb
 from tqdm.auto import tqdm
 
-for lime import lime_base
+from lime import lime_base
 from lime.lime_image import ImageExplanation
 
 ###############################################################################
@@ -66,8 +66,8 @@ class LimeSpectraExplainer:
         classifier_fn,
         labels=(1,),
         hide_color=None,
-        loc:float=0,
-        scale:float=0.2,
+        loc: float = 0,
+        scale: float = 0.2,
         # change this since I have a regressor
         top_labels=5,
         num_features=100000,
@@ -122,22 +122,15 @@ class LimeSpectraExplainer:
             random_seed = self.random_state.randint(0, high=1000)
 
         # add code to make sure a segmentation function is passed
+        no_segmentation_function = segmentation_fn == None
+
+        if no_segmentation_function is True:
+
+            raise ValueError("Segmentation function for spectra not provided")
+
         segments = segmentation_fn(image)
 
-        fudged_image = self.fudge_spectrum(fudge_spectrum(
-            hide_color,
-            loc, scale
-        )
-        fudged_image = image.copy()
-        if hide_color is None:
-            for x in np.unique(segments):
-                fudged_image[segments == x] = (
-                    np.mean(image[segments == x][:, 0]),
-                    np.mean(image[segments == x][:, 1]),
-                    np.mean(image[segments == x][:, 2]),
-                )
-        else:
-            fudged_image[:] = hide_color
+        fudged_image = self.fudge_spectrum(hide_color, loc, scale)
 
         top = labels
 
@@ -156,10 +149,12 @@ class LimeSpectraExplainer:
         ).ravel()
 
         ret_exp = ImageExplanation(image, segments)
+
         if top_labels:
             top = np.argsort(labels[0])[-top_labels:]
             ret_exp.top_labels = list(top)
             ret_exp.top_labels.reverse()
+
         for label in top:
             (
                 ret_exp.intercept[label],
@@ -175,6 +170,7 @@ class LimeSpectraExplainer:
                 model_regressor=model_regressor,
                 feature_selection=self.feature_selection,
             )
+
         return ret_exp
 
     def data_labels(
