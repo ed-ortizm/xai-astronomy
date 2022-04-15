@@ -64,20 +64,20 @@ class LimeSpectraExplainer:
         self,
         image,
         classifier_fn,
-        labels=(1,),
+        segmentation_fn,
         hide_color=None,
         loc: float = 0,
         scale: float = 0.2,
-        # change this since I have a regressor
-        top_labels=5,
         num_features=100000,
         num_samples=1000,
         batch_size=10,
-        segmentation_fn=None,
         distance_metric="cosine",
         model_regressor=None,
         random_seed=None,
         progress_bar=True,
+        # see hard code of values below
+        # labels=(1,),
+        # top_labels=5,
     ):
         """Generates explanations for a prediction.
 
@@ -92,12 +92,12 @@ class LimeSpectraExplainer:
             classifier_fn: classifier prediction probability function, which
                 takes a numpy array and outputs prediction probabilities.  For
                 ScikitClassifiers , this is classifier.predict_proba.
-            labels: iterable with labels to be explained.
             hide_color: If not None, will hide superpixels with this color.
                 Otherwise, use the mean pixel color of the image.
-            top_labels: if not None, ignore labels and produce explanations for
-                the K labels with highest prediction probabilities, where K is
-                this parameter.
+            loc: mean of the normal distribution in case hide color
+                is set to "normal"
+            scale: standard deviation of the normal distribution in
+                case hide color is set to "normal"
             num_features: maximum number of features present in explanation
             num_samples: size of the neighborhood to learn the linear model
             batch_size: batch size for model predictions
@@ -112,22 +112,26 @@ class LimeSpectraExplainer:
                 will be generated using the internal random number generator.
             progress_bar: if True, show tqdm progress bar.
 
+            labels: iterable with labels to be explained.
+            top_labels: if not None, ignore labels and produce explanations for
+                the K labels with highest prediction probabilities, where K is
+                this parameter.
+
         Returns:
             An ImageExplanation object (see lime_image.py) with the corresponding
             explanations.
         """
+        #######################################################################
+        # set variables bellow to accomadate for a regressor
+        labels = None
+        top_labels = 1
+        #######################################################################
         if len(image.shape) == 2:
             image = gray2rgb(image)
+
         if random_seed is None:
             random_seed = self.random_state.randint(0, high=1000)
-
-        # add code to make sure a segmentation function is passed
-        no_segmentation_function = segmentation_fn == None
-
-        if no_segmentation_function is True:
-
-            raise ValueError("Segmentation function for spectra not provided")
-
+        #######################################################################
         segments = segmentation_fn(image)
 
         fudged_image = self.fudge_spectrum(hide_color, loc, scale)
@@ -143,6 +147,7 @@ class LimeSpectraExplainer:
             batch_size=batch_size,
             progress_bar=progress_bar,
         )
+        #######################################################################
 
         distances = sklearn.metrics.pairwise_distances(
             data, data[0].reshape(1, -1), metric=distance_metric
@@ -173,6 +178,7 @@ class LimeSpectraExplainer:
 
         return ret_exp
 
+    ###########################################################################
     def data_labels(
         self,
         image,
@@ -225,7 +231,46 @@ class LimeSpectraExplainer:
             preds = classifier_fn(np.array(imgs))
             labels.extend(preds)
         return data, np.array(labels)
+    ###########################################################################
+    def fudge_spectrum(
+        self, hide_color: float = 0.0, loc=0, scale=0.2
+    ) -> np.array:
+        """
+        Fudge image of galaxy to set pixel values of segments
+        ignored in sampled neighbors
 
+        INPUT
+            hide_color: value to fill segments that
+                "won't be cosidered" by the predictor.
+                If "mean", it will fill each segment  with the mean
+                value per channel. If "normal", it will pertub pixels
+                in each off superpixelsfrom a Normal distribution
+            loc: mean of the normal distribution in case hide color
+                is set to "normal"
+            scale: standard deviation of the normal distribution in
+                case hide color is set to "normal"
+        OUTPUT
+            image_fudged: galaxy image with segments to ignore
+                in neighbors set to hide_color
+        """
+
+        if hide_color == "mean":
+
+            image_fudged = self.fudge_with_mean()
+
+        elif hide_color == "normal":
+
+            image_fudged = self.fudge_with_gaussian_noise(loc, scale)
+
+        elif hide_color == "gaussian":
+
+            image_fudged = self.fudge_adding_gaussian()
+
+        else:
+            # Fudge image with hide_color value on all pixels
+            image_fudged = np.ones(self.image.shape) * hide_color
+
+        return image_fudged
     ###########################################################################
     def fudge_adding_gaussian(self, amplitude: float = 0.5, scale: float = 1):
 
@@ -277,47 +322,6 @@ class LimeSpectraExplainer:
         centroids = np.array(centroids, dtype=int)
 
         return centroids
-
-    ###########################################################################
-    def fudge_spectrum(
-        self, hide_color: float = 0.0, loc=0, scale=0.2
-    ) -> np.array:
-        """
-        Fudge image of galaxy to set pixel values of segments
-        ignored in sampled neighbors
-
-        INPUT
-            hide_color: value to fill segments that
-                "won't be cosidered" by the predictor.
-                If "mean", it will fill each segment  with the mean
-                value per channel. If "normal", it will pertub pixels
-                in each off superpixelsfrom a Normal distribution
-            loc: mean of the normal distribution in case hide color
-                is set to "normal"
-            scale: standard deviation of the normal distribution in
-                case hide color is set to "normal"
-        OUTPUT
-            image_fudged: galaxy image with segments to ignore
-                in neighbors set to hide_color
-        """
-
-        if hide_color == "mean":
-
-            image_fudged = self.fudge_with_mean()
-
-        elif hide_color == "normal":
-
-            image_fudged = self.fudge_with_gaussian_noise(loc, scale)
-
-        elif hide_color == "gaussian":
-
-            image_fudged = self.fudge_adding_gaussian()
-
-        else:
-            # Fudge image with hide_color value on all pixels
-            image_fudged = np.ones(self.image.shape) * hide_color
-
-        return image_fudged
 
     ###########################################################################
     def fudge_with_mean(self) -> np.array:
