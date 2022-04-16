@@ -16,6 +16,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 ###############################################################################
 from configparser import ConfigParser, ExtendedInterpolation
+import glob
 import time
 
 import multiprocessing as mp
@@ -169,7 +170,19 @@ if __name__ == "__main__":
     check.check_directory(model_directory, exit=True)
 
     save_explanation_to = f"{score_directory}/explanations"
-    check.check_directory(save_explanation_to, exit=False)
+
+    explanation_runs = glob.glob(f"{save_explanation_to}/*/")
+
+    if len(explanation_runs)==0:
+
+        run = "00000"
+
+    else:
+
+        runs = [int(run.split("/")[-2]) for run in explanation_runs]
+        run = f"{max(run) + 1:5d}"
+
+    check.check_directory(f"{save_explanation_to}/{run}", exit=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
     cores_per_worker = parser.getint("configuration", "cores_per_worker")
