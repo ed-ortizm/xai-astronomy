@@ -72,7 +72,7 @@ class ImageNeighbors:
                 element of the array is the original image
         """
 
-        image_fudged = self.fudge_image(hide_color, mu, std)
+        image_fudged = self.fudge_spectrum(hide_color, mu, std)
 
         on_off_batch_super_pixels = np.random.randint(
             0, 2, number_samples * self.number_segments
@@ -101,7 +101,7 @@ class ImageNeighbors:
         return np.array(neighbors)
 
     ###########################################################################
-    def fudge_image(
+    def fudge_spectrum(
         self, hide_color: float = 0.0, amplitude: float = 1.0, mu=0, std=0.2
     ) -> np.array:
         """
@@ -290,7 +290,6 @@ class ImageNeighbors:
         image_fudged += np.random.normal(mu, std, size=self.image.shape)
 
         return image_fudged
-
 
 ###############################################################################
 class TabularNeighbors:

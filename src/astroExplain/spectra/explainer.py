@@ -65,9 +65,10 @@ class LimeSpectraExplainer:
         image,
         classifier_fn,
         segmentation_fn,
-        hide_color=None,
-        loc: float = 0,
-        scale: float = 0.2,
+        hide_color:str,
+        amplitude: float = 1,
+        mu: float = 0.,
+        std: float = 1.,
         num_features=100000,
         num_samples=1000,
         batch_size=10,
@@ -92,12 +93,23 @@ class LimeSpectraExplainer:
             classifier_fn: classifier prediction probability function, which
                 takes a numpy array and outputs prediction probabilities.  For
                 ScikitClassifiers , this is classifier.predict_proba.
-            hide_color: If not None, will hide superpixels with this color.
-                Otherwise, use the mean pixel color of the image.
-            loc: mean of the normal distribution in case hide color
-                is set to "normal"
-            scale: standard deviation of the normal distribution in
-                case hide color is set to "normal"
+            hide_color: value or method to perturbe segments in neigboring
+                spectra.
+                If "mean", each segment of the fudged image will contain
+                    the mean value of the fluxes in that segment.
+                If "noise", each segment of the fudged image will contain
+                    the flux plus white noise.
+                If "gaussian", each segment of the fudged image will contain
+                    the flux plus a gaussian per segment. The absolute value
+                    of the gaussians' amplitude wil be determined by the
+                    variable amplitude. The standard deviation will be
+                    determined by the variable std. The sign of gausians'
+                    amplitude wil be randomly set.
+                If numeric value, each segment of the fudged image will
+                contain that the passed numeric value
+            amplitude: amplitude of gaussians or white-noise
+            mu: mean of white-noise
+            std: standard deviation of gaussians or white-noise
             num_features: maximum number of features present in explanation
             num_samples: size of the neighborhood to learn the linear model
             batch_size: batch size for model predictions
@@ -134,7 +146,7 @@ class LimeSpectraExplainer:
         #######################################################################
         segments = segmentation_fn(image)
 
-        fudged_image = self.fudge_spectrum(hide_color, loc, scale)
+        fudged_image = self.fudge_spectrum(hide_color, amplitude, mu, std)
 
         top = labels
 
@@ -234,66 +246,123 @@ class LimeSpectraExplainer:
 
     ###########################################################################
     def fudge_spectrum(
-        self, hide_color: float = 0.0, loc=0, scale=0.2
+        self, hide_color: str, amplitude: float = 1.0, mu=0, std=1.
     ) -> np.array:
         """
         Fudge image of galaxy to set pixel values of segments
         ignored in sampled neighbors
 
         INPUT
-            hide_color: value to fill segments that
-                "won't be cosidered" by the predictor.
-                If "mean", it will fill each segment  with the mean
-                value per channel. If "normal", it will pertub pixels
-                in each off superpixelsfrom a Normal distribution
-            loc: mean of the normal distribution in case hide color
-                is set to "normal"
-            scale: standard deviation of the normal distribution in
-                case hide color is set to "normal"
+            hide_color: value or method to perturbe segments in neigboring
+                spectra.
+                If "mean", each segment of the fudged image will contain
+                    the mean value of the fluxes in that segment.
+                If "noise", each segment of the fudged image will contain
+                    the flux plus white noise.
+                If "gaussian", each segment of the fudged image will contain
+                    the flux plus a gaussian per segment. The absolute value
+                    of the gaussians' amplitude wil be determined by the
+                    variable amplitude. The standard deviation will be
+                    determined by the variable std. The sign of gausians'
+                    amplitude wil be randomly set.
+                If numeric value, each segment of the fudged image will
+                contain that the passed numeric value
+            amplitude: amplitude of gaussians or white-noise
+            mu: mean of white-noise
+            std: standard deviation of gaussians or white-noise
         OUTPUT
-            image_fudged: galaxy image with segments to ignore
-                in neighbors set to hide_color
+            image_fudged: spectrum where all segments are perturbed
+                to use when generating neigboring spectra.
         """
 
         if hide_color == "mean":
 
             image_fudged = self.fudge_with_mean()
 
-        elif hide_color == "normal":
+        elif hide_color == "noise":
 
-            image_fudged = self.fudge_with_gaussian_noise(loc, scale)
+            image_fudged = self.add_white_noise(mu, std)
 
-        elif hide_color == "gaussian":
+        elif hide_color == "gaussians":
 
-            image_fudged = self.fudge_adding_gaussian()
+            image_fudged = self.add_gaussians(amplitude, std)
 
         else:
-            # Fudge image with hide_color value on all pixels
-            image_fudged = np.ones(self.image.shape) * hide_color
+
+            is_a_number = type(hide_color) == float
+            is_a_number |= type(hide_color) == int
+
+            if is_a_number is True:
+                # Fudge image with hide_color value on all pixels
+                image_fudged = np.ones(self.image.shape) * hide_color
+
+            else:
+
+                raise ValueError(
+                    "hide_color: 'mean', 'noise', 'gaussians' or numeric value"
+                )
 
         return image_fudged
 
     ###########################################################################
-    def fudge_adding_gaussian(self, amplitude: float = 0.5, scale: float = 1):
+    def add_gaussians(
+        self,
+        amplitude: float = 1.0,
+        std: float = 1.0,
+    ) -> np.array:
+        """
+        Create a fudged image adding an array of gaussians where each
+        is gaussian is placed at the center of each segment and randomly
+        assigned a positive or negative amplitude
 
-        image_fudged = self.image.copy()
+        INPUTS
+        amplitude: the amplitude of all gaussians
+        std: common standard deviation to all gaussians
 
+        OUTPUT
+        image_fudged: image + array of gaussians
+        """
+
+        assert std > 0
+
+        gaussians = self.get_gaussians(amplitude, std)
+
+        image_fudged = self.image.copy() + gaussians
+
+        return image_fudged
+
+    ###########################################################################
+    def get_gaussians(
+        self,
+        amplitude: float = 1.0,
+        std: float = 1.0,
+    ) -> (np.array, np.array):
+        """
+        Set array of gaussians to fudge the spectrum to explain. The
+        sign of the amplitude  for each gaussian will be set randomly
+
+        INPUTS
+        amplitude: the amplitude of all gaussians
+        std: common standard deviation to all gaussians
+
+        OUTPUT
+        gaussians: gray image representation of the array of gausians
+        """
         number_gaussians = self.number_segments
         number_pixels = self.image[..., 0].size
 
         x = np.arange(number_pixels)
         centroids = self.get_centroids_of_segments()
 
-        # gaussians = np.empty(shape=(number_gaussians, number_pixels))
         gaussians = np.zeros(shape=(1, number_pixels))
-        #######################################################################
-        amplitude *= np.random.choice([-1, 1], size=number_pixels)
 
+        amplitude *= np.random.choice([-1.0, 1.0], size=number_gaussians)
         for n in range(number_gaussians):
-            loc = centroids[n]
-            gaussians[0, :] += amplitude * norm.pdf(x, loc, scale)
 
-        return image_fudged + gaussians.reshape(1, -1, 1)
+            mu = centroids[n]
+            gaussians[0, :] += amplitude[n] * norm.pdf(x, mu, std)
+
+        return gaussians.reshape(1, -1, 1)
 
     ###########################################################################
     def get_centroids_of_segments(self) -> np.array:
@@ -328,7 +397,7 @@ class LimeSpectraExplainer:
 
         OUTPUT
         image_fudged: original image + gaussian noise according
-            to loc and scale parameters
+            to mu and std parameters
         """
         image_fudged = self.image.copy()
 
@@ -345,23 +414,23 @@ class LimeSpectraExplainer:
         return image_fudged
 
     ###########################################################################
-    def fudge_with_gaussian_noise(self, loc=0, scale=0.2) -> np.array:
+    def add_white_noise(self, mu=0, std=0.2) -> np.array:
         """
         Fudge image with gaussian noise per channel per segmment
 
         INPUT
-        loc: mean of the normal distribution in case hide color
+        mu: mean of the normal distribution in case hide color
             is set to "normal"
-        scale: standard deviation of the normal distribution in
+        std: standard deviation of the normal distribution in
             case hide color is set to "normal"
 
         OUTPUT
         image_fudged: original image + gaussian noise according
-            to loc and scale parameters
+            to mu and std parameters
         """
 
         image_fudged = self.image.copy()
 
-        image_fudged += np.random.normal(loc, scale, size=self.image.shape)
+        image_fudged += np.random.normal(mu, std, size=self.image.shape)
 
         return image_fudged
