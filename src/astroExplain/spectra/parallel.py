@@ -5,11 +5,11 @@ import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
 import pickle
 
-from lime import lime_image
 import numpy as np
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from astroExplain.spectra.segment import SpectraSegmentation
+from astroExplain.spectra.explainer import LimeSpectraExplainer
 from sdss.superclasses import FileDirectory
 
 ###############################################################################
@@ -124,7 +124,7 @@ def explain_anomalies(number_anomaly: int) -> None:
     ###############################################################################
     # Set explainer instance
     # print(f"Set explainer and Get explanations", end="\n")
-    explainer = lime_image.LimeImageExplainer(random_state=0)
+    explainer = lime_image.LimeSpectraExplainer(random_state=0)
 
     segmentation_fn = SpectraSegmentation().uniform
     segmentation_fn = partial(
@@ -150,13 +150,14 @@ def explain_anomalies(number_anomaly: int) -> None:
     explanation = explainer.explain_instance(
         image=galaxy,
         classifier_fn=anomaly_score_function,
-        labels=None,
+        segmentation_fn=segmentation_fn,
         hide_color=lime_configuration["hide_color"],
-        top_labels=1,
-        # num_features=1000, # default= 100000
+        amplitude=lime_configuration["amplitude"],
+        mu = lime_configuration["mu"],
+        std = lime_configuration["std"],
         num_samples=lime_configuration["number_samples"],
         batch_size=lime_configuration["batch_size"],
-        segmentation_fn=segmentation_fn
+        mu = lime_configuration["mu"],
         # distance_metric="cosine",
     )
     ###########################################################################

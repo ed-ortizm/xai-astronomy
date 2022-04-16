@@ -146,7 +146,12 @@ class LimeSpectraExplainer:
         #######################################################################
         segments = segmentation_fn(image)
 
-        fudged_image = self.fudge_spectrum(hide_color, amplitude, mu, std)
+        fudged_image = self.fudge_spectrum(
+            hide_color=hide_color,
+            amplitude=amplitude,
+            mu=mu,
+            std=std
+        )
 
         top = labels
 
