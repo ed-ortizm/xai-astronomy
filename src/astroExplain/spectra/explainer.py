@@ -59,6 +59,11 @@ class LimeSpectraExplainer:
         self.base = lime_base.LimeBase(
             kernel_fn, verbose, random_state=self.random_state
         )
+        
+        # compatibility
+        self.number_segments = None
+        self.image = None
+        self.segments = None
 
     def explain_instance(
         self,
@@ -140,11 +145,13 @@ class LimeSpectraExplainer:
         #######################################################################
         if len(image.shape) == 2:
             image = gray2rgb(image)
-
+        self.image = image
         if random_seed is None:
             random_seed = self.random_state.randint(0, high=1000)
         #######################################################################
         segments = segmentation_fn(image)
+        self.segments = segments
+        self.number_segments = np.unique(segments).shape[0]
 
         fudged_image = self.fudge_spectrum(
             hide_color=hide_color,

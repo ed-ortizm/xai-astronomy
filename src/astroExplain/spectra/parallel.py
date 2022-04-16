@@ -124,7 +124,7 @@ def explain_anomalies(number_anomaly: int) -> None:
     ###############################################################################
     # Set explainer instance
     # print(f"Set explainer and Get explanations", end="\n")
-    explainer = lime_image.LimeSpectraExplainer(random_state=0)
+    explainer = LimeSpectraExplainer(random_state=0)
 
     segmentation_fn = SpectraSegmentation().uniform
     segmentation_fn = partial(
@@ -157,7 +157,7 @@ def explain_anomalies(number_anomaly: int) -> None:
         std = lime_configuration["std"],
         num_samples=lime_configuration["number_samples"],
         batch_size=lime_configuration["batch_size"],
-        mu = lime_configuration["mu"],
+        progress_bar = lime_configuration["progress_bar"],
         # distance_metric="cosine",
     )
     ###########################################################################
