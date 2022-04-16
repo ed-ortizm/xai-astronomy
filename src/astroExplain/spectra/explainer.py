@@ -65,10 +65,10 @@ class LimeSpectraExplainer:
         image,
         classifier_fn,
         segmentation_fn,
-        hide_color:str,
+        hide_color: str,
         amplitude: float = 1,
-        mu: float = 0.,
-        std: float = 1.,
+        mu: float = 0.0,
+        std: float = 1.0,
         num_features=100000,
         num_samples=1000,
         batch_size=10,
@@ -246,7 +246,7 @@ class LimeSpectraExplainer:
 
     ###########################################################################
     def fudge_spectrum(
-        self, hide_color: str, amplitude: float = 1.0, mu=0, std=1.
+        self, hide_color: str, amplitude: float = 1.0, mu=0, std=1.0
     ) -> np.array:
         """
         Fudge image of galaxy to set pixel values of segments

@@ -291,6 +291,7 @@ class ImageNeighbors:
 
         return image_fudged
 
+
 ###############################################################################
 class TabularNeighbors:
     pass
