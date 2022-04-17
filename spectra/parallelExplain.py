@@ -180,9 +180,10 @@ if __name__ == "__main__":
     else:
 
         runs = [int(run.split("/")[-2]) for run in explanation_runs]
-        run = f"{max(run) + 1:5d}"
+        run = f"{max(runs) + 1 : 05d}"
 
-    check.check_directory(f"{save_explanation_to}/{run}", exit=False)
+    save_explanation_to = f"{save_explanation_to}/{run}"
+    check.check_directory(f"{save_explanation_to}", exit=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
     cores_per_worker = parser.getint("configuration", "cores_per_worker")
