@@ -180,7 +180,7 @@ if __name__ == "__main__":
     else:
 
         runs = [int(run.split("/")[-2]) for run in explanation_runs]
-        run = f"{max(runs) + 1 : 05d}"
+        run = f"{max(runs)+1:05d}"
 
     save_explanation_to = f"{save_explanation_to}/{run}"
     check.check_directory(f"{save_explanation_to}", exit=False)
@@ -210,7 +210,7 @@ if __name__ == "__main__":
         )
 
     ###########################################################################
-    with open(f"{score_directory}/{config_file_name}", "w") as config_file:
+    with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
         parser.write(config_file)
     ###########################################################################
     finish_time = time.time()
