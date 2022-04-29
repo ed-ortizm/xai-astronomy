@@ -1,9 +1,9 @@
+"""Get segments of an image using SLIC from skimage"""
 from configparser import ConfigParser, ExtendedInterpolation
-import pickle
-from PIL import Image
 import shutil
 import time
 
+from PIL import Image
 from matplotlib.image import imsave
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
