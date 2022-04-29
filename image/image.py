@@ -99,6 +99,8 @@ super_pixels = mark_boundaries(
 
 imsave(f"{save_to}/{file_name}.png", galaxy)
 imsave(f"{save_to}/{file_name}_super_pixels.png", super_pixels)
+imsave(f"{save_to}/{file_name}.pdf", galaxy)
+imsave(f"{save_to}/{file_name}_super_pixels.pdf", super_pixels)
 ###############################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time-start_time:.2f}")
