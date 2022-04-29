@@ -1,3 +1,4 @@
+"""Explain galaxyPlus model, get super pixel representation and neighbors"""
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
 import os
@@ -12,18 +13,19 @@ from matplotlib.image import imsave
 import numpy as np
 
 from astroExplain.image.imagePlus import GalaxyPlus
+from astroExplain.image.explanation import TellMeWhy
 from sdss.superclasses import FileDirectory, ConfigurationFile
 
 ###############################################################################
-start_time = time.time()
-parser = ConfigParser(interpolation=ExtendedInterpolation())
+START_TIME = time.time()
+PARSER = ConfigParser(interpolation=ExtendedInterpolation())
 configuration_file = f"image.ini"
-parser.read(f"{configuration_file}")
+PARSER.read(f"{configuration_file}")
 config = ConfigurationFile()
 ###############################################################################
-file_name = parser.get("file", "galaxy")
+file_name = PARSER.get("file", "galaxy")
 file_name, file_format = file_name.split(".")
-file_location = parser.get("directory", "images")
+file_location = PARSER.get("directory", "images")
 
 print(f"Load image: {file_name}.{file_format}", end="\n")
 
@@ -33,10 +35,10 @@ galaxy *= 1 / galaxy.max()
 ###############################################################################
 print(f"Set explainer configuration", end="\n")
 # Load model
-base_line = parser.get("model", "base_line")
+base_line = PARSER.get("model", "base_line")
 addGalaxy = GalaxyPlus(base_line=base_line)
 
-slic_configuration = config.section_to_dictionary(parser.items("slic"), [])
+slic_configuration = config.section_to_dictionary(PARSER.items("slic"), [])
 
 segmentation_fn = partial(
     slic,
@@ -48,7 +50,7 @@ segmentation_fn = partial(
 ###############################################################################
 # Set explainer instance
 explainer = lime_image.LimeImageExplainer(random_state=0)
-lime_configuration = config.section_to_dictionary(parser.items("lime"), [])
+lime_configuration = config.section_to_dictionary(PARSER.items("lime"), [])
 
 if lime_configuration["hide_color"] == "None":
 
@@ -90,6 +92,7 @@ with open(f"{save_to}/{explanation_name}.pkl", "wb") as file:
     pickle.dump(explanation, file)
 ###############################################################################
 # save segmented_image
+print(f"Save super pixel representation", end="\n")
 super_pixels = mark_boundaries(
     galaxy,
     explanation.segments,
@@ -98,9 +101,30 @@ super_pixels = mark_boundaries(
 )
 
 imsave(f"{save_to}/{file_name}.png", galaxy)
-imsave(f"{save_to}/{file_name}_super_pixels.png", super_pixels)
 imsave(f"{save_to}/{file_name}.pdf", galaxy)
+imsave(f"{save_to}/{file_name}_super_pixels.png", super_pixels)
 imsave(f"{save_to}/{file_name}_super_pixels.pdf", super_pixels)
-###############################################################################
-finish_time = time.time()
-print(f"Run time: {finish_time-start_time:.2f}")
+
+# Get neighbors
+print(f"Ssve neighboring galaxies", end="\n")
+why = TellMeWhy(explanation)
+neighbors = why.get_neighbors(number_samples=100, hide_color=1.)
+
+save_to = f"{save_to}/neighbors"
+FileDirectory().check_directory(save_to, exit=False)
+
+for idx, neighbor in enumerate(neighbors):
+
+    neighbor = mark_boundaries(
+        neighbor,
+        explanation.segments,
+        color=(1., 1., 1.),
+        outline_color=(0., 0., 0.),
+    )
+
+    imsave(f"{save_to}/{idx:03d}_neighbor.pdf", neighbor)
+    imsave(f"{save_to}/{idx:03d}_neighbor.png", neighbor)
+
+# finish script
+FINISH_TIME = time.time()
+print(f"Run time: {FINISH_TIME-START_TIME:.2f}")

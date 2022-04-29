@@ -1,13 +1,14 @@
+"""Handle LimeImageExplainer explanation object"""
 import copy
 
 import numpy as np
 from skimage.segmentation import mark_boundaries
 from lime.lime_image import ImageExplanation
 
-###############################################################################
 
+class TellMeWhy:
+    """Handle LimeImageExplainer explanation object"""
 
-class TellMeWhyImage:
     def __init__(self, explanation: ImageExplanation):
         """
         INPUT
@@ -90,7 +91,7 @@ class TellMeWhyImage:
 
         fudged_galaxy = self.galaxy.copy()
 
-        if hide_color == None:
+        if hide_color is None:
 
             for segment in np.unique(self.segments):
 

@@ -1,3 +1,4 @@
+"""Module to generate neigboring images"""
 import copy
 
 import numpy as np
@@ -45,7 +46,7 @@ class Neighbors:
             sigma=sigma,
         )
 
-        if random_seed != None:
+        if random_seed is not None:
             np.random.seed(random_seed)
 
     ###########################################################################
@@ -117,7 +118,7 @@ class Neighbors:
 
         fudged_galaxy = self.image.copy()
 
-        if hide_color == None:
+        if hide_color is None:
 
             for segment in np.unique(self.segments):
 
