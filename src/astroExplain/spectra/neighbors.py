@@ -48,8 +48,8 @@ class ImageNeighbors:
     def get_neighbors(
         self,
         number_samples: int = 50,
-        hide_color: str="gaussians",
-        amplitude: float = 1.,
+        hide_color: str = "gaussians",
+        amplitude: float = 1.0,
         mu: float = 0,
         std: float = 0.2,
     ) -> np.array:
@@ -74,10 +74,7 @@ class ImageNeighbors:
         """
 
         image_fudged = self.fudge_spectrum(
-            hide_color=hide_color,
-            amplitude=amplitude,
-            mu=mu,
-            std=std,
+            hide_color=hide_color, amplitude=amplitude, mu=mu, std=std
         )
 
         on_off_batch_super_pixels = np.random.randint(
@@ -169,9 +166,7 @@ class ImageNeighbors:
 
     ###########################################################################
     def add_gaussians(
-        self,
-        amplitude: float = 1.0,
-        std: float = 1.0,
+        self, amplitude: float = 1.0, std: float = 1.0
     ) -> np.array:
         """
         Create a fudged image adding an array of gaussians where each
@@ -196,9 +191,7 @@ class ImageNeighbors:
 
     ###########################################################################
     def get_gaussians(
-        self,
-        amplitude: float = 1.0,
-        std: float = 1.0,
+        self, amplitude: float = 1.0, std: float = 1.0
     ) -> (np.array, np.array):
         """
         Set array of gaussians to fudge the spectrum to explain. The

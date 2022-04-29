@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     explanation_runs = glob.glob(f"{save_explanation_to}/*/")
 
-    if len(explanation_runs)==0:
+    if len(explanation_runs) == 0:
 
         run = "00000"
 

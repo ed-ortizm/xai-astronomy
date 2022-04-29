@@ -50,7 +50,7 @@ class LimeSpectraExplainer:
         if kernel is None:
 
             def kernel(d, kernel_width):
-                return np.sqrt(np.exp(-(d**2) / kernel_width**2))
+                return np.sqrt(np.exp(-(d ** 2) / kernel_width ** 2))
 
         kernel_fn = partial(kernel, kernel_width=kernel_width)
 
@@ -59,7 +59,7 @@ class LimeSpectraExplainer:
         self.base = lime_base.LimeBase(
             kernel_fn, verbose, random_state=self.random_state
         )
-        
+
         # compatibility
         self.number_segments = None
         self.image = None
@@ -154,10 +154,7 @@ class LimeSpectraExplainer:
         self.number_segments = np.unique(segments).shape[0]
 
         fudged_image = self.fudge_spectrum(
-            hide_color=hide_color,
-            amplitude=amplitude,
-            mu=mu,
-            std=std
+            hide_color=hide_color, amplitude=amplitude, mu=mu, std=std
         )
 
         top = labels
@@ -318,9 +315,7 @@ class LimeSpectraExplainer:
 
     ###########################################################################
     def add_gaussians(
-        self,
-        amplitude: float = 1.0,
-        std: float = 1.0,
+        self, amplitude: float = 1.0, std: float = 1.0
     ) -> np.array:
         """
         Create a fudged image adding an array of gaussians where each
@@ -345,9 +340,7 @@ class LimeSpectraExplainer:
 
     ###########################################################################
     def get_gaussians(
-        self,
-        amplitude: float = 1.0,
-        std: float = 1.0,
+        self, amplitude: float = 1.0, std: float = 1.0
     ) -> (np.array, np.array):
         """
         Set array of gaussians to fudge the spectrum to explain. The

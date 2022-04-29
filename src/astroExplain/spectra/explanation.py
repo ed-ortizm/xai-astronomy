@@ -27,8 +27,7 @@ class TellMeWhy:
 
     ###########################################################################
     def plot_full_explanation(
-        self,
-        figure_size: tuple = (10, 5),
+        self, figure_size: tuple = (10, 5)
     ) -> (plt.Figure, plt.Axes):
         """
         Builds skeleton to plot the spectrum and the normalized
@@ -50,9 +49,7 @@ class TellMeWhy:
 
     ###########################################################################
     def smooth_and_normalize_explanation(
-        self,
-        median_smooth: bool = False,
-        drop_fraction: float = 0.1,
+        self, median_smooth: bool = False, drop_fraction: float = 0.1
     ) -> np.array:
         """
         Takes vectorized array with explanation weights and smooths it
@@ -84,8 +81,7 @@ class TellMeWhy:
 
     ###########################################################################
     def positive_mask_and_segments(
-        self,
-        number_of_features: int = 5,
+        self, number_of_features: int = 5
     ) -> (np.array, np.array):
         #######################################################################
         """
@@ -129,8 +125,7 @@ class TellMeWhy:
 
     ###########################################################################
     def negative_mask_and_segments(
-        self,
-        number_of_features: int = 5,
+        self, number_of_features: int = 5
     ) -> (np.array, np.array):
         #######################################################################
         """

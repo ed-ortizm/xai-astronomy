@@ -1,19 +1,17 @@
 """Explain galaxyPlus model, get super pixel representation and neighbors"""
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
-import os
 import pickle
-from PIL import Image
-import shutil
 import time
 
-from skimage.segmentation import slic, mark_boundaries
-from lime import lime_image
 from matplotlib.image import imsave
 import numpy as np
+from PIL import Image
+from skimage.segmentation import slic, mark_boundaries
 
 from astroExplain.image.imagePlus import GalaxyPlus
 from astroExplain.image.explanation import TellMeWhy
+from lime import lime_image
 from sdss.superclasses import FileDirectory, ConfigurationFile
 
 ###############################################################################
@@ -60,9 +58,7 @@ if lime_configuration["hide_color"] == "None":
 
 else:
 
-    explanation_name = (
-        f"{file_name}_hide_{lime_configuration['hide_color']}"
-    )
+    explanation_name = f"{file_name}_hide_{lime_configuration['hide_color']}"
 
 ###############################################################################
 # get explanation
@@ -82,12 +78,12 @@ explanation = explainer.explain_instance(
 ###############################################################################
 print(f"Save explanation", end="\n")
 
-save_to = f"{file_location}/{file_name}"
-FileDirectory().check_directory(save_to, exit=False)
+SAVE_TO = f"{file_location}/{file_name}"
+FileDirectory().check_directory(SAVE_TO, exit=False)
 
 explanation_name = f"{explanation_name}_base_{base_line}"
 
-with open(f"{save_to}/{explanation_name}.pkl", "wb") as file:
+with open(f"{SAVE_TO}/{explanation_name}.pkl", "wb") as file:
 
     pickle.dump(explanation, file)
 ###############################################################################
@@ -96,34 +92,34 @@ print(f"Save super pixel representation", end="\n")
 super_pixels = mark_boundaries(
     galaxy,
     explanation.segments,
-    color=(1., 1., 1.),
-    outline_color=(1., 1., 1.),
+    color=(1.0, 1.0, 1.0),
+    outline_color=(1.0, 1.0, 1.0),
 )
 
-imsave(f"{save_to}/{file_name}.png", galaxy)
-imsave(f"{save_to}/{file_name}.pdf", galaxy)
-imsave(f"{save_to}/{file_name}_super_pixels.png", super_pixels)
-imsave(f"{save_to}/{file_name}_super_pixels.pdf", super_pixels)
+imsave(f"{SAVE_TO}/{file_name}.png", galaxy)
+imsave(f"{SAVE_TO}/{file_name}.pdf", galaxy)
+imsave(f"{SAVE_TO}/{file_name}_super_pixels.png", super_pixels)
+imsave(f"{SAVE_TO}/{file_name}_super_pixels.pdf", super_pixels)
 
 # Get neighbors
 print(f"Ssve neighboring galaxies", end="\n")
 why = TellMeWhy(explanation)
-neighbors = why.get_neighbors(number_samples=100, hide_color=1.)
+neighbors = why.get_neighbors(number_samples=100, hide_color=1.0)
 
-save_to = f"{save_to}/neighbors"
-FileDirectory().check_directory(save_to, exit=False)
+SAVE_TO = f"{SAVE_TO}/neighbors"
+FileDirectory().check_directory(SAVE_TO, exit=False)
 
 for idx, neighbor in enumerate(neighbors):
 
     neighbor = mark_boundaries(
         neighbor,
         explanation.segments,
-        color=(1., 1., 1.),
-        outline_color=(0., 0., 0.),
+        color=(1.0, 1.0, 1.0),
+        outline_color=(0.0, 0.0, 0.0),
     )
 
-    imsave(f"{save_to}/{idx:03d}_neighbor.pdf", neighbor)
-    imsave(f"{save_to}/{idx:03d}_neighbor.png", neighbor)
+    imsave(f"{SAVE_TO}/{idx:03d}_neighbor.pdf", neighbor)
+    imsave(f"{SAVE_TO}/{idx:03d}_neighbor.png", neighbor)
 
 # finish script
 FINISH_TIME = time.time()

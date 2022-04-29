@@ -153,11 +153,11 @@ def explain_anomalies(number_anomaly: int) -> None:
         segmentation_fn=segmentation_fn,
         hide_color=lime_configuration["hide_color"],
         amplitude=lime_configuration["amplitude"],
-        mu = lime_configuration["mu"],
-        std = lime_configuration["std"],
+        mu=lime_configuration["mu"],
+        std=lime_configuration["std"],
         num_samples=lime_configuration["number_samples"],
         batch_size=lime_configuration["batch_size"],
-        progress_bar = lime_configuration["progress_bar"],
+        progress_bar=lime_configuration["progress_bar"],
         # distance_metric="cosine",
     )
     ###########################################################################
