@@ -113,6 +113,7 @@ class TellMeWhy:
         negative_only: bool = False,
         number_of_features: int = 5,
         hide_rest: bool = False,
+        # hide_color: float = 1,
     ) -> np.array:
 
         """
@@ -130,6 +131,7 @@ class TellMeWhy:
             If None, it will consider all the segments
         hide_rest: If True, it sets to zero the rest of the super
             pixel
+        hide_color: fudge non contributing super pixels with this color
 
         OUTPUT
         visual_explanation: array with boundaries highlighting
