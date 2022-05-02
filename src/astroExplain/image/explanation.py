@@ -165,7 +165,7 @@ class TellMeWhy:
 
         visual_explanation = mark_boundaries(image, mask)
 
-        return visual_explanation
+        return visual_explanation, mask
 
     ###########################################################################
     def get_heatmap(self) -> np.array:
