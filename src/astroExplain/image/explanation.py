@@ -149,7 +149,7 @@ class TellMeWhy:
                 f"at the same time."
             )
         #######################################################################
-        if number_of_features == None:
+        if number_of_features is None:
             # set to the total number of segments
             number_of_features = np.unique(self.segments).size
 
