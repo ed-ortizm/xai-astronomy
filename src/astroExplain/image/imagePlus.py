@@ -1,9 +1,7 @@
+"""Toy model to compute the brightness of galaxy"""
 import numpy as np
 
-# convert spectra to 3 channels
-from skimage.color import gray2rgb
 
-###############################################################################
 class GalaxyPlus:
 
     """
@@ -19,7 +17,8 @@ class GalaxyPlus:
             brightness = image-[median or mean]
         """
 
-        assert (base_line == "median") or (base_line == "mean")
+        assert base_line in ("median", "mean")
+        # assert (base_line == "median") or (base_line == "mean")
 
         self.base_line = base_line
 
@@ -63,13 +62,15 @@ class GalaxyPlus:
 
         # axis=(1, 2) -> the weidth and height of the image
         if self.base_line == "median":
+
             return np.median(image, axis=(1, 2), keepdims=True)
 
-        elif self.base_line == "mean":
-            return np.mean(image, axis=(1, 2), keepdims=True)
+        return np.mean(image, axis=(1, 2), keepdims=True)
+
 
     ###########################################################################
-    def _update_dimension(self, image: np.array) -> np.array:
+    @staticmethod
+    def _update_dimension(image: np.array) -> np.array:
 
         if image.ndim == 3:
             return image[np.newaxis, ...]
