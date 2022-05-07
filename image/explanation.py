@@ -50,25 +50,25 @@ print(f"Save neighboring galaxies", end="\n")
 hide_color = PARSER.get("explain-me", "hide")
 hide_color = None if hide_color == "None" else hide_color
 
-# neighbors = why.get_neighbors(
-#     number_samples=PARSER.getint("explain-me", "neighbors"),
-#     hide_color=hide_color,
-# )
-#
-# neighbors_directory = f"{file_location}/neighbors"
-# FileDirectory().check_directory(neighbors_directory, exit=False)
-#
-# for idx, neighbor in enumerate(neighbors):
-#
-#     neighbor = mark_boundaries(
-#         neighbor,
-#         explanation.segments,
-#         color=(1.0, 1.0, 1.0),
-#         outline_color=(0.0, 0.0, 0.0),
-#     )
-#
-#     imsave(f"{neighbors_directory}/{idx:03d}_neighbor.pdf", neighbor)
-#     imsave(f"{neighbors_directory}/{idx:03d}_neighbor.png", neighbor)
+neighbors = why.get_neighbors(
+    number_samples=PARSER.getint("explain-me", "neighbors"),
+    hide_color=hide_color,
+)
+
+neighbors_directory = f"{file_location}/neighbors"
+FileDirectory().check_directory(neighbors_directory, exit=False)
+
+for idx, neighbor in enumerate(neighbors):
+
+    neighbor = mark_boundaries(
+        neighbor,
+        explanation.segments,
+        color=(1.0, 1.0, 1.0),
+        outline_color=(0.0, 0.0, 0.0),
+    )
+
+    imsave(f"{neighbors_directory}/{idx:03d}_neighbor.pdf", neighbor)
+    imsave(f"{neighbors_directory}/{idx:03d}_neighbor.png", neighbor)
 
 # show me explanations
 show_me_directory = f"{file_location}/show_me"
@@ -87,7 +87,7 @@ for idx in range(show_number):
     positive_only=True,
     negative_only=False,
     number_of_features=number_of_features,
-    hide_rest=True,
+    hide_rest=False,
     )
 
     contribution = mark_boundaries(
@@ -99,36 +99,6 @@ for idx in range(show_number):
 
     imsave(f"{positive_directory}/positive_{2**(idx+1):03d}.pdf", contribution)
     imsave(f"{positive_directory}/positive_{2**(idx+1):03d}.png", contribution)
-
-# negative
-# negative_directory = f"{show_me_directory}/negative"
-# FileDirectory().check_directory(negative_directory, exit=False)
-# for idx in range(show_number):
-#
-#     number_of_features = 2**(idx+1)
-#
-#     contribution, contribution_mask = why.show_me(
-#     positive_only=False,
-#     negative_only=True,
-#     number_of_features=number_of_features,
-#     hide_rest=True,
-#     )
-#
-#     contribution = mark_boundaries(
-#         contribution,
-#         contribution_mask,
-#         color=(0, 0, 0),
-#         outline_color=(1.0, 1.0, 1.0),
-#     )
-#
-#     imsave(
-        # f"{positive_directory}/positive_{2**(idx+1):03d}.pdf",
-        # contribution
-    # )
-#     imsave(
-        # f"{positive_directory}/positive_{2**(idx+1):03d}.png",
-        # contribution
-    # )
 
 # green and Red
 both_directory = f"{show_me_directory}/both"
@@ -142,7 +112,7 @@ for idx in range(show_number+1):
     positive_only=False,
     negative_only=False,
     number_of_features=number_of_features,
-    hide_rest=True,
+    hide_rest=False,
     )
 
     contribution = mark_boundaries(
