@@ -13,8 +13,7 @@ class Neighbors:
         self,
         image: np.array,
         number_segments: int = 128,
-        compactness: float = 32,
-        sigma: float = 16,
+        slic_parameters: dict= None,
         random_seed: int = None,
     ):
 
@@ -23,27 +22,32 @@ class Neighbors:
         image:2D or 3D array containing the image
         number_segments: number of superpixels to split the image
         [from slic documentation]
-        compactness:
-            Balances color proximity and space proximity. Higher
-            values give more weight to space proximity, making
-            superpixel shapes more square/cubic. This parameter
-            depends strongly on image contrast and on the shapes
-            of objects in the image. We recommend exploring possible
-            values on a log scale, e.g., 0.01, 0.1, 1, 10, 100,
-            before refining around a chosen value
-        sigma:
-            Width of Gaussian smoothing kernel for pre-processing
-            for each dimension of the image
+        slic_parameters: compactness and sigma
+            compactness:
+                Balances color proximity and space proximity. Higher
+                values give more weight to space proximity, making
+                superpixel shapes more square/cubic. This parameter
+                depends strongly on image contrast and on the shapes
+                of objects in the image. We recommend exploring possible
+                values on a log scale, e.g., 0.01, 0.1, 1, 10, 100,
+                before refining around a chosen value
+            sigma:
+                Width of Gaussian smoothing kernel for pre-processing
+                for each dimension of the image
         random_seed: if not None, the seed is set
         """
 
         self.image = image
 
+        if slic_parameters is None:
+
+            slic_parameters = {"compactness": 32,"sigma": 16}
+
         self.segments = slic(
             image,
             n_segments=number_segments,
-            compactness=compactness,
-            sigma=sigma,
+            compactness=slic_parameters["compactness"],
+            sigma=slic_parameters["sigma"],
         )
 
         if random_seed is not None:

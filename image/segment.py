@@ -8,7 +8,8 @@ from matplotlib.image import imsave
 import numpy as np
 from skimage.segmentation import slic, mark_boundaries
 
-from sdss.superclasses import ConfigurationFile, FileDirectory
+from sdss.utils.configfile import ConfigurationFile
+from sdss.utils.managefiles import FileDirectory
 
 ###############################################################################
 start_time = time.time()
@@ -42,7 +43,7 @@ super_pixels = mark_boundaries(galaxy, galaxy_segments)
 name_super_pixels = file_name.split(".")[0]
 
 save_to = f"{file_location}/{name_super_pixels}"
-FileDirectory().check_directory(save_to, exit=False)
+FileDirectory().check_directory(save_to, exit_program=False)
 
 imsave(f"{save_to}/{name_super_pixels}.png", galaxy)
 imsave(f"{save_to}/{name_super_pixels}_super_pixels.png", super_pixels)

@@ -112,8 +112,7 @@ class TellMeWhy:
         positive_only: bool = True,
         negative_only: bool = False,
         number_of_features: int = 5,
-        hide_rest: bool = False,
-        # hide_color: float = 1,
+        visualization_parameters: dict = None,
     ) -> np.array:
 
         """
@@ -129,9 +128,14 @@ class TellMeWhy:
         number_of_features: example: 6, then it will get the six
             segments with the largest inpat to the anomaly score.
             If None, it will consider all the segments
-        hide_rest: If True, it sets to zero the rest of the super
-            pixel
-        hide_color: fudge non contributing super pixels with this color
+        visualization_parameters: hide_rest, color, outline_color to control
+            visualization of super pixels in explanation
+
+            hide_rest: If True, it sets to zero the rest of the super
+                pixel
+            color: tuple with line colors per channel of super pixels'
+                boundaries
+            outline_color: outline color of super pixels' edges
 
         OUTPUT
         visual_explanation: array with boundaries highlighting
@@ -154,16 +158,28 @@ class TellMeWhy:
             number_of_features = np.unique(self.segments).size
 
         #######################################################################
+        if visualization_parameters is None:
+
+            visualization_parameters = {}
+            visualization_parameters["hide_rest"] = False
+            visualization_parameters["color"] = (1.0, 1.0, 1.0)
+            visualization_parameters["outline_color"] = (1.0, 1.0, 1.0)
+        #######################################################################
         image, mask = self.explanation.get_image_and_mask(
             label=self.explanation.top_labels[0],
             positive_only=positive_only,
             negative_only=negative_only,
             num_features=number_of_features,
             min_weight=-np.inf,
-            hide_rest=hide_rest,
+            hide_rest=visualization_parameters["hide_rest"],
         )
 
-        visual_explanation = mark_boundaries(image, mask)
+        visual_explanation = mark_boundaries(
+            image,
+            mask,
+            color=visualization_parameters["color"],
+            outline_color=visualization_parameters["outline_color"],
+        )
 
         return visual_explanation, mask
 

@@ -9,7 +9,8 @@ import numpy as np
 from skimage.segmentation import mark_boundaries
 
 from astroExplain.image.explanation import TellMeWhy
-from sdss.superclasses import FileDirectory, ConfigurationFile
+from sdss.utils.managefiles import FileDirectory
+from sdss.utils.configfile import ConfigurationFile
 
 ###############################################################################
 START_TIME = time.time()
@@ -56,7 +57,7 @@ neighbors = why.get_neighbors(
 )
 
 neighbors_directory = f"{file_location}/neighbors"
-FileDirectory().check_directory(neighbors_directory, exit=False)
+FileDirectory().check_directory(neighbors_directory, exit_program=False)
 
 for idx, neighbor in enumerate(neighbors):
 
@@ -72,10 +73,10 @@ for idx, neighbor in enumerate(neighbors):
 
 # show me explanations
 show_me_directory = f"{file_location}/show_me"
-FileDirectory().check_directory(show_me_directory, exit=False)
+FileDirectory().check_directory(show_me_directory, exit_program=False)
 
 positive_directory = f"{show_me_directory}/positive"
-FileDirectory().check_directory(positive_directory, exit=False)
+FileDirectory().check_directory(positive_directory, exit_program=False)
 # so select 25% off in a shell super pixels
 show_number = PARSER.getint("explain-me", "show")
 # positive
@@ -102,7 +103,7 @@ for idx in range(show_number):
 
 # green and Red
 both_directory = f"{show_me_directory}/both"
-FileDirectory().check_directory(both_directory, exit=False)
+FileDirectory().check_directory(both_directory, exit_program=False)
 
 for idx in range(show_number + 1):
 
