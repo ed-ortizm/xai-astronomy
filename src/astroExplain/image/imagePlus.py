@@ -67,7 +67,6 @@ class GalaxyPlus:
 
         return np.mean(image, axis=(1, 2), keepdims=True)
 
-
     ###########################################################################
     @staticmethod
     def _update_dimension(image: np.array) -> np.array:

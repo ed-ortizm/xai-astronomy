@@ -10,9 +10,9 @@ from PIL import Image
 from skimage.segmentation import slic, mark_boundaries
 
 from astroExplain.image.imagePlus import GalaxyPlus
-from astroExplain.image.explanation import TellMeWhy
 from lime import lime_image
-from sdss.superclasses import FileDirectory, ConfigurationFile
+from sdss.utils.managefiles import FileDirectory
+from sdss.utils.configfile import ConfigurationFile
 
 ###############################################################################
 START_TIME = time.time()
@@ -20,6 +20,8 @@ PARSER = ConfigParser(interpolation=ExtendedInterpolation())
 configuration_file = f"image.ini"
 PARSER.read(f"{configuration_file}")
 config = ConfigurationFile()
+
+file_dir = FileDirectory()
 ###############################################################################
 file_name = PARSER.get("file", "galaxy")
 file_name, file_format = file_name.split(".")
@@ -79,13 +81,12 @@ explanation = explainer.explain_instance(
 print(f"Save explanation", end="\n")
 
 SAVE_TO = f"{file_location}/{file_name}"
-FileDirectory().check_directory(SAVE_TO, exit=False)
+file_dir.check_directory(SAVE_TO, exit_program=False)
 
 explanation_name = f"{explanation_name}_base_{base_line}"
 
 with open(
-    f"{SAVE_TO}/{explanation_name}_{slic_configuration['segments']}.pkl",
-    "wb"
+    f"{SAVE_TO}/{explanation_name}_{slic_configuration['segments']}.pkl", "wb"
 ) as file:
 
     pickle.dump(explanation, file)

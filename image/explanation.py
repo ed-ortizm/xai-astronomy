@@ -81,13 +81,13 @@ show_number = PARSER.getint("explain-me", "show")
 # positive
 for idx in range(show_number):
 
-    number_of_features = 2**(idx+1)
+    number_of_features = 2 ** (idx + 1)
 
     contribution, contribution_mask = why.show_me(
-    positive_only=True,
-    negative_only=False,
-    number_of_features=number_of_features,
-    hide_rest=False,
+        positive_only=True,
+        negative_only=False,
+        number_of_features=number_of_features,
+        hide_rest=False,
     )
 
     contribution = mark_boundaries(
@@ -104,15 +104,15 @@ for idx in range(show_number):
 both_directory = f"{show_me_directory}/both"
 FileDirectory().check_directory(both_directory, exit=False)
 
-for idx in range(show_number+1):
+for idx in range(show_number + 1):
 
-    number_of_features = 2**(idx+1)
+    number_of_features = 2 ** (idx + 1)
 
     contribution, contribution_mask = why.show_me(
-    positive_only=False,
-    negative_only=False,
-    number_of_features=number_of_features,
-    hide_rest=False,
+        positive_only=False,
+        negative_only=False,
+        number_of_features=number_of_features,
+        hide_rest=False,
     )
 
     contribution = mark_boundaries(
@@ -128,8 +128,8 @@ for idx in range(show_number+1):
 # Get heatmap
 heatmap = why.get_heatmap()
 vmax = np.nanmax(heatmap)
-#Plot. The visualization makes more sense if a symmetrical colorbar is used.
-plt.imshow(heatmap, cmap = 'RdBu', vmin  = -vmax, vmax = vmax)
+# Plot. The visualization makes more sense if a symmetrical colorbar is used.
+plt.imshow(heatmap, cmap="RdBu", vmin=-vmax, vmax=vmax)
 plt.colorbar()
 plt.savefig(f"{file_location}/heatmap.png")
 plt.savefig(f"{file_location}/heatmap.pdf")
