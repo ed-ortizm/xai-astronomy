@@ -83,7 +83,10 @@ FileDirectory().check_directory(SAVE_TO, exit=False)
 
 explanation_name = f"{explanation_name}_base_{base_line}"
 
-with open(f"{SAVE_TO}/{explanation_name}.pkl", "wb") as file:
+with open(
+    f"{SAVE_TO}/{explanation_name}_{slic_configuration['segments']}.pkl",
+    "wb"
+) as file:
 
     pickle.dump(explanation, file)
 
@@ -101,87 +104,5 @@ imsave(f"{SAVE_TO}/{file_name}.pdf", galaxy)
 imsave(f"{SAVE_TO}/{file_name}_super_pixels.png", super_pixels)
 imsave(f"{SAVE_TO}/{file_name}_super_pixels.pdf", super_pixels)
 
-# Get neighbors
-print(f"Save neighboring galaxies", end="\n")
-
-why = TellMeWhy(explanation)
-
-hide_color = PARSER.get("explain-me", "hide")
-hide_color = None if hide_color == "None" else hide_color
-
-neighbors = why.get_neighbors(
-    number_samples=PARSER.getint("explain-me", "neighbors"),
-    hide_color=hide_color,
-)
-white_neighbors = why.get_neighbors(
-    number_samples=PARSER.getint("explain-me", "neighbors"),
-    hide_color=1,
-)
-
-neighbors_directory = f"{SAVE_TO}/neighbors"
-FileDirectory().check_directory(SAVE_TO, exit=False)
-
-for idx, neighbor in enumerate(neighbors):
-
-    neighbor = mark_boundaries(
-        neighbor,
-        explanation.segments,
-        color=(1.0, 1.0, 1.0),
-        outline_color=(0.0, 0.0, 0.0),
-    )
-
-    imsave(f"{SAVE_TO}/{idx:03d}_neighbor.pdf", neighbor)
-    imsave(f"{SAVE_TO}/{idx:03d}_neighbor.png", neighbor)
-
-    white_neighbor = mark_boundaries(
-        white_neighbors[idx],
-        explanation.segments,
-        color=(1.0, 1.0, 1.0),
-        outline_color=(0.0, 0.0, 0.0),
-    )
-
-    imsave(
-        f"{neighbors_directory}/{idx:03d}_white_neighbor.pdf", white_neighbor
-    )
-    imsave(
-        f"{neighbors_directory}/{idx:03d}_white_neighbor.png", white_neighbor
-    )
-# show me explanations
-show_me_directory = f"{SAVE_TO}/show_me"
-FileDirectory().check_directory(show_me_directory, exit=False)
-positive_directory = f"{show_me_directory}/positive"
-FileDirectory().check_directory(positive_directory, exit=False)
-negative_directory = f"{show_me_directory}/negative"
-FileDirectory().check_directory(negative_directory, exit=False)
-# so select 25% off in a shell super pixels
-show_number = int(lime_configuration["number_samples"]/4)
-# positive
-for idx in range(show_number):
-
-    contribution = why.show_me(
-    positive_only=True,
-    negative_only=False,
-    number_of_features=idx,
-    hide_rest=False,
-    )
-
-    imsave(f"{positive_directory}/positive_{idx:03d}.pdf", contribution)
-    imsave(f"{positive_directory}/positive_{idx:03d}.png", contribution)
-
-# negative
-for idx in range(show_number):
-
-    contribution = why.show_me(
-    positive_only=False,
-    negative_only=True,
-    number_of_features=idx,
-    hide_rest=False,
-    )
-
-    imsave(f"{negative_directory}/negative_{idx:03d}.pdf", contribution)
-    imsave(f"{negative_directory}/negative_{idx:03d}.png", contribution)
-# green and Red
-
-# finish script
 FINISH_TIME = time.time()
 print(f"Run time: {FINISH_TIME-START_TIME:.2f}")
