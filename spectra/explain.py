@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
-from lime import lime_image
+from astroExplain.spectra.explainer import LimeSpectraExplainer
 from astroExplain.spectra.segment import SpectraSegmentation
 from autoencoders.ae import AutoEncoder
 from sdss.utils.managefiles import FileDirectory
@@ -34,7 +34,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 start_time = time.time()
 ###############################################################################
 parser = ConfigParser(interpolation=ExtendedInterpolation())
-config_file_name = "explainAnomaly.ini"
+config_file_name = "explain.ini"
 parser.read(f"{config_file_name}")
 # Check files and directory
 check = FileDirectory()
@@ -96,7 +96,7 @@ anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
 ###############################################################################
 # Set explainer instance
 print(f"Set explainer and Get explanations", end="\n")
-explainer = lime_image.LimeImageExplainer(random_state=0)
+explainer = LimeSpectraExplainer(random_state=0)
 
 number_segments = parser.getint("lime", "number_segments")
 segmentation_fn = SpectraSegmentation().uniform
@@ -114,9 +114,9 @@ for idx, galaxy in enumerate(anomalies):
     explanation = explainer.explain_instance(
         image=galaxy,
         classifier_fn=anomaly_score_function,
-        labels=None,
+        # labels=None,
         hide_color=parser.getint("lime", "hide_color"),
-        top_labels=1,
+        # top_labels=1,
         # num_features=1000, # default= 100000
         num_samples=parser.getint("lime", "number_samples"),
         batch_size=parser.getint("lime", "batch_size"),

@@ -12,7 +12,11 @@ from lime.lime_image import ImageExplanation
 
 ###############################################################################
 class LimeSpectraExplainer:
-    """Explains predictions on Image (i.e. matrix) data.
+    """
+    Taken from lime original repository and adapted to explain a regressor
+    model for spectra: https://github.com/marcotcr/lime
+
+    Explains predictions on Spectra (i.e. matrix) data.
     For numerical features, perturb them by sampling from a Normal(0,1) and
     doing the inverse operation of mean-centering and scaling, according to the
     means and stds in the training data. For categorical features, perturb by
