@@ -57,7 +57,7 @@ class LimeSpectraExplainer:
 
                 return np.sqrt(np.exp(-(d ** 2) / kernel_width ** 2))
 
-            kernel_fn = partial(kernel, kernel_width=kernel_width)
+            kernel_fn = partial(kernel_fn, kernel_width=kernel_width)
 
         else:
             kernel_fn = partial(kernel, kernel_width=kernel_width)

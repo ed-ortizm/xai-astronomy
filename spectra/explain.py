@@ -102,43 +102,42 @@ anomaly = ReconstructionAnomalyScore(
     relative=relative,
     epsilon=1e-3,
 )
-# anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
-# ###############################################################################
-# # Set explainer instance
-# print("Set explainer and Get explanations", end="\n")
-# explainer = LimeSpectraExplainer(random_state=0)
-#
-# number_segments = parser.getint("lime", "number_segments")
-# segmentation_fn = SpectraSegmentation().uniform
-# segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
-#
-# # Get explanations
-# save_explanation_to = parser.get("directory", "explanation")
-# save_explanation_to = f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
-# check.check_directory(save_explanation_to, exit_program=False)
-#
-# for idx, galaxy in enumerate(anomalies):
-#
-#     print(f"Explain galaxy {idx}", end="\r")
-#
-#     explanation = explainer.explain_instance(
-#         image=galaxy,
-#         classifier_fn=anomaly_score_function,
-#         # labels=None,
-#         hide_color=parser.getint("lime", "hide_color"),
-#         # top_labels=1,
-#         # num_features=1000, # default= 100000
-#         num_samples=parser.getint("lime", "number_samples"),
-#         batch_size=parser.getint("lime", "batch_size"),
-#         segmentation_fn=segmentation_fn
-#         # distance_metric="cosine",
-#     )
-#
-#     save_name = f"{idx:05d}_explanationUniform"
-#
-#     with open(f"{save_explanation_to}/{save_name}.pkl", "wb") as file:
-#
-#         pickle.dump(explanation, file)
+anomaly_score_function = partial(anomaly.score, metric=metric)
+###############################################################################
+# Set explainer instance
+print("Set explainer and Get explanations", end="\n")
+explainer = LimeSpectraExplainer(random_state=0)
+
+number_segments = parser.getint("lime", "number_segments")
+segmentation_fn = SpectraSegmentation().uniform
+segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
+
+# Get explanations
+save_explanation_to = f"{explanation_directory}/{score_name}/xai"
+check.check_directory(save_explanation_to, exit_program=False)
+
+for idx, galaxy in enumerate(spectra_to_explain):
+
+    print(f"Explain galaxy {idx}", end="\r")
+
+    explanation = explainer.explain_instance(
+        image=galaxy,
+        classifier_fn=anomaly_score_function,
+        # labels=None,
+        hide_color=parser.getint("lime", "hide_color"),
+        # top_labels=1,
+        # num_features=1000, # default= 100000
+        num_samples=parser.getint("lime", "number_samples"),
+        batch_size=parser.getint("lime", "batch_size"),
+        segmentation_fn=segmentation_fn
+        # distance_metric="cosine",
+    )
+
+    save_name = f"{idx:05d}_explanationUniform"
+
+    with open(f"{save_explanation_to}/{save_name}.pkl", "wb") as file:
+
+        pickle.dump(explanation, file)
 
 
 ###############################################################################
