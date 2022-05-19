@@ -13,7 +13,7 @@ class Neighbors:
         self,
         image: np.array,
         number_segments: int = 128,
-        slic_parameters: dict= None,
+        slic_parameters: dict = None,
         random_seed: int = None,
     ):
 
@@ -41,7 +41,7 @@ class Neighbors:
 
         if slic_parameters is None:
 
-            slic_parameters = {"compactness": 32,"sigma": 16}
+            slic_parameters = {"compactness": 32, "sigma": 16}
 
         self.segments = slic(
             image,
