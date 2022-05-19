@@ -1,4 +1,19 @@
+"""Explain a single anomaly with LimeSpecExplainer"""
+from configparser import ConfigParser, ExtendedInterpolation
+from functools import partial
 import os
+import pickle
+import time
+
+import numpy as np
+import tensorflow as tf
+
+from anomaly.reconstruction import ReconstructionAnomalyScore
+from lime import lime_image
+from astroExplain.spectra.segment import SpectraSegmentation
+from autoencoders.ae import AutoEncoder
+from sdss.utils.managefiles import FileDirectory
+from sdss.utils.configfile import ConfigurationFile
 
 # Set environment variables to disable multithreading as users will probably
 # want to set the number of cores to the max of their computer.
@@ -14,20 +29,6 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 # 2 = INFO and WARNING messages are not printed
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-###############################################################################
-from configparser import ConfigParser, ExtendedInterpolation
-from functools import partial
-import pickle
-import time
-
-from lime import lime_image
-import numpy as np
-import tensorflow as tf
-
-from anomaly.reconstruction import ReconstructionAnomalyScore
-from astroExplain.spectra.segment import SpectraSegmentation
-from autoencoders.ae import AutoEncoder
-from sdss.superclasses import ConfigurationFile, FileDirectory
 
 ###############################################################################
 start_time = time.time()
@@ -104,7 +105,7 @@ segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
 # Get explanations
 save_explanation_to = parser.get("directory", "explanation")
 save_explanation_to = f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
-check.check_directory(save_explanation_to, exit=False)
+check.check_directory(save_explanation_to, exit_program=False)
 
 for idx, galaxy in enumerate(anomalies):
 

@@ -88,7 +88,8 @@ for idx in range(show_number):
         positive_only=True,
         negative_only=False,
         number_of_features=number_of_features,
-        hide_rest=False,
+        # visualization_parameters={},
+        # hide_rest=False,
     )
 
     contribution = mark_boundaries(
@@ -113,7 +114,7 @@ for idx in range(show_number + 1):
         positive_only=False,
         negative_only=False,
         number_of_features=number_of_features,
-        hide_rest=False,
+        # hide_rest=False,
     )
 
     contribution = mark_boundaries(
