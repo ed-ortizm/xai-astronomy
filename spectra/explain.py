@@ -1,5 +1,6 @@
 """Explain a single anomaly with LimeSpecExplainer"""
 import os
+
 # disable tensorflow logs: warnings and info :). Allow error logs
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Set environment variables to disable multithreading as users will probably
@@ -25,6 +26,7 @@ from astroExplain.spectra.utils import get_anomaly_score_name
 from autoencoders.ae import AutoEncoder
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
+
 ###############################################################################
 start_time = time.time()
 ###############################################################################
@@ -63,7 +65,7 @@ score_name = get_anomaly_score_name(metric, velocity, relative, percentage)
 
 spectra_to_explain = np.load(
     f"{explanation_directory}/{score_name}/{spectra_name}"
-    )
+)
 
 if spectra_to_explain.ndim == 2:
     # convert spectra to batch of gray images
@@ -113,7 +115,11 @@ segmentation_fn = SpectraSegmentation().uniform
 segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
 
 # Get explanations
-save_explanation_to = f"{explanation_directory}/{score_name}/xai"
+
+save_explanation_to = (
+    f"{explanation_directory}/{score_name}/"
+    f"xai_{spectra_name.split('.')[0]}"
+)
 check.check_directory(save_explanation_to, exit_program=False)
 
 for idx, galaxy in enumerate(spectra_to_explain):
@@ -123,13 +129,11 @@ for idx, galaxy in enumerate(spectra_to_explain):
     explanation = explainer.explain_instance(
         image=galaxy,
         classifier_fn=anomaly_score_function,
-        # labels=None,
-        hide_color=parser.getint("lime", "hide_color"),
-        # top_labels=1,
-        # num_features=1000, # default= 100000
+        hide_color="noise",  # parser.getint("lime", "hide_color"),
         num_samples=parser.getint("lime", "number_samples"),
         batch_size=parser.getint("lime", "batch_size"),
-        segmentation_fn=segmentation_fn
+        segmentation_fn=segmentation_fn,
+        progress_bar=parser.getboolean("lime", "progress_bar")
         # distance_metric="cosine",
     )
 
