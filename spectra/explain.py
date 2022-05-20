@@ -39,7 +39,7 @@ check = FileDirectory()
 configuration = ConfigurationFile()
 ###############################################################################
 # set the number of cores to use with the reconstruction function
-cores_per_worker = parser.getint("tensorflow-session", "cores")
+cores_per_worker = parser.getint("tensorflow", "cores")
 jobs = cores_per_worker
 config = tf.compat.v1.ConfigProto(
     intra_op_parallelism_threads=jobs,
@@ -122,6 +122,10 @@ save_explanation_to = (
 )
 check.check_directory(save_explanation_to, exit_program=False)
 
+fudge_parameters = configuration.section_to_dictionary(
+    parser.items("fudge"), value_separators=[]
+)
+
 for idx, galaxy in enumerate(spectra_to_explain):
 
     print(f"Explain galaxy {idx}", end="\r")
@@ -129,7 +133,10 @@ for idx, galaxy in enumerate(spectra_to_explain):
     explanation = explainer.explain_instance(
         image=galaxy,
         classifier_fn=anomaly_score_function,
-        hide_color="noise",  # parser.getint("lime", "hide_color"),
+        hide_color=fudge_parameters["hide_color"],
+        amplitude=fudge_parameters["amplitude"],
+        mu=fudge_parameters["mu"],
+        std=fudge_parameters["std"],
         num_samples=parser.getint("lime", "number_samples"),
         batch_size=parser.getint("lime", "batch_size"),
         segmentation_fn=segmentation_fn,

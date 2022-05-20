@@ -445,7 +445,6 @@ class LimeSpectraExplainer:
         """
 
         # image_fudged = self.image.copy()
-        print(mu, std)
 
         image_fudged = np.random.normal(mu, std, size=self.image.shape)
 
