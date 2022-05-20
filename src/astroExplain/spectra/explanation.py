@@ -72,10 +72,14 @@ class TellMeWhy:
         """
 
         heatmap = self.get_heatmap()
+
         # smooth noise
         if median_smooth is True:
+            absolute_heatmap = np.abs(heatmap)
+            sign_heatmap = np.sign(heatmap)
+            heatmap = absolute_heatmap-np.median(absolute_heatmap)
+            heatmap *= sign_heatmap
 
-            heatmap -= np.median(heatmap)
         # normalize heatmap
         heatmap *= 1 / np.abs(heatmap).max()
         # smooth noise with drop_fraction
