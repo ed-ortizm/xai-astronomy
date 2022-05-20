@@ -285,7 +285,7 @@ class LimeSpectraExplainer:
                     amplitude wil be randomly set.
                 If numeric value, each segment of the fudged image will
                 contain that the passed numeric value
-            amplitude: amplitude of gaussians or white-noise
+            amplitude: amplitude of gaussians
             mu: mean of white-noise
             std: standard deviation of gaussians or white-noise
         OUTPUT
@@ -428,7 +428,8 @@ class LimeSpectraExplainer:
         return image_fudged
 
     ###########################################################################
-    def add_white_noise(self, mu=1, std=0.1) -> np.array:
+    def add_white_noise(self, mu=1, std=0.1
+    ) -> np.array:
         """
         Fudge image with gaussian noise per channel per segmment
 
