@@ -1,3 +1,4 @@
+"""Functionality to explain regressors trained on spectra"""
 import copy
 from functools import partial
 
@@ -6,6 +7,7 @@ from scipy.stats import norm
 import sklearn
 from sklearn.utils import check_random_state
 from skimage.color import gray2rgb
+
 from tqdm.auto import tqdm
 from lime import lime_base
 from lime.lime_image import ImageExplanation
@@ -16,13 +18,11 @@ class LimeSpectraExplainer:
     Taken from lime original repository and adapted to explain a regressor
     model for spectra: https://github.com/marcotcr/lime
 
-    Explains predictions on Spectra (i.e. matrix) data.
+    Explains predictions on Spectra (i.e. flat matrix) data.
     For numerical features, perturb them by sampling from a Normal(0,1) and
     doing the inverse operation of mean-centering and scaling, according to the
-    means and stds in the training data. For categorical features, perturb by
-    sampling according to the training distribution, and making a binary
-    feature that is 1 when the value is the same as the instance being
-    explained."""
+    means and stds in the training data.
+    """
 
     def __init__(
         self,
@@ -38,8 +38,8 @@ class LimeSpectraExplainer:
             kernel_width: kernel width for the exponential kernel.
             If None, defaults to sqrt(number of columns) * 0.75.
             kernel: similarity kernel that takes euclidean distances and kernel
-                width as input and outputs weights in (0,1). If None, defaults to
-                an exponential kernel.
+                width as input and outputs weights in (0,1).
+                If None, defaults to an exponential kernel.
             verbose: if true, print local prediction values from linear model
             feature_selection: feature selection method. can be
                 'forward_selection', 'lasso_path', 'none' or 'auto'.
@@ -53,10 +53,14 @@ class LimeSpectraExplainer:
 
         if kernel is None:
 
-            def kernel(d, kernel_width):
+            def kernel_fn(d, kernel_width):
+
                 return np.sqrt(np.exp(-(d ** 2) / kernel_width ** 2))
 
-        kernel_fn = partial(kernel, kernel_width=kernel_width)
+            kernel_fn = partial(kernel_fn, kernel_width=kernel_width)
+
+        else:
+            kernel_fn = partial(kernel, kernel_width=kernel_width)
 
         self.random_state = check_random_state(random_state)
         self.feature_selection = feature_selection
@@ -76,8 +80,8 @@ class LimeSpectraExplainer:
         segmentation_fn,
         hide_color: str,
         amplitude: float = 1,
-        mu: float = 0.0,
-        std: float = 1.0,
+        mu: float = 1.0,
+        std: float = 0.1,
         num_features=100000,
         num_samples=1000,
         batch_size=10,
@@ -139,8 +143,8 @@ class LimeSpectraExplainer:
                 this parameter.
 
         Returns:
-            An ImageExplanation object (see lime_image.py) with the corresponding
-            explanations.
+            An ImageExplanation object (see lime_image.py) with the
+            corresponding explanations.
         """
         #######################################################################
         # set variables bellow to accomadate for a regressor
@@ -240,6 +244,7 @@ class LimeSpectraExplainer:
         data[0, :] = 1
         imgs = []
         rows = tqdm(data) if progress_bar else data
+        # rows = data
         for row in rows:
             temp = copy.deepcopy(image)
             zeros = np.where(row == 0)[0]
@@ -280,7 +285,7 @@ class LimeSpectraExplainer:
                     amplitude wil be randomly set.
                 If numeric value, each segment of the fudged image will
                 contain that the passed numeric value
-            amplitude: amplitude of gaussians or white-noise
+            amplitude: amplitude of gaussians
             mu: mean of white-noise
             std: standard deviation of gaussians or white-noise
         OUTPUT
@@ -302,8 +307,8 @@ class LimeSpectraExplainer:
 
         else:
 
-            is_a_number = type(hide_color) == float
-            is_a_number |= type(hide_color) == int
+            is_a_number = isinstance(hide_color, float)
+            is_a_number |= isinstance(hide_color, int)
 
             if is_a_number is True:
                 # Fudge image with hide_color value on all pixels
@@ -371,7 +376,7 @@ class LimeSpectraExplainer:
             mu = centroids[n]
             gaussians[0, :] += amplitude[n] * norm.pdf(x, mu, std)
 
-        return gaussians.reshape(1, -1, 1)
+        return gaussians.reshape((1, -1, 1))
 
     ###########################################################################
     def get_centroids_of_segments(self) -> np.array:
@@ -423,7 +428,8 @@ class LimeSpectraExplainer:
         return image_fudged
 
     ###########################################################################
-    def add_white_noise(self, mu=0, std=0.2) -> np.array:
+    def add_white_noise(self, mu=1, std=0.1
+    ) -> np.array:
         """
         Fudge image with gaussian noise per channel per segmment
 
@@ -438,8 +444,8 @@ class LimeSpectraExplainer:
             to mu and std parameters
         """
 
-        image_fudged = self.image.copy()
+        # image_fudged = self.image.copy()
 
-        image_fudged += np.random.normal(mu, std, size=self.image.shape)
+        image_fudged = np.random.normal(mu, std, size=self.image.shape)
 
         return image_fudged

@@ -1,20 +1,8 @@
 """Explain a single anomaly with LimeSpecExplainer"""
-from configparser import ConfigParser, ExtendedInterpolation
-from functools import partial
 import os
-import pickle
-import time
 
-import numpy as np
-import tensorflow as tf
-
-from anomaly.reconstruction import ReconstructionAnomalyScore
-from astroExplain.spectra.explainer import LimeSpectraExplainer
-from astroExplain.spectra.segment import SpectraSegmentation
-from autoencoders.ae import AutoEncoder
-from sdss.utils.managefiles import FileDirectory
-from sdss.utils.configfile import ConfigurationFile
-
+# disable tensorflow logs: warnings and info :). Allow error logs
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 # Set environment variables to disable multithreading as users will probably
 # want to set the number of cores to the max of their computer.
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -23,12 +11,21 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 ###############################################################################
-# Set TensorFlow print of log information
-# 0 = all messages are logged (default behavior)
-# 1 = INFO messages are not printed
-# 2 = INFO and WARNING messages are not printed
-# 3 = INFO, WARNING, and ERROR messages are not printed
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+from configparser import ConfigParser, ExtendedInterpolation
+from functools import partial
+import pickle
+import time
+
+import tensorflow as tf
+import numpy as np
+
+from anomaly.reconstruction import ReconstructionAnomalyScore
+from astroExplain.spectra.explainer import LimeSpectraExplainer
+from astroExplain.spectra.segment import SpectraSegmentation
+from astroExplain.spectra.utils import get_anomaly_score_name
+from autoencoders.ae import AutoEncoder
+from sdss.utils.managefiles import FileDirectory
+from sdss.utils.configfile import ConfigurationFile
 
 ###############################################################################
 start_time = time.time()
@@ -42,7 +39,7 @@ check = FileDirectory()
 configuration = ConfigurationFile()
 ###############################################################################
 # set the number of cores to use with the reconstruction function
-cores_per_worker = parser.getint("tensorflow-session", "cores")
+cores_per_worker = parser.getint("tensorflow", "cores")
 jobs = cores_per_worker
 config = tf.compat.v1.ConfigProto(
     intra_op_parallelism_threads=jobs,
@@ -53,49 +50,64 @@ config = tf.compat.v1.ConfigProto(
 session = tf.compat.v1.Session(config=config)
 ###############################################################################
 # Load data
-print("Load anomalies", end="\n")
+print("Load spectra to explain", end="\n")
 
-input_directory = parser.get("directory", "input")
+explanation_directory = parser.get("directory", "explanation")
 
-anomalies_name = parser.get("file", "anomalies")
-anomalies = np.load(f"{input_directory}/{anomalies_name}")
+spectra_name = parser.get("file", "spectra")
 
-if anomalies.ndim == 2:
+metric = parser.get("score", "metric")
+velocity = parser.getint("score", "filter")
+relative = parser.getboolean("score", "relative")
+percentage = parser.getint("score", "percentage")
+
+score_name = get_anomaly_score_name(metric, velocity, relative, percentage)
+
+spectra_to_explain = np.load(
+    f"{explanation_directory}/{score_name}/{spectra_name}"
+)
+
+if spectra_to_explain.ndim == 2:
     # convert spectra to batch of gray images
-    anomalies = anomalies[:, np.newaxis, :]
-elif anomalies.ndim == 1:
+    spectra_to_explain = spectra_to_explain[:, np.newaxis, :]
+elif spectra_to_explain.ndim == 1:
     # convert single spectrum to gray image
-    anomalies = anomalies[np.newaxis, np.newaxis, :]
+    spectra_to_explain = spectra_to_explain[np.newaxis, np.newaxis, :]
 
+###############################################################################
+meta_data_directory = parser.get("directory", "meta")
 wave_name = parser.get("file", "grid")
-wave = np.load(f"{input_directory}/{wave_name}")
+wave = np.load(f"{meta_data_directory}/{wave_name}")
 ###############################################################################
 # Load reconstruction function
-print(f"Load reconstruction function", end="\n")
+print("Load reconstruction function", end="\n")
 
-model_name = parser.get("file", "model")
-model_directory = f"{input_directory}/{model_name}"
-model = AutoEncoder(reload=True, reload_from=model_directory)
+model_id = parser.get("file", "model_id")
+model_directory = parser.get("directory", "model")
+model = AutoEncoder(reload=True, reload_from=f"{model_directory}/{model_id}")
 reconstruct_function = model.reconstruct
-
-score_config = parser.items("score")
-score_config = configuration.section_to_dictionary(score_config, [",", "\n"])
 ###############################################################################
 # Load anomaly score function
-print(f"Load anomaly score function", end="\n")
+score_parser = ConfigParser(interpolation=ExtendedInterpolation())
+score_parser_name = parser.get("score", "configuration")
+score_parser.read(f"{explanation_directory}/{score_name}/{score_parser_name}")
+score_config = score_parser.items("score")
+score_config = configuration.section_to_dictionary(score_config, [",", "\n"])
+
+print("Load anomaly score function", end="\n")
 anomaly = ReconstructionAnomalyScore(
     reconstruct_function,
     wave,
     lines=score_config["lines"],
-    velocity_filter=score_config["velocity"],
-    percentage=score_config["percentage"],
-    relative=score_config["relative"],
+    velocity_filter=velocity,
+    percentage=percentage,
+    relative=relative,
     epsilon=1e-3,
 )
-anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
+anomaly_score_function = partial(anomaly.score, metric=metric)
 ###############################################################################
 # Set explainer instance
-print(f"Set explainer and Get explanations", end="\n")
+print("Set explainer and Get explanations", end="\n")
 explainer = LimeSpectraExplainer(random_state=0)
 
 number_segments = parser.getint("lime", "number_segments")
@@ -103,24 +115,32 @@ segmentation_fn = SpectraSegmentation().uniform
 segmentation_fn = partial(segmentation_fn, number_segments=number_segments)
 
 # Get explanations
-save_explanation_to = parser.get("directory", "explanation")
-save_explanation_to = f"{save_explanation_to}/{anomalies_name.split('.')[0]}"
+
+save_explanation_to = (
+    f"{explanation_directory}/{score_name}/"
+    f"xai_{spectra_name.split('.')[0]}"
+)
 check.check_directory(save_explanation_to, exit_program=False)
 
-for idx, galaxy in enumerate(anomalies):
+fudge_parameters = configuration.section_to_dictionary(
+    parser.items("fudge"), value_separators=[]
+)
+
+for idx, galaxy in enumerate(spectra_to_explain):
 
     print(f"Explain galaxy {idx}", end="\r")
 
     explanation = explainer.explain_instance(
         image=galaxy,
         classifier_fn=anomaly_score_function,
-        # labels=None,
-        hide_color=parser.getint("lime", "hide_color"),
-        # top_labels=1,
-        # num_features=1000, # default= 100000
+        hide_color=fudge_parameters["hide_color"],
+        amplitude=fudge_parameters["amplitude"],
+        mu=fudge_parameters["mu"],
+        std=fudge_parameters["std"],
         num_samples=parser.getint("lime", "number_samples"),
         batch_size=parser.getint("lime", "batch_size"),
-        segmentation_fn=segmentation_fn
+        segmentation_fn=segmentation_fn,
+        progress_bar=parser.getboolean("lime", "progress_bar")
         # distance_metric="cosine",
     )
 
@@ -132,8 +152,8 @@ for idx, galaxy in enumerate(anomalies):
 
 
 ###############################################################################
-with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
-    parser.write(config_file)
+# with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
+#     parser.write(config_file)
 ###############################################################################
 finish_time = time.time()
 print(f"Run time: {finish_time-start_time:.2f}")

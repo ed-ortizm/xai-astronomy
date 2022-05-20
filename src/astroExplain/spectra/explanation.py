@@ -1,4 +1,6 @@
+"""Functionality to handle explanation objects from LimeSpetraExplainer"""
 import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
 import numpy as np
 
 from lime.lime_image import ImageExplanation
@@ -26,8 +28,9 @@ class TellMeWhy:
         self.explanation = explanation
 
     ###########################################################################
+    @staticmethod
     def plot_full_explanation(
-        self, figure_size: tuple = (10, 5)
+        figure_size: tuple = (10, 5)
     ) -> (plt.Figure, plt.Axes):
         """
         Builds skeleton to plot the spectrum and the normalized
@@ -71,6 +74,7 @@ class TellMeWhy:
         heatmap = self.get_heatmap()
         # smooth noise
         if median_smooth is True:
+
             heatmap -= np.median(heatmap)
         # normalize heatmap
         heatmap *= 1 / np.abs(heatmap).max()
@@ -103,7 +107,7 @@ class TellMeWhy:
             segments, and NaNs otherwise
         """
         #######################################################################
-        if number_of_features == None:
+        if number_of_features is None:
             # set to the total number of segments
             number_of_features = np.unique(self.segments).size
         #######################################################################
@@ -147,7 +151,7 @@ class TellMeWhy:
             segments, and NaNs otherwise
         """
         #######################################################################
-        if number_of_features == None:
+        if number_of_features is None:
             # set to the total number of segments
             number_of_features = np.unique(self.segments).size
         #######################################################################
@@ -192,7 +196,7 @@ class TellMeWhy:
         heatmap = self.get_heatmap()
         heatmap = 0.5 * (heatmap[:-1] + heatmap[1:])
 
-        points = np.array([self.wave, self.galaxy]).T.reshape(-1, 1, 2)
+        points = np.array([self.wave, self.galaxy]).T.reshape((-1, 1, 2))
         segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
         fig, ax = plt.subplots(figsize=(10, 5))
