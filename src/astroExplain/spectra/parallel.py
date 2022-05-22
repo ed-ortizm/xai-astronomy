@@ -5,7 +5,9 @@ from multiprocessing.sharedctypes import RawArray
 import pickle
 
 import numpy as np
+import tensorflow as tf
 
+from autoencoders.ae import AutoEncoder
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from astroExplain.spectra.segment import SpectraSegmentation
 from astroExplain.spectra.explainer import LimeSpectraExplainer
@@ -86,9 +88,6 @@ def explain_anomalies(_: int) -> None:
     PARAMETERS
     """
     ###########################################################################
-    import tensorflow as tf
-    from autoencoders.ae import AutoEncoder
-
     # set the number of cores to use per model in each worker
     config = tf.compat.v1.ConfigProto(
         intra_op_parallelism_threads=cores_per_worker,
@@ -99,13 +98,11 @@ def explain_anomalies(_: int) -> None:
     session = tf.compat.v1.Session(config=config)
     ###########################################################################
     # Load reconstruction function
-    # print(f"Load reconstruction function", end="\n")
 
     model = AutoEncoder(reload=True, reload_from=model_directory)
 
     ###########################################################################
     # Load anomaly score function
-    # print(f"Load anomaly score function", end="\n")
 
     anomaly = ReconstructionAnomalyScore(
         # reconstruct_function
