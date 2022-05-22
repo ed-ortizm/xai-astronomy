@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     spectra_to_explain = RawArray(
         np.ctypeslib.as_ctypes_type(spectra_to_explain.dtype),
-        spectra_to_explain.reshape(-1)
+        spectra_to_explain.reshape(-1),
     )
 
     ###########################################################################
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     meta_data_spectra_df = pd.read_csv(
         f"{explanation_directory}/{score_name}/{meta_data_spectra_name}",
-        index_col="specobjid"
+        index_col="specobjid",
     )
     ###########################################################################
     wave_name = parser.get("file", "grid")
@@ -88,16 +88,16 @@ if __name__ == "__main__":
     ###########################################################################
     model_id = parser.get("file", "model_id")
     model_directory = parser.get("directory", "model")
+    model_directory = f"{model_directory}/{model_id}"
+    check.check_directory(model_directory, exit_program=True)
 
     specobjid = np.array(meta_data_spectra_df.index, dtype=int)
     specobjid = RawArray(
         np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
     )
 
-    import sys
-    sys.exit()
-    del anomalies
-
+    # import sys
+    # sys.exit()
     ###########################################################################
 
     ###########################################################################
@@ -128,13 +128,16 @@ if __name__ == "__main__":
     lime_configuration = configuration.section_to_dictionary(
         lime_configuration, [",", "\n"]
     )
-    ###########################################################################
-    model_directory = f"{data_directory}/{data_bin}/models"
-    model_name = parser.get("file", "model")
-    model_directory = f"{model_directory}/{model_name}"
-    check.check_directory(model_directory, exit=True)
 
-    save_explanation_to = f"{score_directory}/explanations"
+    fudge_configuration = configuration.section_to_dictionary(
+        parser.items("fudge"), value_separators=[]
+    )
+    ###########################################################################
+    save_explanation_to = (
+        f"{explanation_directory}/{score_name}/"
+        f"xai_{spectra_name.split('.')[0]}"
+    )
+    check.check_directory(save_explanation_to, exit_program=False)
 
     explanation_runs = glob.glob(f"{save_explanation_to}/*/")
 
@@ -148,7 +151,7 @@ if __name__ == "__main__":
         run = f"{max(runs)+1:05d}"
 
     save_explanation_to = f"{save_explanation_to}/{run}"
-    check.check_directory(f"{save_explanation_to}", exit=False)
+    check.check_directory(f"{save_explanation_to}", exit_program=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
     cores_per_worker = parser.getint("configuration", "cores_per_worker")
@@ -161,9 +164,10 @@ if __name__ == "__main__":
             wave,
             specobjid,
             spectra_to_explain,
-            anomalies_shape,
+            spectra_to_explain_shape,
             score_configuration,
             lime_configuration,
+            fudge_configuration,
             model_directory,
             save_explanation_to,
             cores_per_worker,
@@ -171,11 +175,15 @@ if __name__ == "__main__":
     ) as pool:
 
         pool.map(
-            parallelExplainer.explain_anomalies, np.arange(anomalies_shape[0])
+            parallelExplainer.explain_anomalies,
+            np.arange(spectra_to_explain_shape[0]),
         )
 
     ###########################################################################
-    with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
+    with open(
+        f"{save_explanation_to}/{config_file_name}", "w", encoding="utf8"
+    ) as config_file:
+
         parser.write(config_file)
     ###########################################################################
     finish_time = time.time()
