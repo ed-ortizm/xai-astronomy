@@ -1,3 +1,4 @@
+"""Explain anomalies in parallel with LimeSpecExplainer"""
 import os
 
 # Set environment variables to disable multithreading as users will probably
@@ -24,11 +25,10 @@ from multiprocessing.sharedctypes import RawArray
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-
 import astroExplain.spectra.parallel as parallelExplainer
-from autoencoders.ae import AutoEncoder
-from sdss.superclasses import FileDirectory, ConfigurationFile
+from astroExplain.spectra.utils import get_anomaly_score_name
+from sdss.utils.managefiles import FileDirectory
+from sdss.utils.configfile import ConfigurationFile
 
 ###############################################################################
 if __name__ == "__main__":
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     start_time = time.time()
     ###########################################################################
     parser = ConfigParser(interpolation=ExtendedInterpolation())
-    config_file_name = "parallelExplain.ini"
+    config_file_name = "parallel_explain.ini"
     parser.read(f"{config_file_name}")
     ###########################################################################
     # Check files and directory
@@ -49,109 +49,74 @@ if __name__ == "__main__":
     counter = mp.Value("i", 0)
     ###########################################################################
     # strings to get right paths to data
-    data_directory = parser.get("directory", "data")
-    data_bin = parser.get("common", "bin")
+    explanation_directory = parser.get("directory", "explanation")
+    spectra_name = parser.get("file", "spectra")
 
-    # Load data
-    print("Load anomalies")
+    metric = parser.get("score", "metric")
+    velocity = parser.getint("score", "filter")
+    relative = parser.getboolean("score", "relative")
+    percentage = parser.getint("score", "percentage")
 
-    anomalies_file = parser.get("file", "anomalies")
-    anomalies_name = anomalies_file.split(".")[0]
+    score_name = get_anomaly_score_name(metric, velocity, relative, percentage)
 
-    # if testing
-    is_test = parser.getboolean("configuration", "test")
-
-    if is_test is True:
-
-        score_directory = f"{data_directory}/{data_bin}/test"
-
-    else:
-
-        score_directory = f"{data_directory}/{data_bin}/{anomalies_name}"
-
-    check.check_directory(score_directory, exit=True)
-
-    anomalies = np.load(f"{score_directory}/{anomalies_file}")
-
-    specobjid = anomalies[:, 0].astype(int)
-    share_specobjid = RawArray(
-        np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
-    )
-    del specobjid
-
-    # load spectra
-
-    fluxes = np.load(f"{data_directory}/fluxes.npy", mmap_mode="r")
-    anomalies_indexes = anomalies[:, 1].astype(int)
-    anomalies = fluxes[anomalies_indexes]
-
-    del fluxes
-
-    if anomalies.ndim == 1:
-        anomalies = anomalies[np.newaxis, ...]
-
-    share_anomalies = RawArray(
-        np.ctypeslib.as_ctypes_type(anomalies.dtype), anomalies.reshape(-1)
+    spectra_to_explain = np.load(
+        f"{explanation_directory}/{score_name}/{spectra_name}"
     )
 
-    anomalies_shape = anomalies.shape
-    del anomalies
+    if spectra_to_explain.ndim == 1:
+        spectra_to_explain = spectra_to_explain[np.newaxis, ...]
 
+    spectra_to_explain_shape = spectra_to_explain.shape
+
+    spectra_to_explain = RawArray(
+        np.ctypeslib.as_ctypes_type(spectra_to_explain.dtype),
+        spectra_to_explain.reshape(-1),
+    )
+
+    ###########################################################################
+    meta_data_spectra_name = parser.get("file", "meta")
+    meta_data_directory = parser.get("directory", "meta")
+
+    meta_data_spectra_df = pd.read_csv(
+        f"{explanation_directory}/{score_name}/{meta_data_spectra_name}",
+        index_col="specobjid",
+    )
     ###########################################################################
     wave_name = parser.get("file", "grid")
-    wave = np.load(f"{data_directory}/{wave_name}")
-    share_wave = RawArray(np.ctypeslib.as_ctypes_type(wave.dtype), wave)
+    wave = np.load(f"{meta_data_directory}/{wave_name}")
+    wave = RawArray(np.ctypeslib.as_ctypes_type(wave.dtype), wave)
+    ###########################################################################
+    model_id = parser.get("file", "model_id")
+    model_directory = parser.get("directory", "model")
+    model_directory = f"{model_directory}/{model_id}"
+    check.check_directory(model_directory, exit_program=True)
 
-    del wave
+    specobjid = np.array(meta_data_spectra_df.index, dtype=int)
+    specobjid = RawArray(
+        np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
+    )
+
+    # import sys
+    # sys.exit()
+    ###########################################################################
 
     ###########################################################################
-    print(f"Load score and lime configurations", end="\n")
-    # Fetch lines and epsilon from configuration file used to get scores
-    anomalies_parser = ConfigParser(interpolation=ExtendedInterpolation())
-    anomalies_configuration = parser.get("file", "configuration_anomalies")
-    anomalies_parser.read(f"{score_directory}/{anomalies_configuration}")
+    print("Load score and lime configurations", end="\n")
 
-    ###########################################################################
+    score_parser = ConfigParser(interpolation=ExtendedInterpolation())
+    score_parser_name = parser.get("score", "configuration")
+    score_parser.read(
+        f"{explanation_directory}/{score_name}/{score_parser_name}"
+    )
+    score_config = score_parser.items("score")
+    score_config = configuration.section_to_dictionary(
+        score_config, [",", "\n"]
+    )
+
     score_configuration = {}
+    score_configuration["epsilon"] = score_config["epsilon"]
 
-    lines = anomalies_parser.get("score", "lines")
-    lines = configuration.entry_to_list(lines, str, "\n")
-    score_configuration["lines"] = lines
-
-    epsilon = anomalies_parser.getfloat("score", "epsilon")
-    score_configuration["epsilon"] = epsilon
-
-    ##########################################################################
-    temp = anomalies_name.split(".")[0].split("_")
-
-    if len(temp) == 2:
-        # lp_rel100.npy
-
-        metric = temp[0]
-        velocity = 0
-
-        if "no" in temp[1]:
-            relative = False
-            percentage = float(temp[1].strip("noRel"))
-
-        else:
-            relative = True
-            percentage = float(temp[1].strip("rel"))
-
-    else:
-        # lp_filter_50Kms_rel100.npy
-
-        metric = temp[0]
-        velocity = float(temp[2].strip("Kms"))
-
-        if "no" in temp[3]:
-            relative = False
-            percentage = float(temp[3].strip("noRel"))
-
-        else:
-            relative = True
-            percentage = float(temp[3].strip("rel"))
-
+    score_configuration["lines"] = score_config["lines"]
     score_configuration["metric"] = metric
     score_configuration["velocity"] = velocity
     score_configuration["relative"] = relative
@@ -163,13 +128,16 @@ if __name__ == "__main__":
     lime_configuration = configuration.section_to_dictionary(
         lime_configuration, [",", "\n"]
     )
-    ###########################################################################
-    model_directory = f"{data_directory}/{data_bin}/models"
-    model_name = parser.get("file", "model")
-    model_directory = f"{model_directory}/{model_name}"
-    check.check_directory(model_directory, exit=True)
 
-    save_explanation_to = f"{score_directory}/explanations"
+    fudge_configuration = configuration.section_to_dictionary(
+        parser.items("fudge"), value_separators=[]
+    )
+    ###########################################################################
+    save_explanation_to = (
+        f"{explanation_directory}/{score_name}/"
+        f"xai_{spectra_name.split('.')[0]}"
+    )
+    check.check_directory(save_explanation_to, exit_program=False)
 
     explanation_runs = glob.glob(f"{save_explanation_to}/*/")
 
@@ -183,7 +151,7 @@ if __name__ == "__main__":
         run = f"{max(runs)+1:05d}"
 
     save_explanation_to = f"{save_explanation_to}/{run}"
-    check.check_directory(f"{save_explanation_to}", exit=False)
+    check.check_directory(f"{save_explanation_to}", exit_program=False)
     ###########################################################################
     number_processes = parser.getint("configuration", "jobs")
     cores_per_worker = parser.getint("configuration", "cores_per_worker")
@@ -193,12 +161,13 @@ if __name__ == "__main__":
         initializer=parallelExplainer.init_shared_data,
         initargs=(
             counter,
-            share_wave,
-            share_specobjid,
-            share_anomalies,
-            anomalies_shape,
+            wave,
+            specobjid,
+            spectra_to_explain,
+            spectra_to_explain_shape,
             score_configuration,
             lime_configuration,
+            fudge_configuration,
             model_directory,
             save_explanation_to,
             cores_per_worker,
@@ -206,11 +175,15 @@ if __name__ == "__main__":
     ) as pool:
 
         pool.map(
-            parallelExplainer.explain_anomalies, np.arange(anomalies_shape[0])
+            parallelExplainer.explain_anomalies,
+            np.arange(spectra_to_explain_shape[0]),
         )
 
     ###########################################################################
-    with open(f"{save_explanation_to}/{config_file_name}", "w") as config_file:
+    with open(
+        f"{save_explanation_to}/{config_file_name}", "w", encoding="utf8"
+    ) as config_file:
+
         parser.write(config_file)
     ###########################################################################
     finish_time = time.time()

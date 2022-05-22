@@ -79,7 +79,7 @@ class LimeSpectraExplainer:
         classifier_fn,
         segmentation_fn,
         hide_color: str,
-        amplitude: float = 1,
+        amplitude: float = 1.0,
         mu: float = 1.0,
         std: float = 0.1,
         num_features=100000,
@@ -428,8 +428,7 @@ class LimeSpectraExplainer:
         return image_fudged
 
     ###########################################################################
-    def add_white_noise(self, mu=1, std=0.1
-    ) -> np.array:
+    def add_white_noise(self, mu=1, std=0.1) -> np.array:
         """
         Fudge image with gaussian noise per channel per segmment
 
