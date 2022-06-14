@@ -1,11 +1,12 @@
 """Functionality to fudge spectra"""
+from astropy.convolution import Gaussian1DKernel, convolve
 import numpy as np
 from scipy.stats import norm
 
 class Fudge:
     """Different methods to fudge a spectrum"""
     def __init__(self, image:np.array, segments:np.array):
-        self.image = image
+        self.spectrum = image
         self.segments = segments
     ###########################################################################
     def fudge_spectrum(
@@ -57,7 +58,7 @@ class Fudge:
 
             if is_a_number is True:
                 # Fudge image with hide_color value on all pixels
-                image_fudged = np.ones(self.image.shape) * hide_color
+                image_fudged = np.ones(self.spectrum.shape) * hide_color
 
             else:
 
@@ -67,6 +68,80 @@ class Fudge:
 
         return image_fudged
 
+    ###########################################################################
+    def same(self)-> np.array:
+        """The fudged spectrum is the same spectrum"""
+        return self.spectrum.copy()
+    ###########################################################################
+    def flat(self,
+        continuum: float=1.,
+        noise: str='spectrum',
+        kernel_size: int=3,
+        sigma: float=1
+    )-> np.array:
+        """
+        Flat spectrum with different noise options. The noise can be
+        zero, i.e, a complete flat spectrum. It can be the same noise
+        in the spectrum or white noise according to input parameters
+
+        INPUTS
+
+        continuum: value of the continuum
+        noise: options are {'spectrum', 'flat', 'white'}
+            'spectrum': add the spectrum's noise to the continuum
+            'flat': there is no noise added to the continuum
+            'user': add whithe noise with mu=0 and sigma as passed
+                in the arguments of this function
+        kernel_size: size of gaussian kernel used to smoot the spectrum.
+            Necessary when implementin noise='spectrum'. The noise
+            will be the original image minus the the filtered image
+            with the gaussian kernel
+        sigma: standard deviation of white noise if noise is set
+            to 'white'
+
+        OUTPUT
+
+        fugged_image: the fudged image
+
+        """
+
+        if noise == "spectrum":
+
+            _, fudge_noise = slef.filter_noise(kernel_size)
+            fudged_image = continuum + fudge_noise
+            return fudged_image
+
+        if noise == "flat":
+
+            fudged_image = continuum * np.ones(self.spectrum.shape)
+            return fudged_image
+
+        if noise == "white":
+
+            fudge_noise = self.white_noise(sigma=sigma)
+            fudged_image = continuum + fudge_noise
+            return fudged_image
+
+    def filter_noise(self, kernel_size: int=3) -> tuple:
+        """
+        Filter noise on a spectrum with a gaussian kernel
+
+        INPUT
+
+        kernel_size: number of elements in gaussian kernel
+
+        OUTPUT
+
+        filtered_spectrum, noise:
+            filtered_spectrum: spectrum with noise removed
+            noise: spectrum's noise
+        """
+        kernel = Gaussian1DKernel(kernel_size)
+
+        filtered_spectrum = convolve(self.spectrum, kernel, boundary="extend")
+        noise = self.spectrum - filtered_spectrum
+
+        return filtered_spectrum, noise
     ###########################################################################
     def add_gaussians(
         self, amplitude: float = 1.0, std: float = 1.0
@@ -88,7 +163,7 @@ class Fudge:
 
         gaussians = self.get_gaussians(amplitude, std)
 
-        image_fudged = self.image.copy() + gaussians
+        image_fudged = self.spectrum.copy() + gaussians
 
         return image_fudged
 
@@ -108,7 +183,7 @@ class Fudge:
         gaussians: gray image representation of the array of gausians
         """
         number_gaussians = np.unique(self.segments).shape[0]
-        number_pixels = self.image[..., 0].size
+        number_pixels = self.spectrum[..., 0].size
 
         x = np.arange(number_pixels)
         centroids = self.get_centroids_of_segments()
@@ -158,14 +233,14 @@ class Fudge:
         image_fudged: original image + gaussian noise according
             to mu and std parameters
         """
-        image_fudged = self.image.copy()
+        image_fudged = self.spectrum.copy()
 
         for segment_id in np.unique(self.segments):
 
             mask_segments = self.segments == segment_id
 
             mean_per_segment_per_channel = np.mean(
-                self.image[mask_segments], axis=(0, 1)
+                self.spectrum[mask_segments], axis=(0, 1)
             )
 
             image_fudged[mask_segments] = mean_per_segment_per_channel
@@ -173,23 +248,18 @@ class Fudge:
         return image_fudged
 
     ###########################################################################
-    def add_white_noise(self, mu=1, std=0.1) -> np.array:
+    def white_noise(self, sigma=1.) -> np.array:
         """
-        Fudge image with gaussian noise per channel per segmment
+        Generate array with white noise with the same shape of the
+        image to fudge. This white noise has a median of zero
 
         INPUT
-        mu: mean of the normal distribution in case hide color
-            is set to "normal"
-        std: standard deviation of the normal distribution in
-            case hide color is set to "normal"
+        sigma: standard deviation of the normal distribution
 
         OUTPUT
-        image_fudged: original image + gaussian noise according
-            to mu and std parameters
+        noise: white noise
         """
 
-        # image_fudged = self.image.copy()
+        noise = np.random.normal(loc=0., scale=sigma, size=self.spectrum.shape)
 
-        image_fudged = np.random.normal(mu, std, size=self.image.shape)
-
-        return image_fudged
+        return noise
