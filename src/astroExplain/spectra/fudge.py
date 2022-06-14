@@ -8,71 +8,33 @@ class Fudge:
     def __init__(self, image:np.array, segments:np.array):
         self.spectrum = image
         self.segments = segments
-    ###########################################################################
-    def fudge_spectrum(
-        self, hide_color: str, amplitude: float = 1.0, mu=0, std=1.0
-    ) -> np.array:
-        """
-        Fudge image of galaxy to set pixel values of segments
-        ignored in sampled neighbors
 
-        INPUT
-            hide_color: value or method to perturbe segments in neigboring
-                spectra.
-                If "mean", each segment of the fudged image will contain
-                    the mean value of the fluxes in that segment.
-                If "noise", each segment of the fudged image will contain
-                    the flux plus white noise.
-                If "gaussian", each segment of the fudged image will contain
-                    the flux plus a gaussian per segment. The absolute value
-                    of the gaussians' amplitude wil be determined by the
-                    variable amplitude. The standard deviation will be
-                    determined by the variable std. The sign of gausians'
-                    amplitude wil be randomly set.
-                If numeric value, each segment of the fudged image will
-                contain that the passed numeric value
-            amplitude: amplitude of gaussians
-            mu: mean of white-noise
-            std: standard deviation of gaussians or white-noise
-        OUTPUT
-            image_fudged: spectrum where all segments are perturbed
-                to use when generating neigboring spectra.
-        """
-
-        if hide_color == "mean":
-
-            image_fudged = self.fudge_with_mean()
-
-        elif hide_color == "noise":
-
-            image_fudged = self.add_white_noise(mu, std)
-
-        elif hide_color == "gaussians":
-
-            image_fudged = self.add_gaussians(amplitude, std)
-
-        else:
-
-            is_a_number = isinstance(hide_color, float)
-            is_a_number |= isinstance(hide_color, int)
-
-            if is_a_number is True:
-                # Fudge image with hide_color value on all pixels
-                image_fudged = np.ones(self.spectrum.shape) * hide_color
-
-            else:
-
-                raise ValueError(
-                    "hide_color: 'mean', 'noise', 'gaussians' or numeric value"
-                )
-
-        return image_fudged
-
-    ###########################################################################
     def same(self)-> np.array:
         """The fudged spectrum is the same spectrum"""
         return self.spectrum.copy()
-    ###########################################################################
+
+    def same_shape(self, kernel_size: int=3, sigma: float=0. )-> np.array:
+
+        """
+        Keep shape of spectrum and add white noise to it
+
+        INPUTS
+
+        kernel_size: size of gaussian kernel used to smoot the spectrum.
+        sigma: standard deviation of white noise
+
+        OUTPUT
+        fudged_spectrum: filtered spectrum plus white noise
+        """
+
+        filtered_spectrum, _ = self.filter_noise(kernel_size)
+        fudge_noise = self._white_noise(sigma=sigma)
+
+        fudged_spectrum = filtered_spectrum + fudge_noise
+
+        return fudged_spectrum
+
+
     def flat(self,
         continuum: float=1.,
         noise: str='spectrum',
@@ -107,20 +69,22 @@ class Fudge:
 
         if noise == "spectrum":
 
-            _, fudge_noise = slef.filter_noise(kernel_size)
-            fudged_image = continuum + fudge_noise
-            return fudged_image
+            _, fudge_noise = self.filter_noise(kernel_size)
+            fudged_spectrum = continuum + fudge_noise
 
-        if noise == "flat":
+        elif noise == "flat":
 
-            fudged_image = continuum * np.ones(self.spectrum.shape)
-            return fudged_image
+            fudged_spectrum = continuum * np.ones(self.spectrum.shape)
 
-        if noise == "white":
+        elif noise == "white":
 
-            fudge_noise = self.white_noise(sigma=sigma)
-            fudged_image = continuum + fudge_noise
-            return fudged_image
+            fudge_noise = self._white_noise(sigma=sigma)
+            fudged_spectrum = continuum + fudge_noise
+
+        else:
+            raise ValueError( "'noise' must be: 'spectrum', 'flat' or 'white'")
+
+        return fudged_spectrum
 
     def filter_noise(self, kernel_size: int=3) -> tuple:
         """
@@ -142,7 +106,23 @@ class Fudge:
         noise = self.spectrum - filtered_spectrum
 
         return filtered_spectrum, noise
-    ###########################################################################
+
+    def _white_noise(self, sigma=1.) -> np.array:
+        """
+        Generate array with white noise with the same shape of the
+        image to fudge. This white noise has a median of zero
+
+        INPUT
+        sigma: standard deviation of the normal distribution
+
+        OUTPUT
+        noise: white noise
+        """
+
+        noise = np.random.normal(loc=0., scale=sigma, size=self.spectrum.shape)
+
+        return noise
+
     def add_gaussians(
         self, amplitude: float = 1.0, std: float = 1.0
     ) -> np.array:
@@ -246,20 +226,3 @@ class Fudge:
             image_fudged[mask_segments] = mean_per_segment_per_channel
 
         return image_fudged
-
-    ###########################################################################
-    def white_noise(self, sigma=1.) -> np.array:
-        """
-        Generate array with white noise with the same shape of the
-        image to fudge. This white noise has a median of zero
-
-        INPUT
-        sigma: standard deviation of the normal distribution
-
-        OUTPUT
-        noise: white noise
-        """
-
-        noise = np.random.normal(loc=0., scale=sigma, size=self.spectrum.shape)
-
-        return noise
