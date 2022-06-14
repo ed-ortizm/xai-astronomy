@@ -3,17 +3,19 @@ from astropy.convolution import Gaussian1DKernel, convolve
 import numpy as np
 from scipy.stats import norm
 
+
 class Fudge:
     """Different methods to fudge a spectrum"""
-    def __init__(self, image:np.array, segments:np.array):
-        self.spectrum = image
+
+    def __init__(self, spectrum: np.array, segments: np.array):
+        self.spectrum = spectrum
         self.segments = segments
 
-    def same(self)-> np.array:
+    def same(self) -> np.array:
         """The fudged spectrum is the same spectrum"""
         return self.spectrum.copy()
 
-    def same_shape(self, kernel_size: int=3, sigma: float=0. )-> np.array:
+    def same_shape(self, kernel_size: int = 3, sigma: float = 0.0) -> np.array:
 
         """
         Keep shape of spectrum and add white noise to it
@@ -35,7 +37,7 @@ class Fudge:
 
         return fudged_spectrum
 
-    def with_mean(self, same_noise: bool=True, sigma: float=0) -> np.array:
+    def with_mean(self, same_noise: bool = True, sigma: float = 0) -> np.array:
         """
         Fudge spectrum with mean value per channel per segmment
         and either same noise in original segment or white noise
@@ -76,12 +78,13 @@ class Fudge:
 
         return fudged_spectrum
 
-    def flat(self,
-        continuum: float=1.,
-        same_noise: bool=True,
-        kernel_size: int=3,
-        sigma: float=1
-    )-> np.array:
+    def flat(
+        self,
+        continuum: float = 1.0,
+        same_noise: bool = True,
+        kernel_size: int = 3,
+        sigma: float = 1,
+    ) -> np.array:
         """
         Flat spectrum with different noise options. The noise can be
         zero, i.e, a complete flat spectrum. It can be the same noise
@@ -118,7 +121,7 @@ class Fudge:
 
         return fudged_spectrum
 
-    def filter_noise(self, kernel_size: int=3) -> tuple:
+    def filter_noise(self, kernel_size: int = 3) -> tuple:
         """
         Filter noise on a spectrum with a gaussian kernel
 
@@ -139,7 +142,7 @@ class Fudge:
 
         return filtered_spectrum, noise
 
-    def _white_noise(self, sigma=1.) -> np.array:
+    def _white_noise(self, sigma=1.0) -> np.array:
         """
         Generate array with white noise with the same shape of the
         image to fudge. This white noise has a median of zero
@@ -151,7 +154,9 @@ class Fudge:
         noise: white noise
         """
 
-        noise = np.random.normal(loc=0., scale=sigma, size=self.spectrum.shape)
+        noise = np.random.normal(
+            loc=0.0, scale=sigma, size=self.spectrum.shape
+        )
 
         return noise
 

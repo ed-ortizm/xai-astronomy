@@ -77,7 +77,7 @@ class TellMeWhy:
         if median_smooth is True:
             absolute_heatmap = np.abs(heatmap)
             sign_heatmap = np.sign(heatmap)
-            heatmap = absolute_heatmap-np.median(absolute_heatmap)
+            heatmap = absolute_heatmap - np.median(absolute_heatmap)
             heatmap *= sign_heatmap
 
         # normalize heatmap
