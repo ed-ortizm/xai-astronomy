@@ -155,8 +155,9 @@ class LimeSpectraExplainer:
         segments = segmentation_fn(spectrum)
 
         fudged_spectrum = self.fudge_spectrum(
-            spectrum, segments, fudge_parameters
+            spectrum[0, :, 0], segments, fudge_parameters
         )
+        fudged_spectrum = gray2rgb(fudged_spectrum.reshape(1, -1))
 
         top = labels
 

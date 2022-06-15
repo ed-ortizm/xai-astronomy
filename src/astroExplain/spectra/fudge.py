@@ -136,9 +136,15 @@ class Fudge:
             noise: spectrum's noise
         """
         kernel = Gaussian1DKernel(kernel_size)
-
+        
+        #spectrum = self.spectrum[0, :, 0]
+        #filtered_spectrum = convolve(spectrum, kernel, boundary="extend")
         filtered_spectrum = convolve(self.spectrum, kernel, boundary="extend")
+        
         noise = self.spectrum - filtered_spectrum
+
+        #filtered_spectrum = gray2rgb(filtered_spectrum.reshape(1, -1))
+        #noise = gray2rgb(noise.reshape(1, -1))
 
         return filtered_spectrum, noise
 
