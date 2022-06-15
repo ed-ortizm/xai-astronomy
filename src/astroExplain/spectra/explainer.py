@@ -155,7 +155,7 @@ class LimeSpectraExplainer:
         segments = segmentation_fn(spectrum)
 
         fudged_spectrum = self.fudge_spectrum(
-            spectrum[0, :, 0], segments, fudge_parameters
+            spectrum[0, :, 0], segments[0, :], fudge_parameters
         )
         fudged_spectrum = gray2rgb(fudged_spectrum.reshape(1, -1))
 
@@ -318,6 +318,7 @@ class LimeSpectraExplainer:
 
             fudged_spectrum = fudge.with_mean(
                 same_noise=fudge_parameters["same_noise"],
+                kernel_size=fudge_parameters["kernel_size"],
                 sigma=fudge_parameters["sigma"],
             )
 
