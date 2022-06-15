@@ -144,16 +144,18 @@ def explain_anomalies(_: int) -> None:
 
     # Get explanations
     explanation = explainer.explain_instance(
-        image=galaxy,
+        spectrum=galaxy,
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
-        hide_color=fudge_configuration["hide_color"],
-        amplitude=fudge_configuration["amplitude"],
-        mu=fudge_configuration["mu"],
-        std=fudge_configuration["std"],
-        num_samples=lime_configuration["number_samples"],
-        batch_size=lime_configuration["batch_size"],
-        progress_bar=lime_configuration["progress_bar"],
+        fudge_parameters = fudge_configuration,
+        # hide_color=fudge_configuration["hide_color"],
+        # amplitude=fudge_configuration["amplitude"],
+        # mu=fudge_configuration["mu"],
+        # std=fudge_configuration["std"],
+        explainer_parameters = lime_configuration,
+        # num_samples=lime_configuration["number_samples"],
+        # batch_size=lime_configuration["batch_size"],
+        # progress_bar=lime_configuration["progress_bar"],
         # distance_metric="cosine",
     )
     ###########################################################################
