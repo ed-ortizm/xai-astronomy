@@ -96,10 +96,6 @@ if __name__ == "__main__":
         np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
     )
 
-    # import sys
-    # sys.exit()
-    ###########################################################################
-
     ###########################################################################
     print("Load score and lime configurations", end="\n")
 
