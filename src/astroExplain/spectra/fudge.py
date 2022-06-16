@@ -239,12 +239,14 @@ class Fudge:
 
         gaussians = np.zeros(shape=(number_pixels))
 
-        amplitude *= np.random.choice([-1.0, 1.0], size=number_gaussians)
+        amplitudes *= np.random.choice([-1.0, 1.0], size=number_gaussians)
         for n in range(number_gaussians):
 
             mu = mus[n]
             sigma = sigmas[n]
-            gaussians += amplitude[n] * norm.pdf(x, mu, sigma)
+            amplitude = amplitudes[n] * np.sqrt(2 * np.pi) * sigma
+
+            gaussians += amplitude * norm.pdf(x, mu, sigma)
 
         return gaussians
 
