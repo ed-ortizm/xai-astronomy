@@ -174,7 +174,7 @@ class Fudge:
         sigmas_in_segment: int = 8,
         same_noise: bool = True,
         kernel_size: int = 3,
-        sigma: float = 1,
+        sigma: float = 1.,
     ) -> np.array:
         """
         Create a fudged image adding an array of gaussians where each
