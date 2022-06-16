@@ -169,8 +169,12 @@ class Fudge:
 
         return noise
 
-    def add_gaussians(
-        self, amplitude: float = 1.0, std: float = 1.0
+    def gaussians(self,
+        amplitude: float = 1.0,
+        sigmas_in_segment: int = 8,
+        same_noise: bool = True,
+        kernel_size: int = 3,
+        sigma: float = 1,
     ) -> np.array:
         """
         Create a fudged image adding an array of gaussians where each
@@ -178,76 +182,103 @@ class Fudge:
         assigned a positive or negative amplitude
 
         INPUTS
-        amplitude: the amplitude of all gaussians
-        std: common standard deviation to all gaussians
+        amplitude: absolute value of the amplitude for all gaussians
+        same_noise: if True, add the spectrum's noise to the continuum.
+            otherwise add white noise to the continuum, according
+            to sigma. If sigma is zero, there is no noise in the
+            flat continuum
+        kernel_size: size of gaussian kernel used to smoot the spectrum.
+            Necessary when implementin noise='spectrum'. The noise
+            will be the original image minus the the filtered image
+            with the gaussian kernel
+        sigma: standard deviation of white noise if same_noise is False
 
         OUTPUT
-        image_fudged: image + array of gaussians
+        fudged_spectrum: spectrum + noise + array of gaussians
         """
 
-        assert std > 0
+        # Get noise
+        if same_noise is True:
 
-        gaussians = self.get_gaussians(amplitude, std)
+            fudged_spectrum = self.spectrum.copy()
 
-        image_fudged = self.spectrum.copy() + gaussians
+        else:
 
-        return image_fudged
+            fudged_spectrum, _ = self.filter_noise(kernel_size)
+            fudge_noise = self._white_noise(sigma=sigma)
+            fudged_spectrum += fudge_noise
+
+
+        gaussians = self.get_gaussians(amplitude, sigmas_in_segment)
+
+        fudged_spectrum += gaussians
+
+        return fudged_spectrum
 
     ###########################################################################
     def get_gaussians(
-        self, amplitude: float = 1.0, std: float = 1.0
-    ) -> (np.array, np.array):
+        self, amplitude: float = 1.0, sigmas_in_segment: int = 8
+    ) -> np.array:
         """
         Set array of gaussians to fudge the spectrum to explain. The
         sign of the amplitude  for each gaussian will be set randomly
 
         INPUTS
         amplitude: the amplitude of all gaussians
-        std: common standard deviation to all gaussians
+        sigmas_in_segment: number of times the standard deviation
+            of the gaussian fits in the segment
 
         OUTPUT
         gaussians: gray image representation of the array of gausians
         """
         number_gaussians = np.unique(self.segments).shape[0]
-        number_pixels = self.spectrum[..., 0].size
+        number_pixels = self.spectrum.size
 
         x = np.arange(number_pixels)
-        centroids = self.get_centroids_of_segments()
+        centroids, sigmas = self.get_mus_and_sigmas(sigmas_in_segment)
 
-        gaussians = np.zeros(shape=(1, number_pixels))
+        gaussians = np.zeros(shape=(number_pixels))
 
         amplitude *= np.random.choice([-1.0, 1.0], size=number_gaussians)
         for n in range(number_gaussians):
 
             mu = centroids[n]
-            gaussians[0, :] += amplitude[n] * norm.pdf(x, mu, std)
+            sigma = sigmas[n]
+            gaussians[0, :] += amplitude[n] * norm.pdf(x, mu, sigma)
 
-        return gaussians.reshape((1, -1, 1))
+        return gaussians
 
     ###########################################################################
-    def get_centroids_of_segments(self) -> np.array:
+    def get_mus_and_sigmas(self, sigmas_in_segment: int=8) -> np.array:
 
         """
         Get the index of the centroids for each segment
+
+        INPUTS
+        sigmas_in_segment: number of times the standard deviation
+            of the gaussian fits in the segment
 
         OUTPUT
         centroids: centroids. indexes along the segments array
         """
 
-        centroids = []
+        mus = []
+        sigmas = []
 
         for idx, segment_id in enumerate(np.unique(self.segments)):
 
             width = np.sum(self.segments == segment_id)
+            sigmas.append(width/sigmas_in_segment)
 
             if idx == 0:
-                centroids.append(width / 2)
+                mus.append(width / 2)
 
             else:
-                centroids.append(width + centroids[idx - 1])
+                mus.append(width + centroids[idx - 1])
 
-        centroids = np.array(centroids, dtype=int)
+        mus = np.array(mus, dtype=int)
+        sigmas = np.array(sigmas)
 
-        return centroids
+        return centroids, sigmas
 
     ###########################################################################
