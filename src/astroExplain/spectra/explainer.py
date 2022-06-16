@@ -322,6 +322,16 @@ class LimeSpectraExplainer:
                 sigma=fudge_parameters["sigma"],
             )
 
+        elif kind_of_fudge == "gaussians":
+
+            fudged_spectrum = fudge.gaussians(
+                amplitude=fudge_parameters["amplitude"],
+                sigmas_in_segment = fudge_parameters["sigmas_in_segment"],
+                same_noise=fudge_parameters["same_noise"],
+                kernel_size=fudge_parameters["kernel_size"],
+                sigma=fudge_parameters["sigma"],
+            )
+
         else:
             raise NotImplementedError(f"{kind_of_fudge} fudge not implemented")
 
