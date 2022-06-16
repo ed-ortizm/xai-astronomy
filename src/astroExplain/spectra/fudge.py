@@ -235,16 +235,16 @@ class Fudge:
         number_pixels = self.spectrum.size
 
         x = np.arange(number_pixels)
-        centroids, sigmas = self.get_mus_and_sigmas(sigmas_in_segment)
+        mus, sigmas = self.get_mus_and_sigmas(sigmas_in_segment)
 
         gaussians = np.zeros(shape=(number_pixels))
 
         amplitude *= np.random.choice([-1.0, 1.0], size=number_gaussians)
         for n in range(number_gaussians):
 
-            mu = centroids[n]
+            mu = mus[n]
             sigma = sigmas[n]
-            gaussians[0, :] += amplitude[n] * norm.pdf(x, mu, sigma)
+            gaussians += amplitude[n] * norm.pdf(x, mu, sigma)
 
         return gaussians
 
@@ -252,14 +252,15 @@ class Fudge:
     def get_mus_and_sigmas(self, sigmas_in_segment: int=8) -> np.array:
 
         """
-        Get the index of the centroids for each segment
+        Get the index of the mus for each segment and the sigma of each gaussian
 
         INPUTS
         sigmas_in_segment: number of times the standard deviation
             of the gaussian fits in the segment
 
         OUTPUT
-        centroids: centroids. indexes along the segments array
+        mus, sigmas: centroids indexes along the segments array and sigma
+            of gaussian
         """
 
         mus = []
@@ -274,11 +275,11 @@ class Fudge:
                 mus.append(width / 2)
 
             else:
-                mus.append(width + centroids[idx - 1])
+                mus.append(width + mus[idx - 1])
 
         mus = np.array(mus, dtype=int)
         sigmas = np.array(sigmas)
 
-        return centroids, sigmas
+        return mus, sigmas
 
     ###########################################################################
