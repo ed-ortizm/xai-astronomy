@@ -239,7 +239,10 @@ class Fudge:
 
         gaussians = np.zeros(shape=(number_pixels))
 
-        amplitudes *= np.random.choice([-1.0, 1.0], size=number_gaussians)
+        amplitudes = amplitude * np.random.choice(
+            [-1.0, 1.0], size=number_gaussians
+        )
+
         for n in range(number_gaussians):
 
             mu = mus[n]
