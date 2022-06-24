@@ -54,10 +54,22 @@ if __name__ == "__main__":
 
     metric = parser.get("score", "metric")
     velocity = parser.getint("score", "filter")
-    relative = parser.getboolean("score", "relative")
-    percentage = parser.getint("score", "percentage")
 
-    score_name = get_anomaly_score_name(metric, velocity, relative, percentage)
+    is_reconstruction = len(
+        {"lp", "mad", "mse"}.intersection(metric)
+    ) != 0
+
+    if is_reconstruction is True:
+
+        relative = parser.getboolean("score", "relative")
+        percentage = parser.getint("score", "percentage")
+
+        score_name = get_anomaly_score_name(
+            metric, velocity, relative, percentage
+        )
+
+    else:
+        score_name = f"{metric}"
 
     spectra_to_explain = np.load(
         f"{explanation_directory}/{score_name}/{spectra_name}"
@@ -110,14 +122,15 @@ if __name__ == "__main__":
     )
 
     score_configuration = {}
-    score_configuration["epsilon"] = score_config["epsilon"]
-
-    score_configuration["lines"] = score_config["lines"]
     score_configuration["metric"] = metric
+    score_configuration["lines"] = score_config["lines"]
     score_configuration["velocity"] = velocity
-    score_configuration["relative"] = relative
-    score_configuration["percentage"] = percentage
 
+    if is_reconstruction is True:
+
+        score_configuration["epsilon"] = score_config["epsilon"]
+        score_configuration["relative"] = relative
+        score_configuration["percentage"] = percentage
     ###########################################################################
 
     lime_configuration = parser.items("lime")

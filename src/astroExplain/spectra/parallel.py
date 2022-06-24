@@ -8,7 +8,9 @@ import numpy as np
 import tensorflow as tf
 
 from autoencoders.ae import AutoEncoder
+from anomaly.distance import DistanceAnomalyScore
 from anomaly.reconstruction import ReconstructionAnomalyScore
+from anomaly.utils import FilterParameters, ReconstructionParameters
 from astroExplain.spectra.segment import SpectraSegmentation
 from astroExplain.spectra.explainer import LimeSpectraExplainer
 
@@ -103,17 +105,38 @@ def explain_anomalies(_: int) -> None:
 
     ###########################################################################
     # Load anomaly score function
+    is_reconstruction = len(
+        {"lp", "mad", "mse"}.intersection(score_configuration["metric"])
+    ) != 0
 
-    anomaly = ReconstructionAnomalyScore(
-        # reconstruct_function
-        model.reconstruct,
-        wave,
-        lines=score_configuration["lines"],
-        velocity_filter=score_configuration["velocity"],
-        percentage=score_configuration["percentage"],
-        relative=score_configuration["relative"],
-        epsilon=score_configuration["epsilon"],
-    )
+    if is_reconstruction is True:
+
+        anomaly = ReconstructionAnomalyScore(
+            # reconstruct_function
+            model.reconstruct,
+            filter_parameters=FilterParameters(
+                wave=wave,
+                lines=score_configuration["lines"],
+                velocity_filter=score_configuration["velocity"]
+            ),
+            reconstruction_parameters=ReconstructionParameters(
+                percentage=score_configuration["percentage"],
+                relative=score_configuration["relative"],
+                epsilon=score_configuration["epsilon"]
+            )
+        )
+
+    else:
+        anomaly = DistanceAnomalyScore(
+            # reconstruct_function
+            model.reconstruct,
+            filter_parameters=FilterParameters(
+                wave=wave,
+                lines=score_configuration["lines"],
+                velocity_filter=score_configuration["velocity"]
+            ),
+        )
+
 
     anomaly_score_function = partial(
         anomaly.score, metric=score_configuration["metric"]
