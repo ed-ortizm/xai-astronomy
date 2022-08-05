@@ -90,7 +90,7 @@ class TellMeWhy:
     ###########################################################################
     def positive_mask_and_segments(
         self, number_of_features: int = 5
-    ) -> (np.array, np.array):
+    ) -> tuple:
         #######################################################################
         """
         Get mask and segments according to either a positive or
@@ -134,7 +134,7 @@ class TellMeWhy:
     ###########################################################################
     def negative_mask_and_segments(
         self, number_of_features: int = 5
-    ) -> (np.array, np.array):
+    ) -> tuple:
         #######################################################################
         """
         Get mask and segments according to either a positive or
@@ -178,7 +178,7 @@ class TellMeWhy:
     ###########################################################################
     def plot_heatmap_spectrum(
         self, heatmap: np.array, symmetric_map: bool
-    ) -> (plt.Figure, plt.Axes):
+    ) -> tuple:
 
         """
         Create a set of line segments so that we can color them

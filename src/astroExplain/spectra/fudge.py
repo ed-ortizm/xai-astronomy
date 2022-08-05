@@ -215,7 +215,6 @@ class Fudge:
 
         return fudged_spectrum
 
-    ###########################################################################
     def get_gaussians(
         self, amplitude: float = 1.0, sigmas_in_segment: int = 8
     ) -> np.array:

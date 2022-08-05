@@ -147,7 +147,7 @@ if __name__ == "__main__":
     ###########################################################################
     save_explanation_to = (
         f"{explanation_directory}/{score_name}/"
-        f"xai_{spectra_name.split('.')[0]}"
+        # f"xai_{spectra_name.split('.')[0]}"
     )
     check.check_directory(save_explanation_to, exit_program=False)
 
