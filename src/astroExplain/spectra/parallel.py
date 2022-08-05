@@ -106,7 +106,7 @@ def explain_anomalies(_: int) -> None:
     ###########################################################################
     # Load anomaly score function
     is_reconstruction = len(
-        {"lp", "mad", "mse"}.intersection(score_configuration["metric"])
+        {"lp", "mad", "mse"}.intersection({score_configuration["metric"]})
     ) != 0
 
     if is_reconstruction is True:
@@ -136,7 +136,6 @@ def explain_anomalies(_: int) -> None:
                 velocity_filter=score_configuration["velocity"]
             ),
         )
-
 
     anomaly_score_function = partial(
         anomaly.score, metric=score_configuration["metric"]

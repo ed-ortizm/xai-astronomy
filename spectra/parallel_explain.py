@@ -56,7 +56,7 @@ if __name__ == "__main__":
     velocity = parser.getint("score", "filter")
 
     is_reconstruction = len(
-        {"lp", "mad", "mse"}.intersection(metric)
+        {"lp", "mad", "mse"}.intersection({metric})
     ) != 0
 
     if is_reconstruction is True:
@@ -72,7 +72,8 @@ if __name__ == "__main__":
         score_name = f"{metric}"
 
     spectra_to_explain = np.load(
-        f"{explanation_directory}/{score_name}/{spectra_name}"
+        # f"{explanation_directory}/{score_name}/{spectra_name}"
+        f"{explanation_directory}/{spectra_name}"
     )
 
     if spectra_to_explain.ndim == 1:
@@ -90,7 +91,8 @@ if __name__ == "__main__":
     meta_data_directory = parser.get("directory", "meta")
 
     meta_data_spectra_df = pd.read_csv(
-        f"{explanation_directory}/{score_name}/{meta_data_spectra_name}",
+        # f"{explanation_directory}/{score_name}/{meta_data_spectra_name}",
+        f"{explanation_directory}/{meta_data_spectra_name}",
         index_col="specobjid",
     )
     ###########################################################################
@@ -114,7 +116,8 @@ if __name__ == "__main__":
     score_parser = ConfigParser(interpolation=ExtendedInterpolation())
     score_parser_name = parser.get("score", "configuration")
     score_parser.read(
-        f"{explanation_directory}/{score_name}/{score_parser_name}"
+        # f"{explanation_directory}/{score_name}/{score_parser_name}"
+        f"{explanation_directory}/{score_parser_name}"
     )
     score_config = score_parser.items("score")
     score_config = configuration.section_to_dictionary(
