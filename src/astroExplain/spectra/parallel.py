@@ -100,10 +100,8 @@ def explain_anomalies(_: int) -> None:
     session = tf.compat.v1.Session(config=config)
     ###########################################################################
     # Load reconstruction function
-
     model = AutoEncoder(reload=True, reload_from=model_directory)
 
-    ###########################################################################
     # Load anomaly score function
     is_reconstruction = len(
         {"lp", "mad", "mse"}.intersection({score_configuration["metric"]})
@@ -145,7 +143,15 @@ def explain_anomalies(_: int) -> None:
     # print(f"Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
 
-    segmentation_fn = SpectraSegmentation().uniform
+    if lime_configuration["segmentation"] == "kmeans":
+        
+        segmentation_fn = SpectraSegmentation().kmeans
+    
+    elif lime_configuration["segmentation"] == "uniform":
+
+        segmentation_fn = SpectraSegmentation().uniform
+    
+    
     segmentation_fn = partial(
         segmentation_fn, number_segments=lime_configuration["number_segments"]
     )

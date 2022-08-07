@@ -155,12 +155,12 @@ if __name__ == "__main__":
 
     if len(explanation_runs) == 0:
 
-        run = "00000"
+        run = "000"
 
     else:
 
         runs = [int(run.split("/")[-2]) for run in explanation_runs]
-        run = f"{max(runs)+1:05d}"
+        run = f"{max(runs)+1:03d}"
 
     save_explanation_to = f"{save_explanation_to}/{run}"
     check.check_directory(f"{save_explanation_to}", exit_program=False)
