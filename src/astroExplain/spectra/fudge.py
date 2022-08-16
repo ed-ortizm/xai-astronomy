@@ -37,6 +37,45 @@ class Fudge:
 
         return fudged_spectrum
 
+    def scale(self,
+        scale_factor: float,
+        # same_noise: bool = True,
+        kernel_size: int=3,
+        # sigma: float = 0
+    ) -> np.array:
+
+        """
+        Fudge spectrum by scaling original spectrum and keeping
+        the same median. This fudging allows to reduce emission
+        or absorption lines keeping the continuum and reshape
+        the continuun as well. The scaling is as follows:
+        spec = (spec-np.median(spec)) * scale_factor + np.median(spec)
+
+        INPUT
+
+        scale_factor: positive number to scale the spectrum
+        same_noise: if True, add the spectrum's noise to the mean value
+            of each segment. Otherwise add white noise, according to
+            sigma. If sigma is zero, there is no noise.
+        sigma: standard deviation of white noise if same_noise is False
+
+        OUTPUT
+        fudged_spectrum: original spectrum but scaled keeping
+            its median
+        """
+
+        # if same_noise is True:
+
+        spectrum, fudge_noise = self.filter_noise(kernel_size)
+
+        fudged_spectrum = (spectrum - np.nanmedian(spectrum))*scale_factor
+        fudged_spectrum += np.nanmedian(spectrum)
+
+
+
+        return fudged_spectrum + fudge_noise
+
+
     def with_mean(self,
         same_noise: bool = True, kernel_size: int=3, sigma: float = 0
     ) -> np.array:
