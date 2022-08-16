@@ -39,7 +39,7 @@ class Fudge:
 
     def scale(self,
         scale_factor: float,
-        # same_noise: bool = True,
+        same_noise: bool = True,
         kernel_size: int=3,
         # sigma: float = 0
     ) -> np.array:
@@ -64,16 +64,26 @@ class Fudge:
             its median
         """
 
-        # if same_noise is True:
+        if same_noise is True:
+            # only re-scale signal
+            spectrum, fudge_noise = self.filter_noise(kernel_size)
 
-        spectrum, fudge_noise = self.filter_noise(kernel_size)
+            fudged_spectrum = (spectrum - np.nanmedian(spectrum))*scale_factor
+            fudged_spectrum += np.nanmedian(spectrum)
 
-        fudged_spectrum = (spectrum - np.nanmedian(spectrum))*scale_factor
-        fudged_spectrum += np.nanmedian(spectrum)
+            fudged_spectrum += fudge_noise
+
+        else:
+            # re-scale signal to noise
+            spectrum = self.spectrum.copy()
+
+            fudged_spectrum = (spectrum - np.nanmedian(spectrum))*scale_factor
+            fudged_spectrum += np.nanmedian(spectrum)
 
 
 
-        return fudged_spectrum + fudge_noise
+
+        return fudged_spectrum
 
 
     def with_mean(self,
