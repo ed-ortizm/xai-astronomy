@@ -83,10 +83,12 @@ print(f"Save explanation", end="\n")
 SAVE_TO = f"{file_location}/{file_name}"
 file_dir.check_directory(SAVE_TO, exit_program=False)
 
-explanation_name = f"{explanation_name}_base_{base_line}"
-
+explanation_name = (
+    f"{explanation_name}_base_{base_line}_{slic_configuration['segments']}"
+    f"compactness_{slic_configuration['compactness']}"
+)
 with open(
-    f"{SAVE_TO}/{explanation_name}_{slic_configuration['segments']}.pkl", "wb"
+    f"{SAVE_TO}/{explanation_name}.pkl", "wb"
 ) as file:
 
     pickle.dump(explanation, file)
@@ -100,10 +102,10 @@ super_pixels = mark_boundaries(
     outline_color=(1.0, 1.0, 1.0),
 )
 
-imsave(f"{SAVE_TO}/{file_name}.png", galaxy)
-imsave(f"{SAVE_TO}/{file_name}.pdf", galaxy)
-imsave(f"{SAVE_TO}/{file_name}_super_pixels.png", super_pixels)
-imsave(f"{SAVE_TO}/{file_name}_super_pixels.pdf", super_pixels)
+imsave(f"{SAVE_TO}/{explanation_name}.png", galaxy)
+imsave(f"{SAVE_TO}/{explanation_name}.pdf", galaxy)
+imsave(f"{SAVE_TO}/{explanation_name}_super_pixels.png", super_pixels)
+imsave(f"{SAVE_TO}/{explanation_name}_super_pixels.pdf", super_pixels)
 
 FINISH_TIME = time.time()
 print(f"Run time: {FINISH_TIME-START_TIME:.2f}")

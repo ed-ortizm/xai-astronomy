@@ -298,6 +298,14 @@ class LimeSpectraExplainer:
 
             fudged_spectrum = fudge.same()
 
+        elif kind_of_fudge == "scale":
+
+            fudged_spectrum = fudge.scale(
+                scale_factor=fudge_parameters["scale_factor"],
+                same_noise=fudge_parameters["same_noise"],
+                kernel_size=fudge_parameters["kernel_size"]
+            )
+
         elif kind_of_fudge == "same_shape":
 
             fudged_spectrum = fudge.same_shape(
