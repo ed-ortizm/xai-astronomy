@@ -85,7 +85,6 @@ class Fudge:
 
         return fudged_spectrum
 
-
     def with_mean(self,
         same_noise: bool = True, kernel_size: int=3, sigma: float = 0
     ) -> np.array:
@@ -295,7 +294,7 @@ class Fudge:
 
             mu = mus[n]
             sigma = sigmas[n]
-            amplitude = amplitudes[n] * np.sqrt(2 * np.pi) * sigma
+            amplitude = amplitudes[n] / np.sqrt(2 * np.pi) / sigma
 
             gaussians += amplitude * norm.pdf(x, mu, sigma)
 

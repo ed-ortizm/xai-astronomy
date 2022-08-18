@@ -12,6 +12,37 @@ from astroExplain.spectra.explanation import TellMeWhy
 from astroExplain.spectra.explainer import LimeSpectraExplainer
 from autoencoders.ae import AutoEncoder
 
+def spectrum_in_segments(spectrum: np.array, segments: np.array):
+    """
+    Return array where each row contains fluxes values per
+    segment. Row zero contains only the fluxes of segment 
+    zero and the rest of the fluxes are set to zero and
+    so on
+    
+    OUTPUT
+
+    fluxes_per_segment: array where each row contains
+    fluxes of segment with the same row index and nans
+    for the rest of fluxes
+
+    """
+
+    number_segments = np.unique(segments).size
+    number_fluxes = spectrum.size
+
+    fluxes_per_segment = np.empty((number_segments, number_fluxes))
+
+    print(fluxes_per_segment.shape)
+    
+    # substract 1 to match id to start at zero
+    for segment_id in np.unique(segments-1):
+        # print(segment_id)
+        flux = np.where(segments == segment_id, spectrum, np.nan)
+        fluxes_per_segment[segment_id, :] = flux
+
+    return fluxes_per_segment
+
+
 def interpret(
     wave: np.array,
     explanation: ImageExplanation,
