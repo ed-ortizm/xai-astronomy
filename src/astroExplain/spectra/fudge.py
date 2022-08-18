@@ -278,6 +278,10 @@ class Fudge:
         OUTPUT
         gaussians: gray image representation of the array of gausians
         """
+        # f_gaussian controls the spread of the gaussian but not
+        # the amplitude
+        f_gaussian = lambda x, mu, sigma: np.exp(-0.5*((x-mu)/sigma)**2)
+
         number_gaussians = np.unique(self.segments).shape[0]
         number_pixels = self.spectrum.size
 
@@ -294,9 +298,13 @@ class Fudge:
 
             mu = mus[n]
             sigma = sigmas[n]
-            amplitude = amplitudes[n] / np.sqrt(2 * np.pi) / sigma
+            amplitude = amplitudes[n]
 
-            gaussians += amplitude * norm.pdf(x, mu, sigma)
+            if n == number_gaussians-1 :
+                if sigma < 0.5*sigmas[n-1]:
+                    amplitude = 0
+
+            gaussians += amplitude * f_gaussian(x, mu, sigma)
 
         return gaussians
 
