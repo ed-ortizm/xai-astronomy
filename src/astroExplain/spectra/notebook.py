@@ -1,17 +1,102 @@
 """Utility functions to explore interpretability with jupyter notebooks"""
 
 from functools import partial
-
+import sys
 import numpy as np
 from lime.lime_image import ImageExplanation
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from anomaly.utils import FilterParameters, ReconstructionParameters
 from astroExplain.spectra.segment import SpectraSegmentation
+from astroExplain.spectra.neighbors import SpectraNeighbors
 from astroExplain.spectra.explanation import TellMeWhy
 from astroExplain.spectra.explainer import LimeSpectraExplainer
 from autoencoders.ae import AutoEncoder
 
+def neighbors_explainer(
+    number_samples: int,
+    spectrum: np.array,
+    segmentation: np.array,
+    number_segments: int,
+    fudge_parameters: dict,
+) -> np.array:
+    """
+    Generate samples according to how LimeSpectraExplainer
+    turns on and off segments and adds the corresponding
+    fudge to it
+
+    INPUT
+    
+    number_samples: number of lime samples with some segments
+        replaced by the corresponding fudging
+    spectrum: the spectrum from which to draw the lime samples
+    segmentation: function to segments spectra, either kmeas or
+        uniform segmentation
+    number_segments: number of segments to divide input spectrum
+    fudge_parameters: properties of fudging:
+        fudge_parameters = {
+        # same, same_shape, flat, with_mean, gaussians, scale
+            "kind_of_fudge": "gaussians",
+        # scale
+            "scale_factor": 0.9,
+        # flat
+            "continuum": 1,
+        # gaussians
+            "amplitude":0.1,
+            "sigmas_in_segment": 8,
+        # control-noise
+            "same_noise": True,
+            "kernel_size": 3,
+            "sigma": 0
+        }
+
+    OUTPUT
+    neighbors: array with lime samples. First entry is the
+        original spectrum
+    """
+
+    neighborhood = SpectraNeighbors()
+    segmenter = SpectraSegmentation()
+
+    if segmentation == "uniform":
+        
+        segmentation_function = segmenter.uniform
+    
+    elif segmentation == "kmeans":
+        
+        segmentation_function = segmenter.kmeans
+
+    else:
+
+        print("Segmentation: {segmentation} is not defined")
+        sys.exit()
+
+    
+    segmentation_function = partial(
+        segmentation_function,
+        number_segments=number_segments
+    )
+
+    neighbors = neighborhood.get_neighbors(
+        number_samples=number_samples,
+        fudge_parameters=fudge_parameters,
+        spectrum=spectrum,
+        segmentation_function=segmentation_function
+    )
+
+    segments = segmentation_function(spectrum)
+
+    if segmentation == "uniform":
+        
+        print(f"Number of segments: {number_segments}")
+    
+    elif segmentation == "kmeans":
+        
+        number_segments = np.unique(segments).size
+        print(f"Number of segments: {number_segments}")
+
+    return neighbors
+    
 def spectrum_in_segments(spectrum: np.array, segments: np.array):
     """
     Return array where each row contains fluxes values per
@@ -32,7 +117,6 @@ def spectrum_in_segments(spectrum: np.array, segments: np.array):
 
     fluxes_per_segment = np.empty((number_segments, number_fluxes))
 
-    print(fluxes_per_segment.shape)
     
     # substract 1 to match id to start at zero
     for segment_id in np.unique(segments-1):

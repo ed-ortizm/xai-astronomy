@@ -60,7 +60,7 @@ class TellMeWhy:
     @staticmethod
     def plot_full_explanation(
         figure_size: tuple = (10, 5)
-    ) -> (plt.Figure, plt.Axes):
+    ) -> tuple:
         """
         Builds skeleton to plot the spectrum and the normalized
         explanation weights pixel by pixel in two subplots
