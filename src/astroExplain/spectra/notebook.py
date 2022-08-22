@@ -130,6 +130,7 @@ def spectrum_in_segments(spectrum: np.array, segments: np.array):
 def interpret(
     wave: np.array,
     explanation: ImageExplanation,
+    figsize: tuple = (10, 5),
     positive:int=5, negative: int =5
 ) -> tuple:
     """
@@ -150,7 +151,7 @@ def interpret(
     """
 
     why = TellMeWhy(wave=wave, explanation=explanation)
-    fig, axs = why.plot_full_explanation()
+    fig, axs = why.plot_full_explanation(figure_size=figsize)
 
     _, positive_spectrum = why.positive_mask_and_segments(positive)
     _, negative_spectrum = why.negative_mask_and_segments(negative)
@@ -159,13 +160,18 @@ def interpret(
     axs[0].plot(why.wave, why.galaxy, c="black")
     axs[0].plot(why.wave, positive_spectrum, c="red")
     axs[0].plot(why.wave, negative_spectrum, c="blue")
+    axs[0].set_ylabel("Normalized flux")
 
     max_weight = np.nanmax(np.abs(weights_explanation))
-    max_weight += 0.1*max_weight
-    axs[1].set_ylim(ymin=-max_weight, ymax=max_weight)
+    # max_weight += 0.1*max_weight
+    # axs[1].set_ylim(ymin=-max_weight, ymax=max_weight)
 
-    axs[1].plot(why.wave, weights_explanation)
-    axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
+    axs[1].plot(why.wave, np.abs(weights_explanation)/max_weight, color="black")
+    # axs[1].plot(why.wave, weights_explanation)
+    # axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
+    axs[1].set_ylabel("Explanation weight")
+    axs[1].set_xlabel("$\lambda$ [$\AA$]")
+
 
     return fig, axs
 
