@@ -63,9 +63,11 @@ class GalaxyPlus:
         # axis=(1, 2) -> the weidth and height of the image
         if self.base_line == "median":
 
-            return np.median(image, axis=(1, 2), keepdims=True)
+            # return np.median(image, axis=(1, 2), keepdims=True)
+            return np.median(image)
 
-        return np.mean(image, axis=(1, 2), keepdims=True)
+        # return np.mean(image, axis=(1, 2), keepdims=True)
+        return np.mean(image)
 
     ###########################################################################
     @staticmethod
