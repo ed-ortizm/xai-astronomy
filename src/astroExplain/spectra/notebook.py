@@ -13,6 +13,21 @@ from astroExplain.spectra.explanation import TellMeWhy
 from astroExplain.spectra.explainer import LimeSpectraExplainer
 from autoencoders.ae import AutoEncoder
 
+def explanation_name(lime_config: dict, fudge_config: dict) -> str:
+
+    segmentation = lime_config['segmentation']
+    n_segments = lime_config['number_segments']
+    perturbation = fudge_config['kind_of_fudge']
+    
+    explanation_str = f"{segmentation}_{n_segments}_{perturbation}"
+
+    if perturbation == "scale":
+
+        scale_factor = fudge_config['scale_factor']
+        explanation_str = f"{explanation_str}_{scale_factor}"
+
+    return explanation_str
+
 def neighbors_explainer(
     number_samples: int,
     spectrum: np.array,
