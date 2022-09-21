@@ -26,6 +26,11 @@ def explanation_name(lime_config: dict, fudge_config: dict) -> str:
         scale_factor = fudge_config['scale_factor']
         explanation_str = f"{explanation_str}_{scale_factor}"
 
+    elif perturbation == "flat":
+
+        continuum = fudge_config['continuum']
+        explanation_str = f"{explanation_str}_{continuum}"
+
     return explanation_str
 
 def neighbors_explainer(
