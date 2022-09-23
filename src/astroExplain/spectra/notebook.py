@@ -31,6 +31,11 @@ def explanation_name(lime_config: dict, fudge_config: dict) -> str:
         continuum = fudge_config['continuum']
         explanation_str = f"{explanation_str}_{continuum}"
 
+    elif perturbation == "gaussians":
+
+        amplitude = fudge_config['amplitude']
+        explanation_str = f"{explanation_str}_{amplitude}"
+
     return explanation_str
 
 def neighbors_explainer(

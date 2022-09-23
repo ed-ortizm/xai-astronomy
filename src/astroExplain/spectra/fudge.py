@@ -290,9 +290,7 @@ class Fudge:
 
         gaussians = np.zeros(shape=(number_pixels))
 
-        amplitudes = amplitude * np.random.choice(
-            [-1.0, 1.0], size=number_gaussians
-        )
+        amplitudes = amplitude * np.ones(number_gaussians)
 
         for n in range(number_gaussians):
 
@@ -301,7 +299,9 @@ class Fudge:
             amplitude = amplitudes[n]
 
             if n == number_gaussians-1 :
+
                 if sigma < 0.5*sigmas[n-1]:
+                
                     amplitude = 0
 
             gaussians += amplitude * f_gaussian(x, mu, sigma)
