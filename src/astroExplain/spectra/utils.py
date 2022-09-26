@@ -10,7 +10,7 @@ def get_anomaly_score_name(
 
     if velocity != 0:
 
-        score_name = f"{score_name}_filter_{velocity}Kms"
+        score_name = f"{score_name}_filter_{velocity}kms"
         # comply with personal naming convetion of directories
 
     if relative is True:
