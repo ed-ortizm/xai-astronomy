@@ -5,15 +5,15 @@ import numpy as np
 
 from lime.lime_image import ImageExplanation
 
-###############################################################################
+#########################################################################
 class TellMeWhy:
-    ###########################################################################
+    #####################################################################
     """
     Class to illustrate lime_image explanations of anomalous spectra
     where a spectrum is took as a (1, number_of_fluxes) gray image
     and the superpixel are collections of pixels
     """
-    ###########################################################################
+    #####################################################################
     def __init__(self, explanation: ImageExplanation, wave: np.array):
         """
         INPUT
@@ -72,14 +72,14 @@ class TellMeWhy:
         (fig, axs): of the explanation
             axs: 2-rows and 1-column
         """
-        #######################################################################
+        #################################################################
         fig, axs = plt.subplots(
             nrows=2, ncols=1, sharex=True, figsize=figure_size
         )
 
         return fig, axs
 
-    ###########################################################################
+    #####################################################################
     def smooth_and_normalize_explanation(
         self, median_smooth: bool = False, drop_fraction: float = 0.1
     ) -> np.array:
