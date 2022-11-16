@@ -2,6 +2,7 @@
 import numpy as np
 from skimage.color import gray2rgb
 from skimage.segmentation import slic
+
 ###############################################################################
 class SpectraSegmentation:
     """
@@ -11,11 +12,12 @@ class SpectraSegmentation:
     def __init__(self):
         pass
 
-    def kmeans(self,
+    def kmeans(
+        self,
         spectra: np.array,
         number_segments: int = 64,
-        sigma: float=3.,
-        compactness: float=0.01
+        sigma: float = 3.0,
+        compactness: float = 0.01,
     ) -> np.array:
         """
         Segment spectra according to flux distribution [color] using
@@ -43,7 +45,7 @@ class SpectraSegmentation:
             spectra,
             n_segments=number_segments,
             sigma=sigma,
-            compactness=compactness
+            compactness=compactness,
         )
 
         return segments.astype(int)

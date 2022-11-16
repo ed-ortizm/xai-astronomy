@@ -96,18 +96,14 @@ class Neighbors:
                 on_off_super_pixels == 0
             ).reshape(-1)
 
-            mask_off_superpixels = np.zeros(
-                self.segments.shape
-            ).astype(bool)
+            mask_off_superpixels = np.zeros(self.segments.shape).astype(bool)
 
             for idx_off in idx_off_super_pixels:
 
                 # segments are enumerate counting from 1
                 mask_off_superpixels[self.segments == idx_off + 1] = True
 
-            temp[mask_off_superpixels] = (
-                fudged_galaxy[mask_off_superpixels]
-            )
+            temp[mask_off_superpixels] = fudged_galaxy[mask_off_superpixels]
 
             neighbors.append(temp)
 

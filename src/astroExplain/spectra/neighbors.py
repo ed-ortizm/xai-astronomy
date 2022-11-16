@@ -9,6 +9,7 @@ from skimage.color import gray2rgb
 import numpy as np
 
 from astroExplain.spectra.fudge import Fudge
+
 ###############################################################################
 class SpectraNeighbors:
 
@@ -67,12 +68,12 @@ class SpectraNeighbors:
         segmentation_function: Function to segment the spectra, can be:
             kmeans or uniform segmentation. Check Fudge class
         number_samples: number of neighbors to sample
-        
+
         OUTPUT
             neighbors: array with sampled neighbors. The first
                 element of the array is the original image
         """
-        
+
         segments = segmentation_function(spectrum).reshape(-1)
         number_segments = np.unique(segments).size
 
@@ -107,7 +108,6 @@ class SpectraNeighbors:
             neighbors.append(temp)
 
         return np.array(neighbors)
-
 
     @staticmethod
     def fudge_spectrum(
@@ -153,7 +153,7 @@ class SpectraNeighbors:
             fudged_spectrum = fudge.scale(
                 scale_factor=fudge_parameters["scale_factor"],
                 same_noise=fudge_parameters["same_noise"],
-                kernel_size=fudge_parameters["kernel_size"]
+                kernel_size=fudge_parameters["kernel_size"],
             )
 
         elif kind_of_fudge == "same_shape":
@@ -184,7 +184,7 @@ class SpectraNeighbors:
 
             fudged_spectrum = fudge.gaussians(
                 amplitude=fudge_parameters["amplitude"],
-                sigmas_in_segment = fudge_parameters["sigmas_in_segment"],
+                sigmas_in_segment=fudge_parameters["sigmas_in_segment"],
                 same_noise=fudge_parameters["same_noise"],
                 kernel_size=fudge_parameters["kernel_size"],
                 sigma=fudge_parameters["sigma"],

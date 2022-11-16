@@ -30,10 +30,10 @@ class TellMeWhy:
     def spectrum_in_segments(self):
         """
         Return array where each row contains fluxes values per
-        segment. Row zero contains only the fluxes of segment 
+        segment. Row zero contains only the fluxes of segment
         zero and the rest of the fluxes are set to zero and
         so on
-        
+
         OUTPUT
 
         fluxes_per_segment: array where each row contains
@@ -48,19 +48,17 @@ class TellMeWhy:
         fluxes_per_segment = np.empty((number_segments, number_fluxes))
 
         print(fluxes_per_segment.shape)
-        
+
         # substract 1 to match id to start at zero
-        for segment_id in np.unique(self.segments-1):
+        for segment_id in np.unique(self.segments - 1):
             # print(segment_id)
             flux = np.where(self.segments == segment_id, self.galaxy, np.nan)
             fluxes_per_segment[segment_id, :] = flux
 
         return fluxes_per_segment
-            
+
     @staticmethod
-    def plot_full_explanation(
-        figure_size: tuple = (10, 5)
-    ) -> tuple:
+    def plot_full_explanation(figure_size: tuple = (10, 5)) -> tuple:
         """
         Builds skeleton to plot the spectrum and the normalized
         explanation weights pixel by pixel in two subplots
@@ -117,9 +115,7 @@ class TellMeWhy:
         return heatmap
 
     ###########################################################################
-    def positive_mask_and_segments(
-        self, number_of_features: int = 5
-    ) -> tuple:
+    def positive_mask_and_segments(self, number_of_features: int = 5) -> tuple:
         #######################################################################
         """
         Get mask and segments according to either a positive or
@@ -161,9 +157,7 @@ class TellMeWhy:
         return spectrum_mask, explanation_segments
 
     ###########################################################################
-    def negative_mask_and_segments(
-        self, number_of_features: int = 5
-    ) -> tuple:
+    def negative_mask_and_segments(self, number_of_features: int = 5) -> tuple:
         #######################################################################
         """
         Get mask and segments according to either a positive or

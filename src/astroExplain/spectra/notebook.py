@@ -13,30 +13,32 @@ from astroExplain.spectra.explanation import TellMeWhy
 from astroExplain.spectra.explainer import LimeSpectraExplainer
 from autoencoders.ae import AutoEncoder
 
+
 def explanation_name(lime_config: dict, fudge_config: dict) -> str:
 
-    segmentation = lime_config['segmentation']
-    n_segments = lime_config['number_segments']
-    perturbation = fudge_config['kind_of_fudge']
-    
+    segmentation = lime_config["segmentation"]
+    n_segments = lime_config["number_segments"]
+    perturbation = fudge_config["kind_of_fudge"]
+
     explanation_str = f"{segmentation}_{n_segments}_{perturbation}"
 
     if perturbation == "scale":
 
-        scale_factor = fudge_config['scale_factor']
+        scale_factor = fudge_config["scale_factor"]
         explanation_str = f"{explanation_str}_{scale_factor}"
 
     elif perturbation == "flat":
 
-        continuum = fudge_config['continuum']
+        continuum = fudge_config["continuum"]
         explanation_str = f"{explanation_str}_{continuum}"
 
     elif perturbation == "gaussians":
 
-        amplitude = fudge_config['amplitude']
+        amplitude = fudge_config["amplitude"]
         explanation_str = f"{explanation_str}_{amplitude}"
 
     return explanation_str
+
 
 def neighbors_explainer(
     number_samples: int,
@@ -51,7 +53,7 @@ def neighbors_explainer(
     fudge to it
 
     INPUT
-    
+
     number_samples: number of lime samples with some segments
         replaced by the corresponding fudging
     spectrum: the spectrum from which to draw the lime samples
@@ -84,11 +86,11 @@ def neighbors_explainer(
     segmenter = SpectraSegmentation()
 
     if segmentation == "uniform":
-        
+
         segmentation_function = segmenter.uniform
-    
+
     elif segmentation == "kmeans":
-        
+
         segmentation_function = segmenter.kmeans
 
     else:
@@ -96,39 +98,38 @@ def neighbors_explainer(
         print("Segmentation: {segmentation} is not defined")
         sys.exit()
 
-    
     segmentation_function = partial(
-        segmentation_function,
-        number_segments=number_segments
+        segmentation_function, number_segments=number_segments
     )
 
     neighbors = neighborhood.get_neighbors(
         number_samples=number_samples,
         fudge_parameters=fudge_parameters,
         spectrum=spectrum,
-        segmentation_function=segmentation_function
+        segmentation_function=segmentation_function,
     )
 
     segments = segmentation_function(spectrum)
 
     if segmentation == "uniform":
-        
+
         print(f"Number of segments: {number_segments}")
-    
+
     elif segmentation == "kmeans":
-        
+
         number_segments = np.unique(segments).size
         print(f"Number of segments: {number_segments}")
 
     return neighbors
-    
+
+
 def spectrum_in_segments(spectrum: np.array, segments: np.array):
     """
     Return array where each row contains fluxes values per
-    segment. Row zero contains only the fluxes of segment 
+    segment. Row zero contains only the fluxes of segment
     zero and the rest of the fluxes are set to zero and
     so on
-    
+
     OUTPUT
 
     fluxes_per_segment: array where each row contains
@@ -142,9 +143,8 @@ def spectrum_in_segments(spectrum: np.array, segments: np.array):
 
     fluxes_per_segment = np.empty((number_segments, number_fluxes))
 
-    
     # substract 1 to match id to start at zero
-    for segment_id in np.unique(segments-1):
+    for segment_id in np.unique(segments - 1):
         # print(segment_id)
         flux = np.where(segments == segment_id, spectrum, np.nan)
         fluxes_per_segment[segment_id, :] = flux
@@ -156,11 +156,12 @@ def interpret(
     wave: np.array,
     explanation: ImageExplanation,
     figsize: tuple = (10, 5),
-    positive:int=5, negative: int =5
+    positive: int = 5,
+    negative: int = 5,
 ) -> tuple:
     """
     Visualize interpretability of anomaly scores
-    
+
     INPUT
     wave: wavelength grid
     explanation: output of LimeSpectraExplainer
@@ -191,17 +192,20 @@ def interpret(
     # max_weight += 0.1*max_weight
     # axs[1].set_ylim(ymin=-max_weight, ymax=max_weight)
 
-    axs[1].plot(why.wave, np.abs(weights_explanation)/max_weight, color="black")
+    axs[1].plot(
+        why.wave, np.abs(weights_explanation) / max_weight, color="black"
+    )
     # axs[1].plot(why.wave, weights_explanation)
     # axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
     axs[1].set_ylabel("Explanation weight")
     axs[1].set_xlabel("$\lambda$ [$\AA$]")
 
-
     return fig, axs
 
+
 def explain_reconstruction_score(
-    wave:np.array, spectrum: np.array,
+    wave: np.array,
+    spectrum: np.array,
     score_config: dict,
     lime_config: dict,
     fudge_config: dict,
@@ -230,13 +234,13 @@ def explain_reconstruction_score(
         filter_parameters=FilterParameters(
             wave=wave,
             lines=score_config["lines"],
-            velocity_filter=score_config["velocity"]
+            velocity_filter=score_config["velocity"],
         ),
         reconstruction_parameters=ReconstructionParameters(
             percentage=score_config["percentage"],
             relative=score_config["relative"],
-            epsilon=score_config["epsilon"]
-        )
+            epsilon=score_config["epsilon"],
+        ),
     )
 
     anomaly_score_function = partial(
@@ -247,13 +251,12 @@ def explain_reconstruction_score(
     explainer = LimeSpectraExplainer(random_state=0)
 
     if lime_config["segmentation"] == "kmeans":
-        
+
         segmentation_fn = SpectraSegmentation().kmeans
 
     elif lime_config["segmentation"] == "uniform":
 
         segmentation_fn = SpectraSegmentation().uniform
-
 
     segmentation_fn = partial(
         segmentation_fn, number_segments=lime_config["number_segments"]
@@ -267,8 +270,8 @@ def explain_reconstruction_score(
         spectrum=spectrum,
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
-        fudge_parameters = fudge_config,
-        explainer_parameters = lime_config,
+        fudge_parameters=fudge_config,
+        explainer_parameters=lime_config,
     )
 
     return explanation

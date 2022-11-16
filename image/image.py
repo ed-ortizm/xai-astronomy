@@ -39,9 +39,7 @@ print("Set explainer configuration")
 base_line = PARSER.get("model", "base_line")
 addGalaxy = GalaxyPlus(base_line=base_line)
 
-slic_configuration = config.section_to_dictionary(
-    PARSER.items("slic"), []
-)
+slic_configuration = config.section_to_dictionary(PARSER.items("slic"), [])
 
 segmentation_fn = partial(
     slic,
@@ -90,9 +88,7 @@ explanation_name = (
     f"{explanation_name}_base_{base_line}_{slic_configuration['segments']}_"
     f"compactness_{slic_configuration['compactness']}"
 )
-with open(
-    f"{SAVE_TO}/{explanation_name}.pkl", "wb"
-) as file:
+with open(f"{SAVE_TO}/{explanation_name}.pkl", "wb") as file:
 
     pickle.dump(explanation, file)
 

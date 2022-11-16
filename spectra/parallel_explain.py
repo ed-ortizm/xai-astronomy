@@ -55,9 +55,7 @@ if __name__ == "__main__":
     metric = parser.get("score", "metric")
     velocity = parser.getint("score", "filter")
 
-    is_reconstruction = len(
-        {"lp", "mad", "mse"}.intersection({metric})
-    ) != 0
+    is_reconstruction = len({"lp", "mad", "mse"}.intersection({metric})) != 0
 
     if is_reconstruction is True:
 

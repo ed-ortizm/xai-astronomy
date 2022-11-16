@@ -12,7 +12,7 @@ from lime import lime_base
 from lime.lime_image import ImageExplanation
 from astroExplain.spectra.fudge import Fudge
 
-###############################################################################
+
 class LimeSpectraExplainer:
     """
     Taken from lime original repository and adapted to explain a regressor
@@ -170,7 +170,6 @@ class LimeSpectraExplainer:
             batch_size=explainer_parameters["batch_size"],
             progress_bar=explainer_parameters["progress_bar"],
         )
-        #######################################################################
 
         distances = sklearn.metrics.pairwise_distances(
             data,
@@ -203,7 +202,6 @@ class LimeSpectraExplainer:
 
         return ret_exp
 
-    ###########################################################################
     def data_labels(
         self,
         image,
@@ -258,7 +256,6 @@ class LimeSpectraExplainer:
             labels.extend(preds)
         return data, np.array(labels)
 
-    ###########################################################################
     @staticmethod
     def fudge_spectrum(
         spectrum: np.array, segments: np.array, fudge_parameters: dict
@@ -303,7 +300,7 @@ class LimeSpectraExplainer:
             fudged_spectrum = fudge.scale(
                 scale_factor=fudge_parameters["scale_factor"],
                 same_noise=fudge_parameters["same_noise"],
-                kernel_size=fudge_parameters["kernel_size"]
+                kernel_size=fudge_parameters["kernel_size"],
             )
 
         elif kind_of_fudge == "same_shape":
@@ -334,7 +331,7 @@ class LimeSpectraExplainer:
 
             fudged_spectrum = fudge.gaussians(
                 amplitude=fudge_parameters["amplitude"],
-                sigmas_in_segment = fudge_parameters["sigmas_in_segment"],
+                sigmas_in_segment=fudge_parameters["sigmas_in_segment"],
                 same_noise=fudge_parameters["same_noise"],
                 kernel_size=fudge_parameters["kernel_size"],
                 sigma=fudge_parameters["sigma"],

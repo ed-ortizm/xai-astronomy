@@ -103,9 +103,10 @@ def explain_anomalies(_: int) -> None:
     model = AutoEncoder(reload=True, reload_from=model_directory)
 
     # Load anomaly score function
-    is_reconstruction = len(
-        {"lp", "mad", "mse"}.intersection({score_configuration["metric"]})
-    ) != 0
+    is_reconstruction = (
+        len({"lp", "mad", "mse"}.intersection({score_configuration["metric"]}))
+        != 0
+    )
 
     if is_reconstruction is True:
 
@@ -115,13 +116,13 @@ def explain_anomalies(_: int) -> None:
             filter_parameters=FilterParameters(
                 wave=wave,
                 lines=score_configuration["lines"],
-                velocity_filter=score_configuration["velocity"]
+                velocity_filter=score_configuration["velocity"],
             ),
             reconstruction_parameters=ReconstructionParameters(
                 percentage=score_configuration["percentage"],
                 relative=score_configuration["relative"],
-                epsilon=score_configuration["epsilon"]
-            )
+                epsilon=score_configuration["epsilon"],
+            ),
         )
 
     else:
@@ -131,7 +132,7 @@ def explain_anomalies(_: int) -> None:
             filter_parameters=FilterParameters(
                 wave=wave,
                 lines=score_configuration["lines"],
-                velocity_filter=score_configuration["velocity"]
+                velocity_filter=score_configuration["velocity"],
             ),
         )
 
@@ -144,14 +145,13 @@ def explain_anomalies(_: int) -> None:
     explainer = LimeSpectraExplainer(random_state=0)
 
     if lime_configuration["segmentation"] == "kmeans":
-        
+
         segmentation_fn = SpectraSegmentation().kmeans
-    
+
     elif lime_configuration["segmentation"] == "uniform":
 
         segmentation_fn = SpectraSegmentation().uniform
-    
-    
+
     segmentation_fn = partial(
         segmentation_fn, number_segments=lime_configuration["number_segments"]
     )
@@ -175,12 +175,12 @@ def explain_anomalies(_: int) -> None:
         spectrum=galaxy,
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
-        fudge_parameters = fudge_configuration,
+        fudge_parameters=fudge_configuration,
         # hide_color=fudge_configuration["hide_color"],
         # amplitude=fudge_configuration["amplitude"],
         # mu=fudge_configuration["mu"],
         # std=fudge_configuration["std"],
-        explainer_parameters = lime_configuration,
+        explainer_parameters=lime_configuration,
         # num_samples=lime_configuration["number_samples"],
         # batch_size=lime_configuration["batch_size"],
         # progress_bar=lime_configuration["progress_bar"],

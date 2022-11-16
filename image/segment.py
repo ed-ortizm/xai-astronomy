@@ -51,10 +51,7 @@ output_file_name = (
     f"{slic_configuration['segments']}_super_pixels.png"
 )
 imsave(f"{save_to}/{name_super_pixels}.png", galaxy)
-imsave(
-    f"{save_to}/{output_file_name}",
-    super_pixels
-)
+imsave(f"{save_to}/{output_file_name}", super_pixels)
 ###############################################################################
 print(f"Save configuration file", end="\n")
 shutil.copyfile(
