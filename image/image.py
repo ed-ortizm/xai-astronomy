@@ -1,28 +1,29 @@
-"""Explain galaxyPlus model, get super pixel representation and neighbors"""
+"""
+Explain galaxyPlus model, get super pixel representation and neighbors
+"""
 from configparser import ConfigParser, ExtendedInterpolation
 from functools import partial
 import pickle
 import time
 
-from matplotlib.image import imsave
 import numpy as np
 from PIL import Image
-from skimage.segmentation import slic, mark_boundaries
+from skimage.segmentation import slic
+from lime import lime_image
 
 from astroExplain.image.imagePlus import GalaxyPlus
-from lime import lime_image
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
 
-###############################################################################
+#########################################################################
 START_TIME = time.time()
 PARSER = ConfigParser(interpolation=ExtendedInterpolation())
-configuration_file = f"image.ini"
+configuration_file = "image.ini"
 PARSER.read(f"{configuration_file}")
 config = ConfigurationFile()
 
 file_dir = FileDirectory()
-###############################################################################
+#########################################################################
 file_name = PARSER.get("file", "galaxy")
 file_name, file_format = file_name.split(".")
 file_location = PARSER.get("directory", "images")
@@ -32,13 +33,15 @@ print(f"Load image: {file_name}.{file_format}", end="\n")
 galaxy = Image.open(f"{file_location}/{file_name}.{file_format}")
 galaxy = np.array(galaxy, dtype=np.float32)
 galaxy *= 1 / galaxy.max()
-###############################################################################
-print(f"Set explainer configuration", end="\n")
+#########################################################################
+print("Set explainer configuration")
 # Load model
 base_line = PARSER.get("model", "base_line")
 addGalaxy = GalaxyPlus(base_line=base_line)
 
-slic_configuration = config.section_to_dictionary(PARSER.items("slic"), [])
+slic_configuration = config.section_to_dictionary(
+    PARSER.items("slic"), []
+)
 
 segmentation_fn = partial(
     slic,
@@ -47,7 +50,7 @@ segmentation_fn = partial(
     sigma=slic_configuration["sigma"],
 )
 
-###############################################################################
+#########################################################################
 # Set explainer instance
 explainer = lime_image.LimeImageExplainer(random_state=0)
 lime_configuration = config.section_to_dictionary(PARSER.items("lime"), [])
@@ -62,7 +65,7 @@ else:
 
     explanation_name = f"{file_name}_hide_{lime_configuration['hide_color']}"
 
-###############################################################################
+#########################################################################
 # get explanation
 print(f"Start explaining {file_name}.{file_format}", end="\n")
 
@@ -77,8 +80,8 @@ explanation = explainer.explain_instance(
     segmentation_fn=segmentation_fn,
 )
 
-###############################################################################
-print(f"Save explanation", end="\n")
+#########################################################################
+print("Save explanation")
 
 SAVE_TO = f"{file_location}/{file_name}"
 file_dir.check_directory(SAVE_TO, exit_program=False)
