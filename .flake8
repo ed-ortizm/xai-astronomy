@@ -1,0 +1,2 @@
+[flake8]
+extend-ignore = E402 # ignore imports not in top of script

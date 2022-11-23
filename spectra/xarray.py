@@ -25,12 +25,13 @@ from multiprocessing.sharedctypes import RawArray
 
 import numpy as np
 import pandas as pd
-import astroExplain.spectra.parallel as parallelExplainer
-from astroExplain.spectra.utils import get_anomaly_score_name
+
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
+import astroExplain.spectra.parallel as parallelExplainer
+from astroExplain.spectra.utils import get_anomaly_score_name
 
-###############################################################################
+
 if __name__ == "__main__":
 
     mp.set_start_method("spawn", force=True)

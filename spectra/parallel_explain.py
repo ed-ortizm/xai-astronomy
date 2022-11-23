@@ -8,14 +8,14 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
-###############################################################################
+#########################################################################
 # Set TensorFlow print of log information
 # 0 = all messages are logged (default behavior)
 # 1 = INFO messages are not printed
 # 2 = INFO and WARNING messages are not printed
 # 3 = INFO, WARNING, and ERROR messages are not printed
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-###############################################################################
+#########################################################################
 from configparser import ConfigParser, ExtendedInterpolation
 import glob
 import time
@@ -25,12 +25,13 @@ from multiprocessing.sharedctypes import RawArray
 
 import numpy as np
 import pandas as pd
-import astroExplain.spectra.parallel as parallelExplainer
-from astroExplain.spectra.utils import get_anomaly_score_name
+
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
+import astroExplain.spectra.parallel as parallelExplainer
+from astroExplain.spectra.utils import get_anomaly_score_name
 
-###############################################################################
+
 if __name__ == "__main__":
 
     mp.set_start_method("spawn", force=True)
