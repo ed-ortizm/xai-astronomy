@@ -1,5 +1,6 @@
 # lime code
 *.txt
+!requirements.txt
 # VS code
 .vscode/*
 # Explanations
