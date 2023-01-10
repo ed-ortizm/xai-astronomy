@@ -5,15 +5,13 @@ import numpy as np
 
 from lime.lime_image import ImageExplanation
 
-#########################################################################
+
 class TellMeWhy:
-    #####################################################################
     """
     Class to illustrate lime_image explanations of anomalous spectra
     where a spectrum is took as a (1, number_of_fluxes) gray image
     and the superpixel are collections of pixels
     """
-    #####################################################################
     def __init__(self, explanation: ImageExplanation, wave: np.array):
         """
         INPUT
@@ -70,14 +68,13 @@ class TellMeWhy:
         (fig, axs): of the explanation
             axs: 2-rows and 1-column
         """
-        #################################################################
+
         fig, axs = plt.subplots(
             nrows=2, ncols=1, sharex=True, figsize=figure_size
         )
 
         return fig, axs
 
-    #####################################################################
     def smooth_and_normalize_explanation(
         self, median_smooth: bool = False, drop_fraction: float = 0.1
     ) -> np.array:
@@ -114,9 +111,7 @@ class TellMeWhy:
 
         return heatmap
 
-    ###########################################################################
     def positive_mask_and_segments(self, number_of_features: int = 5) -> tuple:
-        #######################################################################
         """
         Get mask and segments according to either a positive or
         negative contribution to the anomaly score.
@@ -135,11 +130,11 @@ class TellMeWhy:
         explanation_segments: array with flux values at contributing
             segments, and NaNs otherwise
         """
-        #######################################################################
+
         if number_of_features is None:
             # set to the total number of segments
             number_of_features = np.unique(self.segments).size
-        #######################################################################
+
         __, spectrum_mask = self.explanation.get_image_and_mask(
             label=self.explanation.top_labels[0],
             positive_only=True,
@@ -148,7 +143,7 @@ class TellMeWhy:
             # consider all weights by default
             min_weight=-np.inf,
         )
-        #######################################################################
+
         # ignore values that do not contribute to the score
         explanation_segments = np.where(
             spectrum_mask[0, :] == 0, np.nan, self.galaxy
@@ -156,9 +151,7 @@ class TellMeWhy:
 
         return spectrum_mask, explanation_segments
 
-    ###########################################################################
     def negative_mask_and_segments(self, number_of_features: int = 5) -> tuple:
-        #######################################################################
         """
         Get mask and segments according to either a positive or
         negative contribution to the anomaly score.
@@ -177,11 +170,11 @@ class TellMeWhy:
         explanation_segments: array with flux values at contributing
             segments, and NaNs otherwise
         """
-        #######################################################################
+
         if number_of_features is None:
             # set to the total number of segments
             number_of_features = np.unique(self.segments).size
-        #######################################################################
+
         __, spectrum_mask = self.explanation.get_image_and_mask(
             label=self.explanation.top_labels[0],
             positive_only=False,
@@ -190,7 +183,7 @@ class TellMeWhy:
             # consider all weights by default
             min_weight=-np.inf,
         )
-        #######################################################################
+
         # ignore values that do not contribute to the score
         explanation_segments = np.where(
             spectrum_mask[0, :] == 0, np.nan, self.galaxy
@@ -198,7 +191,6 @@ class TellMeWhy:
 
         return spectrum_mask, explanation_segments
 
-    ###########################################################################
     def plot_heatmap_spectrum(
         self, heatmap: np.array, symmetric_map: bool
     ) -> tuple:

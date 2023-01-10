@@ -9,13 +9,13 @@ from matplotlib.image import imsave
 import numpy as np
 from skimage.segmentation import mark_boundaries
 
-from astroExplain.image.explanation import TellMeWhy
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
+from astroExplain.image.explanation import TellMeWhy
 
 START_TIME = time.time()
 PARSER = ConfigParser(interpolation=ExtendedInterpolation())
-configuration_file = f"explanation.ini"
+configuration_file = "explanation.ini"
 PARSER.read(f"{configuration_file}")
 config = ConfigurationFile()
 
@@ -31,7 +31,7 @@ with open(f"{file_location}/{file_name}.{file_format}", "rb") as file:
     why = TellMeWhy(explanation)
 
 # save segmented_image
-print(f"Save super pixel representation", end="\n")
+print("Save super pixel representation", end="\n")
 
 super_pixels = mark_boundaries(
     explanation.image,
@@ -46,7 +46,7 @@ imsave(f"{file_location}/{file_name}_super_pixels.png", super_pixels)
 imsave(f"{file_location}/{file_name}_super_pixels.pdf", super_pixels)
 
 # Get neighbors
-print(f"Save neighboring galaxies", end="\n")
+print("Save neighboring galaxies", end="\n")
 
 hide_color = PARSER.get("explain-me", "hide")
 hide_color = None if hide_color == "None" else hide_color
