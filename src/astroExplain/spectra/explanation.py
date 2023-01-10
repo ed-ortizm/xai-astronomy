@@ -253,7 +253,6 @@ class TellMeWhy:
 
         return fig, ax
 
-    ###########################################################################
     def get_heatmap(self) -> np.array:
 
         """

@@ -1,4 +1,5 @@
 """Explain galaxyPlus model, get super pixel representation and neighbors"""
+
 from configparser import ConfigParser, ExtendedInterpolation
 import pickle
 import time
@@ -12,13 +13,12 @@ from astroExplain.image.explanation import TellMeWhy
 from sdss.utils.managefiles import FileDirectory
 from sdss.utils.configfile import ConfigurationFile
 
-###############################################################################
 START_TIME = time.time()
 PARSER = ConfigParser(interpolation=ExtendedInterpolation())
 configuration_file = f"explanation.ini"
 PARSER.read(f"{configuration_file}")
 config = ConfigurationFile()
-###############################################################################
+
 file_name = PARSER.get("file", "explanation")
 file_name, file_format = file_name.split(".")
 file_location = PARSER.get("directory", "explanation")
