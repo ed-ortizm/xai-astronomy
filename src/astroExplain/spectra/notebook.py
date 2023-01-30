@@ -2,19 +2,74 @@
 
 from functools import partial
 import sys
-import numpy as np
+from typing import Tuple
+
 from lime.lime_image import ImageExplanation
+from matplotlib.figure import Figure, Axes
+import matplotlib.pyplot as plt
+import numpy as np
 
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from anomaly.utils import FilterParameters, ReconstructionParameters
+from autoencoders.ae import AutoEncoder
 from astroExplain.spectra.segment import SpectraSegmentation
 from astroExplain.spectra.neighbors import SpectraNeighbors
 from astroExplain.spectra.explanation import TellMeWhy
 from astroExplain.spectra.explainer import LimeSpectraExplainer
-from autoencoders.ae import AutoEncoder
+
+
+def fig_axs_interpret_cluster(
+    wave: np.array,
+    mean_anomaly: np.array,
+    median_anomaly: np.array,
+    median_weights: np.array,
+    mean_weights: np.array,
+    fig_size=None
+) -> Tuple[Figure, Axes]:
+    """
+    Plot the mean and median anomaly and the mean and median
+    explanation weights.
+
+    INPUT
+
+    wave: wavelength array
+    mean_anomaly: mean anomaly array
+    median_anomaly: median anomaly array
+    median_weights: median explanation weights array
+    mean_weights: mean explanation weights array
+    fig_size: figure size
+
+    OUTPUT
+
+    fig: figure
+    axs: axes
+    """
+
+    fig, axs = plt.subplots(
+        nrows=3, ncols=1,
+        figsize=fig_size,
+        sharex=True,
+        sharey=False,
+        tight_layout=True,
+    )
+
+    axs[0].plot(wave, median_anomaly, c="black", label="Median")
+    axs[0].set_ylabel("Normalized flux", fontsize=8)
+
+    axs[1].plot(wave, mean_anomaly, c="black", label="Mean")
+    axs[1].set_ylabel("Normalized flux", fontsize=8)
+
+    axs[2].plot(wave, median_weights, color="black", label="Median")
+    axs[2].plot(wave, mean_weights, color="blue", label="Mean")
+
+    axs[2].set_ylabel("Explanation weight", fontsize=8)
+    axs[2].set_ylim(0, 1.01)
+
+    return fig, axs
 
 
 def explanation_name(lime_config: dict, fudge_config: dict) -> str:
+    """Retrieve the explanation name from the lime and fudge configs"""
 
     segmentation = lime_config["segmentation"]
     n_segments = lime_config["number_segments"]
@@ -198,7 +253,7 @@ def interpret(
     # axs[1].plot(why.wave, weights_explanation)
     # axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
     axs[1].set_ylabel("Explanation weight")
-    axs[1].set_xlabel("$\lambda$ [$\AA$]")
+    # axs[1].set_xlabel("$\lambda$ [$\AA$]")
 
     return fig, axs
 
@@ -247,7 +302,7 @@ def explain_reconstruction_score(
         anomaly.score, metric=score_config["metric"]
     )
     # Set explainer instance
-    print(f"Set explainer and Get explanations", end="\n")
+    print("Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
 
     if lime_config["segmentation"] == "kmeans":
