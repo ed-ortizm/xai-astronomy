@@ -12,6 +12,7 @@ class TellMeWhy:
     where a spectrum is took as a (1, number_of_fluxes) gray image
     and the superpixel are collections of pixels
     """
+
     def __init__(self, explanation: ImageExplanation, wave: np.array):
         """
         INPUT

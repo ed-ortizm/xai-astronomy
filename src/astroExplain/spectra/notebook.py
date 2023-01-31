@@ -24,7 +24,7 @@ def fig_axs_interpret_cluster(
     median_anomaly: np.array,
     median_weights: np.array,
     mean_weights: np.array,
-    fig_size=None
+    fig_size=None,
 ) -> Tuple[Figure, Axes]:
     """
     Plot the mean and median anomaly and the mean and median
@@ -46,7 +46,8 @@ def fig_axs_interpret_cluster(
     """
 
     fig, axs = plt.subplots(
-        nrows=3, ncols=1,
+        nrows=3,
+        ncols=1,
         figsize=fig_size,
         sharex=True,
         sharey=False,
