@@ -1,16 +1,27 @@
-import numpy as np
-from skimage.color import gray2rgb  # convert spectra to 3 channels
+"""
+Doc string
+"""
 
-###############################################################################
+import numpy as np
+
+# convert spectra to 3 channels
+from skimage.color import gray2rgb
+
+
 class SpecPlus:
     """
-    Class to add all flexes values in an spectra
+    Class to add all fluxes values in an spectra
     """
 
     def __init__(self):
         pass
 
     def predict(self, spectra: np.array) -> np.array:
+        """
+        imput
+
+        return
+        """
 
         # in case I pass a spectra with one dimension
         # this line converts 1D array to (1, n_wave, 3)
@@ -30,8 +41,12 @@ class SpecPlus:
 
         return prediction.reshape((-1, 1))
 
-    ###########################################################################
     def spectrum_to_image(self, spectrum):
+        """
+        imput
+
+        return
+        """
 
         if spectrum.ndim == 1:
 
@@ -40,13 +55,9 @@ class SpecPlus:
 
         return spectrum
 
-    ###########################################################################
     def _update_dimension(self, spectra: np.array) -> np.array:
 
         if spectra.ndim == 3:
             return spectra[np.newaxis, ...]
 
         return spectra
-
-
-###############################################################################
