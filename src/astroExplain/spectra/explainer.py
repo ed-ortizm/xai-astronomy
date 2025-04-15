@@ -2,14 +2,15 @@
 import copy
 from functools import partial
 
+from lime import lime_base
+from lime.lime_image import ImageExplanation
+# pylint: disable=C0411
+# pylint: disable=E0611
 import numpy as np
 import sklearn
 from sklearn.utils import check_random_state
 from skimage.color import gray2rgb
-
 from tqdm.auto import tqdm
-from lime import lime_base
-from lime.lime_image import ImageExplanation
 from astroExplain.spectra.fudge import Fudge
 
 
@@ -19,7 +20,7 @@ class LimeSpectraExplainer:
     model for spectra: https://github.com/marcotcr/lime
 
     Explains predictions on Spectra (i.e. flat matrix) data.
-    For numerical features, perturb them by sampling from a Normal(0,1) and
+    For numerical features, perturbe them by sampling from a Normal(0,1) and
     doing the inverse operation of mean-centering and scaling, according to the
     means and stds in the training data.
     """
@@ -157,6 +158,7 @@ class LimeSpectraExplainer:
         fudged_spectrum = self.fudge_spectrum(
             spectrum[0, :, 0], segments[0, :], fudge_parameters
         )
+
         fudged_spectrum = gray2rgb(fudged_spectrum.reshape(1, -1))
 
         top = labels
@@ -177,6 +179,8 @@ class LimeSpectraExplainer:
             metric=explainer_parameters["distance_metric"],
         ).ravel()
 
+        # return spectrum, segments
+
         ret_exp = ImageExplanation(spectrum, segments)
 
         if top_labels:
@@ -188,8 +192,8 @@ class LimeSpectraExplainer:
             (
                 ret_exp.intercept[label],
                 ret_exp.local_exp[label],
-                ret_exp.score[label],
-                ret_exp.local_pred[label],
+                ret_exp_score,
+                ret_exp_local_pred
             ) = self.base.explain_instance_with_data(
                 data,
                 labels,
@@ -200,7 +204,7 @@ class LimeSpectraExplainer:
                 feature_selection=self.feature_selection,
             )
 
-        return ret_exp
+        return ret_exp, ret_exp_score, ret_exp_local_pred
 
     def data_labels(
         self,

@@ -5,6 +5,7 @@ import sys
 from typing import Tuple
 
 from lime.lime_image import ImageExplanation
+# pylint: disable=C0411
 from matplotlib.figure import Figure, Axes
 import matplotlib.pyplot as plt
 import numpy as np
@@ -201,7 +202,6 @@ def spectrum_in_segments(spectrum: np.array, segments: np.array):
 
     # substract 1 to match id to start at zero
     for segment_id in np.unique(segments - 1):
-        # print(segment_id)
         flux = np.where(segments == segment_id, spectrum, np.nan)
         fluxes_per_segment[segment_id, :] = flux
 
@@ -305,7 +305,7 @@ def explain_reconstruction_score(
     # Set explainer instance
     print("Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
-
+    segmentation_fn = None
     if lime_config["segmentation"] == "kmeans":
 
         segmentation_fn = SpectraSegmentation().kmeans
@@ -322,7 +322,11 @@ def explain_reconstruction_score(
     # convert spectrum to gray image
     spectrum = spectrum[np.newaxis, :]
     # Get explanations
-    explanation = explainer.explain_instance(
+    (
+        explanation,
+        ret_exp_score,
+        ret_exp_local_pred
+    ) = explainer.explain_instance(
         spectrum=spectrum,
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
@@ -330,4 +334,8 @@ def explain_reconstruction_score(
         explainer_parameters=lime_config,
     )
 
-    return explanation
+    return (
+        explanation,
+        ret_exp_score,
+        ret_exp_local_pred
+    )
