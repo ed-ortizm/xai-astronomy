@@ -1,9 +1,9 @@
 """Segmentation algorithms for spectra"""
 import numpy as np
+# pylint: disable=E0611
 from skimage.color import gray2rgb
 from skimage.segmentation import slic
 
-###############################################################################
 class SpectraSegmentation:
     """
     Class with different segmentation algorithms for spectra
@@ -39,7 +39,6 @@ class SpectraSegmentation:
         # if spectra.ndim == 2 --> (1, flux, 3)
         # if spectra.ndim == 3 --> spectra
         spectra = self.spectra_to_RGB(spectra)
-        spectra = spectra[..., 0].copy()
 
         segments = slic(
             spectra,
@@ -87,7 +86,6 @@ class SpectraSegmentation:
 
         return segments.astype(int)
 
-    ###########################################################################
     @staticmethod
     def spectra_to_RGB(spectra: np.array) -> np.array:
         """
@@ -112,5 +110,3 @@ class SpectraSegmentation:
             return spectra
 
         raise ValueError("Input array shape does not represent a spectrum")
-
-    ###########################################################################
