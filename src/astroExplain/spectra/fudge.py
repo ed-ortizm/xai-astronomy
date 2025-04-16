@@ -291,7 +291,7 @@ class Fudge:
         x = np.arange(number_pixels)
         mus, sigmas = self.get_mus_and_sigmas(sigmas_in_segment)
 
-        gaussians = np.zeros(shape=(number_pixels))
+        gaussians = np.zeros(shape=number_pixels)
 
         amplitudes = amplitude * np.ones(number_gaussians)
 
