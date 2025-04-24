@@ -339,3 +339,54 @@ def explain_reconstruction_score(
         ret_exp_score,
         ret_exp_local_pred
     )
+
+def interpret_dual_axis(
+    wave: np.array,
+    explanation,
+    figsize: tuple = (10, 5),
+    positive: int = 5,
+    negative: int = 5,
+) -> tuple:
+    """
+    Visualize interpretability of anomaly scores using a dual y-axis plot.
+
+    INPUT
+    wave: wavelength grid
+    explanation: output of LimeSpectraExplainer
+    positive: number of segments to highlight in red in explanation
+    negative: number of segments to highlight in blue in explanation
+
+    OUTPUT
+    fig, (ax1, ax2): ax1 is the flux axis, ax2 is the explanation axis
+    """
+    why = TellMeWhy(wave=wave, explanation=explanation)
+
+    fig, ax1 = plt.subplots(figsize=figsize)
+
+    # Get spectral components
+    _, positive_spectrum = why.positive_mask_and_segments(positive)
+    _, negative_spectrum = why.negative_mask_and_segments(negative)
+    weights_explanation = why.get_heatmap()
+
+    # Plot on left y-axis: normalized flux
+    ax1.plot(why.wave, why.galaxy, c="black", label="Flux")
+    ax1.plot(why.wave, positive_spectrum, c="red", label="Positive Segments")
+    ax1.plot(why.wave, negative_spectrum, c="blue", label="Negative Segments")
+    ax1.set_ylabel("Normalized flux", color="black")
+    ax1.tick_params(axis="y", labelcolor="black")
+
+    # Create right y-axis
+    ax2 = ax1.twinx()
+    max_weight = np.nanmax(np.abs(weights_explanation))
+    ax2.plot(
+        why.wave, np.abs(weights_explanation) / max_weight, color="darkgreen", label="Explanation Weight"
+    )
+    ax2.set_ylabel("Explanation weight", color="darkgreen")
+    ax2.tick_params(axis="y", labelcolor="darkgreen")
+
+    # Set common x label and title
+    ax1.set_xlabel("Wavelength")
+    ax1.set_title(f"specobjid: {getattr(explanation, 'specobjid', 'unknown')}")
+
+    fig.tight_layout()
+    return fig, (ax1, ax2)
