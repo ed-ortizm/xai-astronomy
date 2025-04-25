@@ -344,8 +344,6 @@ def interpret_dual_axis(
     wave: np.array,
     explanation,
     figsize: tuple = (10, 5),
-    positive: int = 5,
-    negative: int = 5,
 ) -> tuple:
     """
     Visualize interpretability of anomaly scores using a dual y-axis plot.
@@ -363,15 +361,10 @@ def interpret_dual_axis(
 
     fig, ax1 = plt.subplots(figsize=figsize)
 
-    # Get spectral components
-    _, positive_spectrum = why.positive_mask_and_segments(positive)
-    _, negative_spectrum = why.negative_mask_and_segments(negative)
     weights_explanation = why.get_heatmap()
 
     # Plot on left y-axis: normalized flux
     ax1.plot(why.wave, why.galaxy, c="black", label="Flux")
-    ax1.plot(why.wave, positive_spectrum, c="red", label="Positive Segments")
-    ax1.plot(why.wave, negative_spectrum, c="blue", label="Negative Segments")
     ax1.set_ylabel("Normalized flux", color="black")
     ax1.tick_params(axis="y", labelcolor="black")
 
@@ -379,7 +372,8 @@ def interpret_dual_axis(
     ax2 = ax1.twinx()
     max_weight = np.nanmax(np.abs(weights_explanation))
     ax2.plot(
-        why.wave, np.abs(weights_explanation) / max_weight, color="darkgreen", label="Explanation Weight"
+        why.wave, np.abs(weights_explanation) / max_weight,
+        color="darkgreen", label="Explanation Weight"
     )
     ax2.set_ylabel("Explanation weight", color="darkgreen")
     ax2.tick_params(axis="y", labelcolor="darkgreen")
