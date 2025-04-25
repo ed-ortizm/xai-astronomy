@@ -378,9 +378,44 @@ def interpret_dual_axis(
     ax2.set_ylabel("Explanation weight", color="darkgreen")
     ax2.tick_params(axis="y", labelcolor="darkgreen")
 
-    # Set common x label and title
-    ax1.set_xlabel("Wavelength")
-    ax1.set_title(f"specobjid: {getattr(explanation, 'specobjid', 'unknown')}")
-
     fig.tight_layout()
     return fig, (ax1, ax2)
+
+def interpret_embedded_panel(
+    wave: np.array,
+    explanation,
+    figsize: tuple = (10, 5)
+) -> tuple:
+    """
+    Visualize interpretability of anomaly scores with an embedded
+    explanation panel.
+
+    INPUT
+    wave: wavelength grid
+    explanation: output of LimeSpectraExplainer
+
+    OUTPUT
+    fig, (ax_flux, ax_weight): matplotlib figure and axis objects
+    """
+    why = TellMeWhy(wave=wave, explanation=explanation)
+
+    flux = why.galaxy
+    weights = np.abs(why.get_heatmap())
+    weights /= np.nanmax(weights)
+
+    fig = plt.figure(figsize=figsize)
+    gs = plt.GridSpec(2, 1, height_ratios=[3, 1], hspace=0.05)
+
+    # Main panel for flux
+    ax_flux = fig.add_subplot(gs[0])
+    ax_flux.plot(why.wave, flux, color="black")
+    ax_flux.set_ylabel("Normalized flux")
+
+    # Embedded panel for explanation weights
+    # pylint: disable=W1401
+    ax_weight = fig.add_subplot(gs[1], sharex=ax_flux)
+    ax_weight.plot(why.wave, weights, color="black")
+    ax_weight.set_ylabel("Explanation weight")
+    ax_weight.set_xlabel("$\lambda$ [$\AA$]")
+
+    return fig, (ax_flux, ax_weight)
