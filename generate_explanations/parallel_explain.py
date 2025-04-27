@@ -49,8 +49,6 @@ def main():
     seed = parser.getint("configuration", "seed", fallback=0)
     np.random.seed(seed)
     #########################################################################
-    start_time = time.perf_counter()
-
     config_handler = ConfigurationFile()
 
     mp.set_start_method("spawn", force=True)
@@ -188,9 +186,10 @@ def main():
     ) as config_file:
 
         parser.write(config_file)
-    finish_time = time.time()
-
-    print(f"Run time: {finish_time - start_time:.2f}")
 
 if __name__ == "__main__":
+
+    start_time = time.perf_counter()
     main()
+    finish_time = time.perf_counter()
+    print(f"Run time: {finish_time - start_time:.2f}")
