@@ -5,18 +5,14 @@ from multiprocessing.sharedctypes import RawArray
 import pickle
 
 import numpy as np
-import tensorflow as tf
 
-from autoencoders.ae import AutoEncoder
+from astroExplain.spectra.segment import SpectraSegmentation
+from astroExplain.spectra.explainer import LimeSpectraExplainer
 from anomaly.distance import DistanceAnomalyScore
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from anomaly.utils import FilterParameters, ReconstructionParameters
-from astroExplain.spectra.segment import SpectraSegmentation
-from astroExplain.spectra.explainer import LimeSpectraExplainer
+from autoencoders.ae import AutoEncoder
 
-# from sdss.utils.managefiles import FileDirectory
-
-###############################################################################
 def to_numpy_array(array: RawArray, array_shape: tuple = None) -> np.array:
     """Create a numpy array backed by a shared memory Array."""
 
@@ -28,7 +24,6 @@ def to_numpy_array(array: RawArray, array_shape: tuple = None) -> np.array:
     return array
 
 
-###############################################################################
 def init_shared_data(
     share_counter: mp.Value,
     share_wave: RawArray,
@@ -83,22 +78,10 @@ def init_shared_data(
 
     cores_per_worker = share_cores_per_worker
 
-
-###############################################################################
 def explain_anomalies(_: int) -> None:
     """
     PARAMETERS
     """
-    ###########################################################################
-    # set the number of cores to use per model in each worker
-    config = tf.compat.v1.ConfigProto(
-        intra_op_parallelism_threads=cores_per_worker,
-        inter_op_parallelism_threads=cores_per_worker,
-        allow_soft_placement=True,
-        device_count={"CPU": cores_per_worker},
-    )
-    session = tf.compat.v1.Session(config=config)
-    ###########################################################################
     # Load reconstruction function
     model = AutoEncoder(reload=True, reload_from=model_directory)
 
@@ -139,10 +122,11 @@ def explain_anomalies(_: int) -> None:
     anomaly_score_function = partial(
         anomaly.score, metric=score_configuration["metric"]
     )
-    ###########################################################################
+
     # Set explainer instance
     # print(f"Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
+    segmentation_fn = None
 
     if lime_configuration["segmentation"] == "kmeans":
 
@@ -194,5 +178,3 @@ def explain_anomalies(_: int) -> None:
     ) as file:
 
         pickle.dump(explanation, file)
-    ###########################################################################
-    session.close()
