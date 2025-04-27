@@ -1,7 +1,7 @@
 """Explain anomalies in parallel with LimeSpecExplainer"""
 import argparse
 from configparser import ConfigParser, ExtendedInterpolation
-import glob
+from datetime import datetime
 import os
 import time
 import multiprocessing as mp
@@ -108,9 +108,7 @@ def main():
     wave = np.load(f"{data_dir}/{wave_name}")
     wave = RawArray(np.ctypeslib.as_ctypes_type(wave.dtype), wave)
 
-    model_name = parser.get("file", "model")
     model_dir = parser.get("directory", "model")
-    # model_dir = f"{model_dir}/{model_name}"
 
     check.check_directory(model_dir, exit_program=True)
 
@@ -151,15 +149,13 @@ def main():
 
     check.check_directory(save_explanation_to, exit_program=False)
 
-    explanation_runs = glob.glob(f"{save_explanation_to}/*/")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
-    if len(explanation_runs) == 0:
-        run = "000"
-    else:
-        runs = [int(run.split("/")[-2]) for run in explanation_runs]
-        run = f"{max(runs)+1:03d}"
+    explanation_str = parser.get("configuration", "explanation_str")
+    save_explanation_to = (
+        f"{save_explanation_to}/{timestamp}_{explanation_str}"
+    )
 
-    save_explanation_to = f"{save_explanation_to}/{run}"
     check.check_directory(f"{save_explanation_to}", exit_program=False)
     number_processes = parser.getint("configuration", "jobs")
     cores_per_worker = parser.getint("configuration", "cores_per_worker")
