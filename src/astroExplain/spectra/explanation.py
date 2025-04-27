@@ -252,8 +252,6 @@ class TellMeWhy:
         Returns array of explanation weights pixel by pixel
         """
 
-        print("Get heat map of explanation", end="\n")
-
         # there is only one label, since I have a regressor
         ind = self.explanation.top_labels[0]
 
