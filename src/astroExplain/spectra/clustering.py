@@ -17,7 +17,8 @@ from sklearn.metrics import silhouette_score
 def group_spectra_by_cluster(
     cluster_labels: np.ndarray,
     anomalies_array: np.ndarray,
-    weights: np.ndarray
+    weights: np.ndarray,
+    print_n_clusters: bool = False
 ) -> tuple[Dict[int, np.ndarray], Dict[int, np.ndarray]]:
     """
     Group spectra and explanation weights by cluster label.
@@ -32,6 +33,10 @@ def group_spectra_by_cluster(
     weights : np.ndarray
         Array of explanation weights for each sample
         (shape: [n_samples, ...]).
+    print_n_clusters : bool
+        If True, print the number of clusters and the number of
+        spectra in each cluster.
+        Default is False.
 
     Returns
     -------
@@ -51,7 +56,12 @@ def group_spectra_by_cluster(
         cluster_mask = cluster_labels == cluster_label
         spectra_cluster_dict[cluster_label] = anomalies_array[cluster_mask]
         weights_cluster_dict[cluster_label] = weights[cluster_mask]
-        print(f"Cluster: {cluster_label}, N. spectra: {cluster_mask.sum()}")
+
+        if print_n_clusters:
+            print(
+                f"Cluster: {cluster_label},"
+                f"N. spectra: {cluster_mask.sum()}"
+            )
 
     return spectra_cluster_dict, weights_cluster_dict
 
