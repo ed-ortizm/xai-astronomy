@@ -55,7 +55,6 @@ def get_closest_explanations_to_centroid(
 
     return idx_closest_to_centroid
 
-
 def group_spectra_by_cluster(
     cluster_labels: np.ndarray,
     anomalies_array: np.ndarray,
@@ -142,6 +141,7 @@ def get_weights_per_segments(
     weights_per_segment = np.empty((n_samples, n_segments))
 
     for i in range(n_segments):
+    
         if i < n_segments - 1:
             start = i * base_size
             end = (i + 1) * base_size
@@ -178,13 +178,11 @@ def compute_inertias_silhouette(
     n_clusters_range = range(2, n_clusters)
 
     start_time = time.perf_counter()
-    # Fit the k-means model
     for n in n_clusters_range:
         kmeans = KMeans(n_clusters=n, random_state=0)
         kmeans.fit(X)
         inertias.append(kmeans.inertia_)
         silhouette_scores.append(silhouette_score(X, kmeans.labels_))
-        # print(f"n: {n}, inertia: {kmeans.inertia_}", end="\r")
     finish_time = time.perf_counter()
     print(f"Run time: {finish_time - start_time:.2f} seconds")
 
