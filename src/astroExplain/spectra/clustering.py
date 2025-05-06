@@ -12,6 +12,48 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
+def get_closest_explanations_to_centroid(
+    n_closest: int,
+    weights_cluster: Dict[int, np.ndarray],
+    centroids: np.ndarray
+) -> Dict[int, np.ndarray]:
+    """
+    Return indices of the n_closest explanation vectors closest
+    to each cluster centroid.
+
+    Parameters
+    ----------
+    n_closest : int
+        Number of explanation vectors to retrieve per cluster that are 
+        closest to the centroid.
+    weights_cluster : dict of int to np.ndarray
+        Dictionary mapping cluster labels to arrays of explanation weights. 
+        Each value is an array of shape:
+        (n_samples_in_cluster, n_features).
+    centroids : np.ndarray
+        Array of shape (n_clusters, n_features) containing the centroid of 
+        each cluster.
+
+    Returns
+    -------
+    idx_closest_to_centroid : dict of int to np.ndarray
+        Dictionary mapping cluster labels to arrays of indices
+        (shape (n_closest,)) of the explanation weights closest
+        to each centroid.
+    """
+
+    idx_closest_to_centroid = {}
+
+    for label, cluster in weights_cluster.items():
+
+        # reshape for broadcasting
+        cluster_centroid = centroids[label].reshape(1, -1)
+        distances = np.sum((cluster - cluster_centroid) ** 2, axis=1)
+
+        idx_closest = np.argsort(distances)[:n_closest]
+        idx_closest_to_centroid[int(label)] = idx_closest
+
+    return idx_closest_to_centroid
 
 
 def group_spectra_by_cluster(
