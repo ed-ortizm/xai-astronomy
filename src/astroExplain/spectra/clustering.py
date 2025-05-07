@@ -106,7 +106,7 @@ def group_spectra_by_cluster(
 
     return spectra_cluster_dict, weights_cluster_dict
 
-def get_weights_per_segments(
+def compress_weights_per_segments(
     weights: np.ndarray,
     n_segments: int
 ) -> np.ndarray:
@@ -141,7 +141,7 @@ def get_weights_per_segments(
     weights_per_segment = np.empty((n_samples, n_segments))
 
     for i in range(n_segments):
-    
+
         if i < n_segments - 1:
             start = i * base_size
             end = (i + 1) * base_size
@@ -153,6 +153,55 @@ def get_weights_per_segments(
         weights_per_segment[:, i] = weights[:, start:end].mean(axis=1)
 
     return weights_per_segment
+
+def expand_weights_per_segments(
+    weights_per_segment: np.ndarray,
+    n_wavelengths: int,
+    n_segments: int,
+) -> np.ndarray:
+    """
+    Expand compressed segment-level weights back to full-resolution weights.
+
+    Parameters
+    ----------
+    weights_per_segment : np.ndarray
+        Array of shape (n_samples, n_segments) with one weight per segment.
+    n_wavelengths : int
+        Total number of wavelengths to reconstruct in the full array.
+    n_segments : int
+        Number of regular-sized segments. If residual exists, an extra 
+        segment is appended automatically.
+
+    Returns
+    -------
+    reconstructed_weights : np.ndarray
+        Reconstructed weights of shape (n_samples, n_wavelengths), where
+        each segment's weight is broadcasted to match its original length.
+    """
+
+    n_samples, _ = weights_per_segment.shape
+
+    base_size, residual_size = divmod(n_wavelengths, n_segments)
+    if residual_size > 0:
+        n_segments += 1
+
+    print(f"Base size: {base_size}, Residual size: {residual_size}")
+    print(f"New number of segments: {n_segments}")
+
+    reconstructed_weights = np.empty((n_samples, n_wavelengths))
+
+    for i in range(n_segments):
+        if i < n_segments - 1:
+            start = i * base_size
+            end = (i + 1) * base_size
+        else:
+            start = base_size * (n_segments - 1)
+            end = n_wavelengths
+
+        # Broadcast segment average to all positions in that segment
+        reconstructed_weights[:, start:end] = weights_per_segment[:, [i]]
+
+    return reconstructed_weights
 
 def compute_inertias_silhouette(
     X: np.ndarray, n_clusters: int=10
