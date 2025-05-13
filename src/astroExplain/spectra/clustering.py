@@ -9,8 +9,40 @@ import time
 from typing import Dict
 
 import numpy as np
+from numpy.linalg import norm
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
+
+
+def normalize_weights_l2_abs(X: np.ndarray) -> np.ndarray:
+    """
+    Normalize LIME explanation weights per instance using L2 norm
+    and return the absolute value of the normalized weights.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Array of LIME explanation weights of shape
+        (n_instances, n_features), where each row corresponds to the
+        explanation weights for one instance.
+
+    Returns
+    -------
+    np.ndarray
+        Array of shape (n_instances, n_features) with L2-normalized
+        and absolute-valued explanation weights per instance.
+        Each row has L2 norm = 1.
+    """
+    # Compute L2 norms for each instance (row)
+    norms = norm(X, ord=2, axis=1, keepdims=True)
+
+    # Avoid division by zero
+    norms[norms == 0] = 1.0
+
+    # Normalize and take absolute value
+    X_normalized = np.abs(X / norms)
+
+    return X_normalized
 
 def get_closest_explanations_to_centroid(
     n_closest: int,
