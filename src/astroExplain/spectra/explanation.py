@@ -1,10 +1,11 @@
 """Functionality to handle explanation objects from LimeSpetraExplainer"""
+import pickle
+
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import numpy as np
 
 from lime.lime_image import ImageExplanation
-
 
 class TellMeWhy:
     """
@@ -261,3 +262,50 @@ class TellMeWhy:
         heatmap = np.vectorize(dict_heatmap.get)(self.segments)
 
         return heatmap
+
+def ingest_explanations_into_array(
+    specobjids_array: np.ndarray,
+    wave: np.ndarray,
+    load_from_dir: str,
+) -> np.ndarray:
+    """
+    Load LIME explanations from pickle files into a structured NumPy array.
+
+    For each given `specobjid`, this function loads the saved explanation,
+    processes it through a `TellMeWhy` instance to extract the explanation
+    weights and store them in a 2D NumPy array for batch analysis.
+
+    Parameters
+    ----------
+    specobjids_array : np.ndarray
+        Array of specobjids (unique object identifiers) corresponding to each
+        explanation file.
+    wave : np.ndarray
+        Array representing the wavelength axis used when initializing 
+        `TellMeWhy`.
+    load_from_dir : str
+        Path to the directory where the explanation `.pkl` files are stored.
+
+    Returns
+    -------
+    np.ndarray
+        A 2D array of shape (n_objects, n_wavelengths) containing the
+        explanation weights for each object, where each row corresponds
+        to one spectrum's explanation.
+
+    Notes
+    -----
+    - Each pickle file must contain a tuple where the first element is the
+      explanation dictionary expected by `TellMeWhy`.
+    - Assumes that explanation files are named as `{specobjid}.pkl`.
+    """
+    array_shape = (specobjids_array.shape[0], wave.shape[0])
+    weights_all = np.empty(array_shape, dtype=np.float32)
+
+    for i, specobjid in enumerate(specobjids_array):
+        with open(f"{load_from_dir}/{specobjid}.pkl", "rb") as file:
+            explanation, _, _ = pickle.load(file)
+            why = TellMeWhy(wave=wave, explanation=explanation)
+            weights_all[i, :] = why.get_heatmap()
+
+    return weights_all
