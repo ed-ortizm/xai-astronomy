@@ -132,8 +132,7 @@ def group_spectra_by_cluster(
 
         if print_n_clusters:
             print(
-                f"Cluster: {cluster_label},"
-                f"N. spectra: {cluster_mask.sum()}"
+                f"{cluster_label};{cluster_mask.sum()}"
             )
 
     return spectra_cluster_dict, weights_cluster_dict
