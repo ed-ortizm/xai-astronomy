@@ -15,7 +15,7 @@ class LineRatios:
     centered on the emission lines.
     """
 
-    def __init__(self, window: float = 10.0):
+    def __init__(self, window: float = 5.0):
         """
         Initialize the LineRatios class.
 
