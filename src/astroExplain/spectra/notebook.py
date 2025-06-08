@@ -416,6 +416,6 @@ def interpret_embedded_panel(
     ax_weight = fig.add_subplot(gs[1], sharex=ax_flux)
     ax_weight.plot(why.wave, weights, color="black")
     ax_weight.set_ylabel("Explanation weight")
-    ax_weight.set_xlabel("$\lambda$ [$\AA$]")
+    ax_weight.set_xlabel(r"$\lambda$ [$\AA$]")
 
     return fig, (ax_flux, ax_weight)
