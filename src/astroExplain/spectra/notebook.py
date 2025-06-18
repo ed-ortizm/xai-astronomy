@@ -305,7 +305,9 @@ def explain_reconstruction_score(
     # Set explainer instance
     print("Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
+
     segmentation_fn = None
+
     if lime_config["segmentation"] == "kmeans":
 
         segmentation_fn = SpectraSegmentation().kmeans
