@@ -64,7 +64,7 @@ def fig_axs_interpret_cluster(
     axs[2].plot(wave, median_weights, color="black", label="Median")
     axs[2].plot(wave, mean_weights, color="blue", label="Mean")
 
-    axs[2].set_ylabel("Explanation weight", fontsize=8)
+    axs[2].set_ylabel("Explanation weights", fontsize=8)
     axs[2].set_ylim(0, 1.01)
 
     return fig, axs
@@ -253,7 +253,7 @@ def interpret(
     )
     # axs[1].plot(why.wave, weights_explanation)
     # axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
-    axs[1].set_ylabel("Explanation weight")
+    axs[1].set_ylabel("Explanation weights")
     # axs[1].set_xlabel("$\lambda$ [$\AA$]")
 
     return fig, axs
@@ -375,9 +375,9 @@ def interpret_dual_axis(
     max_weight = np.nanmax(np.abs(weights_explanation))
     ax2.plot(
         why.wave, np.abs(weights_explanation) / max_weight,
-        color="darkgreen", label="Explanation Weight"
+        color="darkgreen", label="Explanation weights"
     )
-    ax2.set_ylabel("Explanation weight", color="darkgreen")
+    ax2.set_ylabel("Explanation weights", color="darkgreen")
     ax2.tick_params(axis="y", labelcolor="darkgreen")
 
     fig.tight_layout()
@@ -417,7 +417,7 @@ def interpret_embedded_panel(
     # pylint: disable=W1401
     ax_weight = fig.add_subplot(gs[1], sharex=ax_flux)
     ax_weight.plot(why.wave, weights, color="black")
-    ax_weight.set_ylabel("Explanation weight")
+    ax_weight.set_ylabel("Explanation weights")
     ax_weight.set_xlabel(r"$\lambda$ [$\AA$]")
 
     return fig, (ax_flux, ax_weight)
