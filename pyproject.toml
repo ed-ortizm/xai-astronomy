@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astroExplain"
+version = "0.0.1"
+description = "Python Code For explainable artificial intelligence in astronomy"
+readme = "README.md"
+authors = [{ name = "Edgar Ortiz", email = "ed.ortizm@gmail.com" }]
+license = { text = "MIT" }
+keywords = ["astrophysics", "galaxy", "Machine Learning", "LIME", "SHAP"]
+dependencies = []
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["[a-z]*"]
