@@ -41,7 +41,6 @@ class Fudge:
         scale_factor: float,
         same_noise: bool = True,
         kernel_size: int = 3,
-        # sigma: float = 0
     ) -> np.array:
 
         """
@@ -113,7 +112,7 @@ class Fudge:
             mask_segments = self.segments == segment_id
 
             mean_per_segment = np.mean(
-                self.spectrum[mask_segments]  # , axis=(0, 1)
+                self.spectrum[mask_segments]
             )
 
             fudged_spectrum[mask_segments] = mean_per_segment
@@ -189,14 +188,9 @@ class Fudge:
         """
         kernel = Gaussian1DKernel(kernel_size)
 
-        # spectrum = self.spectrum[0, :, 0]
-        # filtered_spectrum = convolve(spectrum, kernel, boundary="extend")
         filtered_spectrum = convolve(self.spectrum, kernel, boundary="extend")
 
         noise = self.spectrum - filtered_spectrum
-
-        # filtered_spectrum = gray2rgb(filtered_spectrum.reshape(1, -1))
-        # noise = gray2rgb(noise.reshape(1, -1))
 
         return filtered_spectrum, noise
 
