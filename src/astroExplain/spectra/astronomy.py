@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 
+
 def compute_emission_line_ratios(fluxes_df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute standard emission line ratios from galaxy spectra.
@@ -25,7 +26,7 @@ def compute_emission_line_ratios(fluxes_df: pd.DataFrame) -> pd.DataFrame:
     - 'oii_3726_flux'
     - 'sii_6717_flux'
     - 'sii_6731_flux'
-    
+
     Args:
         fluxes_df (pd.DataFrame): DataFrame containing fluxes
         of emission lines.
@@ -54,14 +55,22 @@ def compute_emission_line_ratios(fluxes_df: pd.DataFrame) -> pd.DataFrame:
     df["o3n2_index"] = np.log10(ratio)
 
     # [SII]/Hα
-    df["sii_to_halpha"] = (
-        df["sii_6717_flux"] + df["sii_6731_flux"]
-    ).div(df["h_alpha_flux"])
+    df["sii_to_halpha"] = (df["sii_6717_flux"] + df["sii_6731_flux"]).div(
+        df["h_alpha_flux"]
+    )
 
     # [SII] density ratio
     df["sii_density_ratio"] = df["sii_6717_flux"].div(df["sii_6731_flux"])
-
+    cols_ratios = [
+        "balmer_decrement",
+        "nii_to_halpha",
+        "oiii_to_hbeta",
+        "oiii_to_oii",
+        "o3n2_index",
+        "sii_to_halpha",
+        "sii_density_ratio",
+    ]
     # Replace inf/-inf with NaN to avoid issues
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
 
-    return df
+    return df, cols_ratios
