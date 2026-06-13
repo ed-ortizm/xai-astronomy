@@ -5,6 +5,7 @@ import sys
 from typing import Tuple
 
 from lime.lime_image import ImageExplanation
+
 # pylint: disable=C0411
 from matplotlib.figure import Figure, Axes
 import matplotlib.pyplot as plt
@@ -248,9 +249,7 @@ def interpret(
     # max_weight += 0.1*max_weight
     # axs[1].set_ylim(ymin=-max_weight, ymax=max_weight)
 
-    axs[1].plot(
-        why.wave, np.abs(weights_explanation) / max_weight, color="black"
-    )
+    axs[1].plot(why.wave, np.abs(weights_explanation) / max_weight, color="black")
     # axs[1].plot(why.wave, weights_explanation)
     # axs[1].hlines(0, xmin=wave.min(), xmax=wave.max(), color="black")
     axs[1].set_ylabel("Explanation weights")
@@ -267,7 +266,6 @@ def explain_reconstruction_score(
     fudge_config: dict,
     model: AutoEncoder,
 ):
-
     """
     Generate explanations for the lp, mad and mse scores and its
     variations
@@ -299,9 +297,7 @@ def explain_reconstruction_score(
         ),
     )
 
-    anomaly_score_function = partial(
-        anomaly.score, metric=score_config["metric"]
-    )
+    anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
     # Set explainer instance
     print("Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
@@ -324,11 +320,7 @@ def explain_reconstruction_score(
     # convert spectrum to gray image
     spectrum = spectrum[np.newaxis, :]
     # Get explanations
-    (
-        explanation,
-        ret_exp_score,
-        ret_exp_local_pred
-    ) = explainer.explain_instance(
+    explanation, ret_exp_score, ret_exp_local_pred = explainer.explain_instance(
         spectrum=spectrum,
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
@@ -336,11 +328,8 @@ def explain_reconstruction_score(
         explainer_parameters=lime_config,
     )
 
-    return (
-        explanation,
-        ret_exp_score,
-        ret_exp_local_pred
-    )
+    return (explanation, ret_exp_score, ret_exp_local_pred)
+
 
 def interpret_dual_axis(
     wave: np.array,
@@ -374,8 +363,10 @@ def interpret_dual_axis(
     ax2 = ax1.twinx()
     max_weight = np.nanmax(np.abs(weights_explanation))
     ax2.plot(
-        why.wave, np.abs(weights_explanation) / max_weight,
-        color="darkgreen", label="Explanation weights"
+        why.wave,
+        np.abs(weights_explanation) / max_weight,
+        color="darkgreen",
+        label="Explanation weights",
     )
     ax2.set_ylabel("Explanation weights", color="darkgreen")
     ax2.tick_params(axis="y", labelcolor="darkgreen")
@@ -383,10 +374,9 @@ def interpret_dual_axis(
     fig.tight_layout()
     return fig, (ax1, ax2)
 
+
 def interpret_embedded_panel(
-    wave: np.array,
-    explanation,
-    figsize: tuple = (10, 5)
+    wave: np.array, explanation, figsize: tuple = (10, 5)
 ) -> tuple:
     """
     Visualize interpretability of anomaly scores with an embedded
