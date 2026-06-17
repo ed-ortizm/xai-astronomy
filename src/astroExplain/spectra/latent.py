@@ -1,8 +1,72 @@
 import numpy as np
 from functools import partial
+from anomaly.latent import LatentLOFAnomalyScore
 from anomaly.latent import LatentIForestAnomalyScore
 from astroExplain.spectra.segment import SpectraSegmentation
 from astroExplain.spectra.explainer import LimeSpectraExplainer
+
+
+def explain_lof_score(
+    spectrum: np.array,
+    lime_config: dict,
+    fudge_config: dict,
+    encoder,
+    lof_model,
+    fitted_scaler,
+):
+    """
+    Generate LIME explanations for the Local Outlier Factor anomaly score.
+
+    INPUTS
+    spectrum: galaxy spectrum to explain (1D array).
+    lime_config: explainer configuration dictionary.
+    fudge_config: configuration for image fudging in explanation.
+    encoder: Callable to encode raw spectra (e.g., ae_model.encode).
+    lof_model: Trained LOF model (with novelty=True).
+    fitted_scaler: StandardScaler previously fitted on the latent training set.
+
+    OUTPUT
+    explanation: ImageExplanation from lime.lime_image
+    ret_exp_score: Float representing the LIME model's R^2 score.
+    ret_exp_local_pred: Float representing the LIME local prediction.
+    """
+
+    # Instantiate our custom LOF anomaly score wrapper
+    anomaly_pipeline = LatentLOFAnomalyScore(
+        encoder_model=encoder,
+        scaler_model=fitted_scaler,
+        lof_model=lof_model,
+    )
+
+    print("Set explainer and Get explanations", end="\n")
+    explainer = LimeSpectraExplainer(random_state=0)
+
+    segmentation_fn = None
+    if lime_config["segmentation"] == "kmeans":
+        segmentation_fn = SpectraSegmentation().kmeans
+    elif lime_config["segmentation"] == "uniform":
+        segmentation_fn = SpectraSegmentation().uniform
+
+    segmentation_fn = partial(
+        segmentation_fn, number_segments=lime_config["number_segments"]
+    )
+
+    # Ensure spectrum is exactly 2D before passing it to LIME
+    if spectrum.ndim == 1:
+        spectrum_2d = spectrum.reshape(1, -1)
+    else:
+        spectrum_2d = spectrum
+
+    # Get explanations passing the .score method as the classifier function
+    explanation, ret_exp_score, ret_exp_local_pred = explainer.explain_instance(
+        spectrum=spectrum_2d,
+        classifier_fn=anomaly_pipeline.score,
+        segmentation_fn=segmentation_fn,
+        fudge_parameters=fudge_config,
+        explainer_parameters=lime_config,
+    )
+
+    return explanation, ret_exp_score, ret_exp_local_pred
 
 
 def explain_iforest_score(
