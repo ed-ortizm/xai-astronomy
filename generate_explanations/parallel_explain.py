@@ -1,4 +1,5 @@
 """Explain anomalies in parallel with LimeSpecExplainer"""
+
 import argparse
 from configparser import ConfigParser, ExtendedInterpolation
 from datetime import datetime
@@ -25,19 +26,17 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
+
 def main():
     """Get explanations in parallel"""
 
     parser = argparse.ArgumentParser(
         description="Parallel explanation of anomalies with LimeSpecExplainer"
-        )
+    )
 
     parser.add_argument(
-        "--config",
-        type=str,
-        default="parallel_explain.ini",
-        help="Path to config file"
-        )
+        "--config", type=str, default="parallel_explain.ini", help="Path to config file"
+    )
 
     args = parser.parse_args()
 
@@ -72,18 +71,14 @@ def main():
         relative = parser.getboolean("score", "relative")
         percentage = parser.getint("score", "percentage")
 
-        score_name = get_anomaly_score_name(
-            metric, velocity, relative, percentage
-        )
+        score_name = get_anomaly_score_name(metric, velocity, relative, percentage)
     else:
         score_name = f"{metric}"
 
     data_dir = parser.get("directory", "data")
     meta_data_dir = parser.get("directory", "meta")
 
-    spectra_to_explain = np.load(
-        f"{meta_data_dir}/{score_name}/{spectra_name}"
-    )
+    spectra_to_explain = np.load(f"{meta_data_dir}/{score_name}/{spectra_name}")
 
     if spectra_to_explain.ndim == 1:
         spectra_to_explain = spectra_to_explain[np.newaxis, ...]
@@ -110,10 +105,7 @@ def main():
 
     check.check_directory(model_dir, exit_program=True)
 
-    specobjid = np.array(
-        meta_data_spectra_df.index,
-        dtype=int
-    )
+    specobjid = np.array(meta_data_spectra_df.index, dtype=int)
 
     specobjid = RawArray(
         np.ctypeslib.as_ctypes_type(specobjid.dtype), specobjid.reshape(-1)
@@ -132,7 +124,6 @@ def main():
         score_configuration["relative"] = relative
         score_configuration["percentage"] = percentage
 
-
     lime_configuration = config_handler.section_to_dictionary(
         parser.items("lime"), [",", "\n"]
     )
@@ -141,18 +132,14 @@ def main():
         parser.items("fudge"), value_separators=[]
     )
 
-    save_explanation_to = (
-        f"{explanation_dir}/{score_name}"
-    )
+    save_explanation_to = f"{explanation_dir}/{score_name}"
 
     check.check_directory(save_explanation_to, exit_program=False)
 
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
     explanation_str = parser.get("configuration", "explanation_str")
-    save_explanation_to = (
-        f"{save_explanation_to}/{timestamp}_{explanation_str}"
-    )
+    save_explanation_to = f"{save_explanation_to}/{timestamp}_{explanation_str}"
 
     check.check_directory(f"{save_explanation_to}", exit_program=False)
     number_processes = parser.getint("configuration", "jobs")
@@ -186,6 +173,7 @@ def main():
     ) as config_file:
 
         parser.write(config_file)
+
 
 if __name__ == "__main__":
 
