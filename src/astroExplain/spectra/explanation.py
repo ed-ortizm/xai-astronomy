@@ -1,4 +1,5 @@
 """Functionality to handle explanation objects from LimeSpetraExplainer"""
+
 import pickle
 
 import matplotlib.pyplot as plt
@@ -6,6 +7,7 @@ from matplotlib.collections import LineCollection
 import numpy as np
 
 from lime.lime_image import ImageExplanation
+
 
 class TellMeWhy:
     """
@@ -71,9 +73,7 @@ class TellMeWhy:
             axs: 2-rows and 1-column
         """
 
-        fig, axs = plt.subplots(
-            nrows=2, ncols=1, sharex=True, figsize=figure_size
-        )
+        fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, figsize=figure_size)
 
         return fig, axs
 
@@ -147,9 +147,7 @@ class TellMeWhy:
         )
 
         # ignore values that do not contribute to the score
-        explanation_segments = np.where(
-            spectrum_mask[0, :] == 0, np.nan, self.galaxy
-        )
+        explanation_segments = np.where(spectrum_mask[0, :] == 0, np.nan, self.galaxy)
 
         return spectrum_mask, explanation_segments
 
@@ -187,16 +185,11 @@ class TellMeWhy:
         )
 
         # ignore values that do not contribute to the score
-        explanation_segments = np.where(
-            spectrum_mask[0, :] == 0, np.nan, self.galaxy
-        )
+        explanation_segments = np.where(spectrum_mask[0, :] == 0, np.nan, self.galaxy)
 
         return spectrum_mask, explanation_segments
 
-    def plot_heatmap_spectrum(
-        self, heatmap: np.array, symmetric_map: bool
-    ) -> tuple:
-
+    def plot_heatmap_spectrum(self, heatmap: np.array, symmetric_map: bool) -> tuple:
         """
         Create a set of line segments so that we can color them
         individually. This creates the points as a N x 1 x 2 array
@@ -248,7 +241,6 @@ class TellMeWhy:
         return fig, ax
 
     def get_heatmap(self) -> np.array:
-
         """
         Returns array of explanation weights pixel by pixel
         """
@@ -262,6 +254,7 @@ class TellMeWhy:
         heatmap = np.vectorize(dict_heatmap.get)(self.segments)
 
         return heatmap
+
 
 def ingest_explanations_into_array(
     specobjids_array: np.ndarray,
@@ -281,7 +274,7 @@ def ingest_explanations_into_array(
         Array of specobjids (unique object identifiers) corresponding to each
         explanation file.
     wave : np.ndarray
-        Array representing the wavelength axis used when initializing 
+        Array representing the wavelength axis used when initializing
         `TellMeWhy`.
     load_from_dir : str
         Path to the directory where the explanation `.pkl` files are stored.

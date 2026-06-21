@@ -1,4 +1,5 @@
 """process base parallelism to to explain anomalies [spectra]"""
+
 from functools import partial
 import multiprocessing as mp
 from multiprocessing.sharedctypes import RawArray
@@ -12,6 +13,7 @@ from anomaly.distance import DistanceAnomalyScore
 from anomaly.reconstruction import ReconstructionAnomalyScore
 from anomaly.utils import FilterParameters, ReconstructionParameters
 from autoencoders.ae import AutoEncoder
+
 
 def to_numpy_array(array: RawArray, array_shape: tuple = None) -> np.array:
     """Create a numpy array backed by a shared memory Array."""
@@ -78,6 +80,7 @@ def init_shared_data(
 
     cores_per_worker = share_cores_per_worker
 
+
 def explain_anomalies(_: int) -> None:
     """
     PARAMETERS
@@ -87,8 +90,7 @@ def explain_anomalies(_: int) -> None:
 
     # Load anomaly score function
     is_reconstruction = (
-        len({"lp", "mad", "mse"}.intersection({score_configuration["metric"]}))
-        != 0
+        len({"lp", "mad", "mse"}.intersection({score_configuration["metric"]})) != 0
     )
 
     if is_reconstruction is True:
@@ -160,15 +162,7 @@ def explain_anomalies(_: int) -> None:
         classifier_fn=anomaly_score_function,
         segmentation_fn=segmentation_fn,
         fudge_parameters=fudge_configuration,
-        # hide_color=fudge_configuration["hide_color"],
-        # amplitude=fudge_configuration["amplitude"],
-        # mu=fudge_configuration["mu"],
-        # std=fudge_configuration["std"],
         explainer_parameters=lime_configuration,
-        # num_samples=lime_configuration["number_samples"],
-        # batch_size=lime_configuration["batch_size"],
-        # progress_bar=lime_configuration["progress_bar"],
-        # distance_metric="cosine",
     )
     ###########################################################################
     with open(

@@ -9,16 +9,10 @@ def get_anomaly_score_name(
     score_name = f"{metric}"
 
     if velocity != 0:
-
-        score_name = f"{score_name}_filter_{velocity}kms"
-        # comply with personal naming convetion of directories
-
+        score_name = f"{score_name}_filter_{velocity}"
+    if percentage != 100:
+        score_name = f"{score_name}_{percentage}"
     if relative is True:
-
-        score_name = f"{score_name}_rel{percentage}"
-
-    else:
-
-        score_name = f"{score_name}_noRel{percentage}"
+        score_name = f"{score_name}_rel"
 
     return score_name
