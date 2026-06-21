@@ -265,6 +265,7 @@ def explain_reconstruction_score(
     lime_config: dict,
     fudge_config: dict,
     model: AutoEncoder,
+    print_config: bool = False,
 ):
     """
     Generate explanations for the lp, mad and mse scores and its
@@ -277,6 +278,7 @@ def explain_reconstruction_score(
     lime_config: explainer configuration
     fudge_config: configuration for image fudging in explanation
     model: API to trained auto encoder
+    print_config: whether to print the configuration
 
     OUTPUT
     explanation: ImageExplanation from lime.lime_image
@@ -299,7 +301,8 @@ def explain_reconstruction_score(
 
     anomaly_score_function = partial(anomaly.score, metric=score_config["metric"])
     # Set explainer instance
-    print("Set explainer and Get explanations", end="\n")
+    if print_config:
+        print("Set explainer and Get explanations", end="\n")
     explainer = LimeSpectraExplainer(random_state=0)
 
     segmentation_fn = None
