@@ -288,8 +288,7 @@ def ingest_explanations_into_array(
 
     Notes
     -----
-    - Each pickle file must contain a tuple where the first element is the
-      explanation dictionary expected by `TellMeWhy`.
+    - Each pickle file contains the explanation dictionary expected by `TellMeWhy`.
     - Assumes that explanation files are named as `{specobjid}.pkl`.
     """
     array_shape = (specobjids_array.shape[0], wave.shape[0])
@@ -297,7 +296,7 @@ def ingest_explanations_into_array(
 
     for i, specobjid in enumerate(specobjids_array):
         with open(f"{load_from_dir}/{specobjid}.pkl", "rb") as file:
-            explanation, _, _ = pickle.load(file)
+            explanation = pickle.load(file)
             why = TellMeWhy(wave=wave, explanation=explanation)
             weights_all[i, :] = why.get_heatmap()
 
