@@ -5,6 +5,7 @@ numbers of clusters.
 It also includes a function to compress explanation weights by averaging
 over fixed segments of the wavelength grid.
 """
+
 import time
 from typing import Dict
 
@@ -44,10 +45,9 @@ def normalize_weights_l2_abs(X: np.ndarray) -> np.ndarray:
 
     return X_normalized
 
+
 def get_closest_explanations_to_centroid(
-    n_closest: int,
-    weights_cluster: Dict[int, np.ndarray],
-    centroids: np.ndarray
+    n_closest: int, weights_cluster: Dict[int, np.ndarray], centroids: np.ndarray
 ) -> Dict[int, np.ndarray]:
     """
     Return indices of the n_closest explanation vectors closest
@@ -56,14 +56,14 @@ def get_closest_explanations_to_centroid(
     Parameters
     ----------
     n_closest : int
-        Number of explanation vectors to retrieve per cluster that are 
+        Number of explanation vectors to retrieve per cluster that are
         closest to the centroid.
     weights_cluster : dict of int to np.ndarray
-        Dictionary mapping cluster labels to arrays of explanation weights. 
+        Dictionary mapping cluster labels to arrays of explanation weights.
         Each value is an array of shape:
         (n_samples_in_cluster, n_features).
     centroids : np.ndarray
-        Array of shape (n_clusters, n_features) containing the centroid of 
+        Array of shape (n_clusters, n_features) containing the centroid of
         each cluster.
 
     Returns
@@ -87,11 +87,12 @@ def get_closest_explanations_to_centroid(
 
     return idx_closest_to_centroid
 
+
 def group_spectra_by_cluster(
     cluster_labels: np.ndarray,
     anomalies_array: np.ndarray,
     weights: np.ndarray,
-    print_n_clusters: bool = False
+    print_n_clusters: bool = False,
 ) -> tuple[Dict[int, np.ndarray], Dict[int, np.ndarray]]:
     """
     Group spectra and explanation weights by cluster label.
@@ -131,16 +132,12 @@ def group_spectra_by_cluster(
         weights_cluster_dict[cluster_label] = weights[cluster_mask]
 
         if print_n_clusters:
-            print(
-                f"{cluster_label};{cluster_mask.sum()}"
-            )
+            print(f"{cluster_label};{cluster_mask.sum()}")
 
     return spectra_cluster_dict, weights_cluster_dict
 
-def compress_weights_per_segments(
-    weights: np.ndarray,
-    n_segments: int
-) -> np.ndarray:
+
+def compress_weights_per_segments(weights: np.ndarray, n_segments: int) -> np.ndarray:
     """
     Compress explanation weights by averaging over fixed segments.
 
@@ -185,6 +182,7 @@ def compress_weights_per_segments(
 
     return weights_per_segment
 
+
 def expand_weights_per_segments(
     weights_per_segment: np.ndarray,
     n_wavelengths: int,
@@ -200,7 +198,7 @@ def expand_weights_per_segments(
     n_wavelengths : int
         Total number of wavelengths to reconstruct in the full array.
     n_segments : int
-        Number of regular-sized segments. If residual exists, an extra 
+        Number of regular-sized segments. If residual exists, an extra
         segment is appended automatically.
 
     Returns
@@ -234,8 +232,9 @@ def expand_weights_per_segments(
 
     return reconstructed_weights
 
+
 def compute_inertias_silhouette(
-    X: np.ndarray, n_clusters: int=10
+    X: np.ndarray, n_clusters: int = 10
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Calculate the inertia and silhouette score for a range of cluster numbers.
