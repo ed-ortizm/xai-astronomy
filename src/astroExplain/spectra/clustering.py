@@ -187,6 +187,7 @@ def expand_weights_per_segments(
     weights_per_segment: np.ndarray,
     n_wavelengths: int,
     n_segments: int,
+    print_info: bool = False,
 ) -> np.ndarray:
     """
     Expand compressed segment-level weights back to full-resolution weights.
@@ -214,8 +215,9 @@ def expand_weights_per_segments(
     if residual_size > 0:
         n_segments += 1
 
-    print(f"Base size: {base_size}, Residual size: {residual_size}")
-    print(f"New number of segments: {n_segments}")
+    if print_info:
+        print(f"Base size: {base_size}, Residual size: {residual_size}")
+        print(f"New number of segments: {n_segments}")
 
     reconstructed_weights = np.empty((n_samples, n_wavelengths))
 
