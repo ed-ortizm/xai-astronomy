@@ -137,7 +137,9 @@ def group_spectra_by_cluster(
     return spectra_cluster_dict, weights_cluster_dict
 
 
-def compress_weights_per_segments(weights: np.ndarray, n_segments: int) -> np.ndarray:
+def compress_weights_per_segments(
+    weights: np.ndarray, n_segments: int, print_info: bool = False
+) -> np.ndarray:
     """
     Compress explanation weights by averaging over fixed segments.
 
@@ -162,8 +164,9 @@ def compress_weights_per_segments(weights: np.ndarray, n_segments: int) -> np.nd
     if residual_size > 0:
         n_segments += 1
 
-    print(f"Base size: {base_size}, Residual size: {residual_size}")
-    print(f"New number of segments: {n_segments}")
+    if print_info:
+        print(f"Base size: {base_size}, Residual size: {residual_size}")
+        print(f"New number of segments: {n_segments}")
 
     # Create empty array
     weights_per_segment = np.empty((n_samples, n_segments))
