@@ -2,6 +2,120 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+
+
+class BPT:
+    """Class to compute and plot BPT diagrams."""
+
+    @staticmethod
+    def bpt_boundary_lines():
+        """
+        Returns the boundary lines for the BPT diagram based on the following
+        references:
+        - Kauffmann et al. (2003): Empirical Star-Forming line
+        - Kewley et al. (2001): Theoretical Maximum Starburst line
+        - Schawinski et al. (2007): Seyfert / LINER division
+        Returns:
+            tuple: A tuple containing three tuples, each representing the x and y
+                coordinates of the boundary lines for the BPT diagram.
+        """
+        # Kauffmann et al. (2003) - Empirical Star-Forming line
+        x_kauff = np.linspace(-2.0, 0.0, 1000)
+        y_kauff = 0.61 / (x_kauff - 0.05) + 1.3
+
+        # Kewley et al. (2001) - Theoretical Maximum Starburst line
+        x_kewley = np.linspace(-2.0, 0.4, 1000)
+        y_kewley = 0.61 / (x_kewley - 0.47) + 1.19
+
+        # Schawinski et al. (2007) - Seyfert / LINER division
+        x_schaw = np.linspace(-0.18, 1.5, 1000)
+        y_schaw = 1.05 * x_schaw + 0.45
+
+        return (x_kauff, y_kauff), (x_kewley, y_kewley), (x_schaw, y_schaw)
+
+    @staticmethod
+    def standar_bpt_plot(
+        fig: plt.Figure,
+        ax: Axes,
+        n2_ha: np.ndarray,
+        o3_hb: np.ndarray,
+        labels: list,
+        xytext: tuple = (0, 0),
+        x_lim: list = [-1.5, 1.0],
+        y_lim: list = [-1.5, 1.5],
+    ):
+        """
+        Create a standard BPT diagram with demarcation lines and data points.
+        Parameters:
+            fig: matplotlib.figure.Figure
+                Figure object to plot on.
+            ax: matplotlib.axes.Axes
+                Axes object to plot on.
+            n2_ha: array-like
+                log10([N II] 6584 / H_alpha) values.
+            o3_hb: array-like
+                log10([O III] 5007 / H_beta) values.
+            labels: array-like
+                Labels for the data points.
+            xytext: tuple, optional
+                Offset for the annotations (default is (0, 0)).
+            x_lim: list, optional
+                Limits for the x-axis (default is [-1.5, 1.0]).
+            y_lim: list, optional
+                Limits for the y-axis (default is [-1.5, 1.5]).
+        """
+        # Demarcation Lines
+        (x_kauff, y_kauff), (x_kewley, y_kewley), (x_schaw, y_schaw) = (
+            BPT.bpt_boundary_lines()
+        )
+
+        ax.plot(x_kauff, y_kauff, "k--", lw=2, label="Kauffmann+03 (SF/Composite)")
+
+        ax.plot(x_kewley, y_kewley, "k-", lw=2, label="Kewley+01 (Composite/AGN)")
+
+        ax.plot(x_schaw, y_schaw, "k-.", lw=2, label="Schawinski+07 (Seyfert/LINER)")
+
+        # Data
+        ax.scatter(n2_ha, o3_hb, color="red")
+        # labels
+        for x, y, label in zip(n2_ha, o3_hb, labels):
+
+            if np.isnan(x) or np.isnan(y):
+                continue
+
+            ax.annotate(
+                label,
+                (x, y),
+                # x points right and y points up from the marker
+                xytext=xytext,
+                # Use offset in points rather than axis coordinates
+                textcoords="offset points",
+                fontsize=9,
+                fontweight="bold",
+                va="bottom",
+                ha="left",
+            )
+        # -------------------------------------------------------------
+        # 3. Formatting
+        # -------------------------------------------------------------
+        # Add region text labels
+        ax.text(-1.0, -0.5, "Star Forming", fontsize=14, ha="center")
+        ax.text(-0.15, -0.5, "Composite", fontsize=14, ha="center", rotation=-70)
+        ax.text(-0.5, 1.25, "Seyfert", fontsize=14, ha="center")
+        ax.text(0.5, -0.5, "LINER", fontsize=14, ha="center")
+
+        # Set axis limits and labels
+        ax.set_xlim(x_lim)
+        ax.set_ylim(y_lim)
+        ax.set_xlabel(r"$\log_{10}([\mathrm{N~II}] / \mathrm{H}\alpha)$", fontsize=14)
+        ax.set_ylabel(r"$\log_{10}([\mathrm{O~III}] / \mathrm{H}\beta)$", fontsize=14)
+        ax.tick_params(labelsize=12)
+
+        ax.legend(loc="lower left", fontsize=8, frameon=False)
+
+        return fig, ax
 
 
 def compute_emission_line_ratios(fluxes_df: pd.DataFrame) -> pd.DataFrame:
