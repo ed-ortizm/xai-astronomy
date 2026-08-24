@@ -6,6 +6,42 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 
 
+def get_subclass_summary(metadata_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Computes value counts, percentages, and an appended Total row for SDSS subClass.
+    """
+    column: str = "subClass"
+    if metadata_df.empty:
+        return pd.DataFrame(columns=[column, "count", "pct"])
+
+    # 1. Compute counts and percentages
+    counts = metadata_df[column].value_counts(dropna=False)
+    pcts = (counts / len(metadata_df)) * 100
+
+    # 2. Build summary dataframe
+    summary_df = pd.DataFrame(
+        {
+            column: counts.index.astype(str),
+            "count": counts.values,
+            "pct": pcts.values,
+        }
+    )
+
+    # 3. Create and append the Total row
+    total_row = pd.DataFrame(
+        [
+            {
+                column: "Total",
+                "count": summary_df["count"].sum(),
+                "pct": summary_df["pct"].sum(),
+            }
+        ]
+    )
+
+    result_df = pd.concat([summary_df, total_row], ignore_index=True)
+    return result_df
+
+
 class BPT:
     """Class to compute and plot BPT diagrams."""
 
