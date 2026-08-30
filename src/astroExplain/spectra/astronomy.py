@@ -16,7 +16,7 @@ def get_subclass_summary(metadata_df: pd.DataFrame) -> pd.DataFrame:
 
     # 1. Compute counts and percentages
     counts = metadata_df[column].value_counts(dropna=False)
-    pcts = (counts / len(metadata_df)) * 100
+    pcts = counts / len(metadata_df)
 
     # 2. Build summary dataframe
     summary_df = pd.DataFrame(
