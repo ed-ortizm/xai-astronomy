@@ -153,6 +153,172 @@ class BPT:
 
         return fig, ax
 
+    @staticmethod
+    def multi_dataset_bpt_plot(
+        fig: plt.Figure,
+        ax: Axes,
+        datasets: list,
+        xytext: tuple = (-5, 5),
+        x_lim: list = [-1.5, 1.0],
+        y_lim: list = [-1.5, 1.5],
+    ):
+        """
+        Plots multiple datasets on a single BPT diagram with error bars.
+
+        datasets: list of dicts. Format:
+        [
+            {
+                "name": "Dataset Label",
+                "color": "blue",
+                "n2_ha_med": array, "n2_ha_p45": array, "n2_ha_p55": array,
+                "o3_hb_med": array, "o3_hb_p45": array, "o3_hb_p55": array
+            }, ...
+        ]
+        """
+        # 1. Demarcation Lines
+        (x_kauff, y_kauff), (x_kewley, y_kewley), (x_schaw, y_schaw) = (
+            BPT.bpt_boundary_lines()
+        )
+        ax.plot(x_kauff, y_kauff, "k--", lw=2, label="Kauffmann+03")
+        ax.plot(x_kewley, y_kewley, "k-", lw=2, label="Kewley+01")
+        ax.plot(x_schaw, y_schaw, "k-.", lw=2, label="Schawinski+07")
+
+        # 2. Plot each dataset
+        for data in datasets:
+            # Convert linear values to log space
+            log_x_med = np.log10(data["n2_ha_med"])
+            log_y_med = np.log10(data["o3_hb_med"])
+
+            # Calculate asymmetric relative errors in log space
+            xerr_lower = log_x_med - np.log10(data["n2_ha_p45"])
+            xerr_upper = np.log10(data["n2_ha_p55"]) - log_x_med
+            xerr = np.vstack((xerr_lower, xerr_upper))
+
+            yerr_lower = log_y_med - np.log10(data["o3_hb_p45"])
+            yerr_upper = np.log10(data["o3_hb_p55"]) - log_y_med
+            yerr = np.vstack((yerr_lower, yerr_upper))
+
+            # Scatter with error bars
+            ax.errorbar(
+                log_x_med,
+                log_y_med,
+                xerr=xerr,
+                yerr=yerr,
+                fmt="o",
+                color=data["color"],
+                label=data["name"],
+                capsize=3,
+                alpha=0.8,
+            )
+            # 1. Retrieve true cluster IDs (fallback to index if not provided)
+            cluster_ids = data.get("cluster_id", range(len(log_x_med)))
+
+            # 2. Format labels using the true cluster ID
+            labels = [f"({int(cid)})" for cid in cluster_ids]
+
+            # 3. Retrieve the offsets dictionary (fallback to empty dict)
+            offsets_dict = data.get("offsets", {})
+
+            for x, y, label, cid in zip(log_x_med, log_y_med, labels, cluster_ids):
+                if np.isnan(x) or np.isnan(y):
+                    continue
+
+                # Look up the custom offset by cluster ID, fallback to global xytext
+                offset = offsets_dict.get(int(cid), xytext)
+
+                ax.annotate(
+                    label,
+                    (x, y),
+                    xytext=offset,
+                    textcoords="offset points",
+                    fontsize=9,
+                    fontweight="bold",
+                    va="center",  # Center alignment makes coordinate math easier
+                    ha="center",
+                    color=data["color"],
+                )
+            # # Add labels (0), (1), etc.
+            # labels = [f"({i})" for i in range(len(log_x_med))]
+
+            # # Fetch custom offsets if provided, otherwise repeat default xytext
+            # custom_offsets = data.get("offsets", [xytext] * len(labels))
+
+            # for x, y, label, offset in zip(
+            #     log_x_med, log_y_med, labels, custom_offsets
+            # ):
+            #     if np.isnan(x) or np.isnan(y):
+            #         continue
+
+            #     ax.annotate(
+            #         label,
+            #         (x, y),
+            #         xytext=offset,  # <--- Uses granular offset
+            #         textcoords="offset points",
+            #         fontsize=9,
+            #         fontweight="bold",
+            #         va="center",  # Changed to center for easier coordinate math
+            #         ha="center",  # Changed to center for easier coordinate math
+            #         color=data["color"],
+            #     )
+
+        # 3. Formatting
+        ax.text(-1.0, -0.5, "Star Forming", fontsize=14, ha="center")
+        ax.text(-0.15, -0.5, "Composite", fontsize=14, ha="center", rotation=-70)
+        ax.text(-0.5, 1.25, "Seyfert", fontsize=14, ha="center")
+        ax.text(0.5, -0.5, "LINER", fontsize=14, ha="center")
+
+        ax.set_xlim(x_lim)
+        ax.set_ylim(y_lim)
+        ax.set_xlabel(r"$\log_{10}([\mathrm{N~II}] / \mathrm{H}\alpha)$", fontsize=14)
+        ax.set_ylabel(r"$\log_{10}([\mathrm{O~III}] / \mathrm{H}\beta)$", fontsize=14)
+        ax.tick_params(labelsize=12)
+        # -------------------------------------------------------------
+        # Split Legends
+        # -------------------------------------------------------------
+        handles, labels = ax.get_legend_handles_labels()
+
+        # The first 3 items are the boundary lines; the rest are the datasets
+        line_handles, line_labels = handles[:3], labels[:3]
+        data_handles, data_labels = handles[3:], labels[3:]
+
+        # 1. Create and add the boundary lines legend in the lower left
+        line_legend = ax.legend(
+            line_handles, line_labels, loc="lower left", fontsize=8, frameon=False
+        )
+        ax.add_artist(line_legend)
+
+        # 2. Create the dataset color code legend in the lower right
+        ax.legend(
+            data_handles, data_labels, loc="lower right", fontsize=8, frameon=False
+        )
+
+        return fig, ax
+
+    @staticmethod
+    def median_45_55_ratios(cluster_meta_df: pd.DataFrame) -> dict:
+        """
+        Groups by cluster ID, computes the 45th, 50th, and 55th percentiles
+        for the BPT line ratios, and returns a formatted DataFrame.
+        """
+        cols = ["nii_to_halpha", "oiii_to_hbeta"]
+        grouped = cluster_meta_df.groupby("cluster")[cols]
+
+        p45 = grouped.quantile(0.45)
+        p50 = grouped.quantile(0.50)
+        p55 = grouped.quantile(0.55)
+
+        return pd.DataFrame(
+            {
+                "cluster_id": p50.index.astype(int),
+                "n2_ha_med": p50["nii_to_halpha"].values,
+                "o3_hb_med": p50["oiii_to_hbeta"].values,
+                "n2_ha_p45": p45["nii_to_halpha"].values,
+                "n2_ha_p55": p55["nii_to_halpha"].values,
+                "o3_hb_p45": p45["oiii_to_hbeta"].values,
+                "o3_hb_p55": p55["oiii_to_hbeta"].values,
+            }
+        )
+
 
 def compute_emission_line_ratios(fluxes_df: pd.DataFrame) -> pd.DataFrame:
     """
